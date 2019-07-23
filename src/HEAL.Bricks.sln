@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.645
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HEAL.Bricks", "HEAL.Bricks\HEAL.Bricks.csproj", "{2E6AD3C3-F423-44DC-B66E-F7A4B3928464}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2E6AD3C3-F423-44DC-B66E-F7A4B3928464}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E6AD3C3-F423-44DC-B66E-F7A4B3928464}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E6AD3C3-F423-44DC-B66E-F7A4B3928464}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E6AD3C3-F423-44DC-B66E-F7A4B3928464}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {34DBEDCA-6F3C-42E6-A951-C2C60987CAC5}
+	EndGlobalSection
+EndGlobal
