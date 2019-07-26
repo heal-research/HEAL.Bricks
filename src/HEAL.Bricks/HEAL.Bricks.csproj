@@ -2,6 +2,53 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>Heuristic and Evolutionary Algorithms Laboratory (HEAL) and Contributors</Authors>
+    <Company>University of Applied Sciences Upper Austria</Company>
+    <Description>HEAL.Bricks is a plug-in framework for .NET. It discovers, loads, and executes plug-ins and supports execution isolation in separate processes or Docker containers.</Description>
+    <Copyright>(c) Heuristic and Evolutionary Algorithms Laboratory (HEAL)</Copyright>
+    <PackageProjectUrl>https://github.com/HeuristicLab/HEAL.Bricks</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/HeuristicLab/HEAL.Bricks.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>HEAL.snk</AssemblyOriginatorKeyFile>
+    <Version>1.0.0-alpha.1</Version>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="CommandLineArgumentHandling\**" />
+    <Compile Remove="Exceptions\**" />
+    <Compile Remove="Interfaces\**" />
+    <Compile Remove="Isolation\**" />
+    <Compile Remove="Utils\**" />
+    <EmbeddedResource Remove="CommandLineArgumentHandling\**" />
+    <EmbeddedResource Remove="Exceptions\**" />
+    <EmbeddedResource Remove="Interfaces\**" />
+    <EmbeddedResource Remove="Isolation\**" />
+    <EmbeddedResource Remove="Utils\**" />
+    <None Remove="CommandLineArgumentHandling\**" />
+    <None Remove="Exceptions\**" />
+    <None Remove="Interfaces\**" />
+    <None Remove="Isolation\**" />
+    <None Remove="Utils\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="ApplicationBase.cs" />
+    <Compile Remove="ApplicationDescription.cs" />
+    <Compile Remove="ApplicationManager.cs" />
+    <Compile Remove="Attributes\PluginDependencyAttribute.cs" />
+    <Compile Remove="Attributes\PluginFileAttribute.cs" />
+    <Compile Remove="LightweightApplicationManager.cs" />
+    <Compile Remove="PluginBase.cs" />
+    <Compile Remove="PluginDescription.cs" />
+    <Compile Remove="PluginFile.cs" />
+    <Compile Remove="PluginState.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\LICENSE.txt" Link="LICENSE.txt" />
+  </ItemGroup>
 
 </Project>
