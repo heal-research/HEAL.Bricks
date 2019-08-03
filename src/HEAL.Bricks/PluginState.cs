@@ -8,8 +8,11 @@
 using System;
 
 namespace HEAL.Bricks {
-  [AttributeUsage(AttributeTargets.Class)]
-  public class NonDiscoverableTypeAttribute : Attribute {
-    public NonDiscoverableTypeAttribute() { }
+  [Serializable]
+  public enum PluginState {
+    Undefined,
+    Enabled,
+    Disabled,
+    Loaded
   }
 }

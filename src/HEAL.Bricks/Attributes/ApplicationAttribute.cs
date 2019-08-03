@@ -7,18 +7,17 @@
 
 using System;
 
-namespace HEAL.Bricks.Attributes {
+namespace HEAL.Bricks {
   [AttributeUsage(AttributeTargets.Class)]
-  public sealed class ApplicationAttribute : Attribute {
+  public class ApplicationAttribute : Attribute {
     public string Name { get; }
     public string Description { get; }
 
-    public ApplicationAttribute(string name) : this(name, string.Empty) { }
-    public ApplicationAttribute(string name, string description) {
+    public ApplicationAttribute(string name, string description = "") {
       #region Parameter Validation
       if (string.IsNullOrWhiteSpace(name)) {
         throw (name == null) ? new ArgumentNullException(nameof(name)) :
-                               new ArgumentException("ApplicationAttribute name must not be empty or all whitespace.", nameof(name));
+                               new ArgumentException($"{nameof(ApplicationAttribute)}.{nameof(Name)} must not be empty or all whitespace.", nameof(name));
       }
       if (description == null) throw new ArgumentNullException(nameof(description));
       #endregion

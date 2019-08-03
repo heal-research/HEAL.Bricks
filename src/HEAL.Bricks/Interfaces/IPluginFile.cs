@@ -5,11 +5,9 @@
  */
 #endregion
 
-using System;
-
 namespace HEAL.Bricks {
-  [AttributeUsage(AttributeTargets.Class)]
-  public class NonDiscoverableTypeAttribute : Attribute {
-    public NonDiscoverableTypeAttribute() { }
+  public interface IPluginFile {
+    string Name { get; }
+    PluginFileType Type { get; }
   }
 }

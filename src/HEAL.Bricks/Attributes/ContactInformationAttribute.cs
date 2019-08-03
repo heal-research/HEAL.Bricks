@@ -9,7 +9,7 @@ using System;
 
 namespace HEAL.Bricks {
   [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-  public sealed class ContactInformationAttribute : Attribute {
+  public class ContactInformationAttribute : Attribute {
     public string Name { get; }
     public string EMail { get; }
 
@@ -17,11 +17,11 @@ namespace HEAL.Bricks {
       #region Parameter Validation
       if (string.IsNullOrWhiteSpace(name)) {
         throw (name == null) ? new ArgumentNullException(nameof(name)) :
-                               new ArgumentException("ContactInformationAttribute name must not be empty or all whitespace.", nameof(name));
+                               new ArgumentException($"{nameof(ContactInformationAttribute)}.{nameof(Name)} must not be empty or all whitespace.", nameof(name));
       }
       if (string.IsNullOrWhiteSpace(email)) {
         throw (email == null) ? new ArgumentNullException(nameof(email)) :
-                                new ArgumentException("ContactInformationAttribute email must not be empty or all whitespace.", nameof(email));
+                                new ArgumentException($"{nameof(ContactInformationAttribute)}.{nameof(EMail)} must not be empty or all whitespace.", nameof(email));
       }
       #endregion
 

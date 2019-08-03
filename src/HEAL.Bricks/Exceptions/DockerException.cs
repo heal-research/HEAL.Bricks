@@ -1,4 +1,4 @@
-#region License Information
+﻿#region License Information
 /*
  * This file is part of HEAL.Bricks which is licensed under the MIT license.
  * See the LICENSE file in the project root for more information.
@@ -8,8 +8,7 @@
 using System;
 
 namespace HEAL.Bricks {
-  [AttributeUsage(AttributeTargets.Class)]
-  public class NonDiscoverableTypeAttribute : Attribute {
-    public NonDiscoverableTypeAttribute() { }
+  public sealed class DockerException : Exception {
+    public DockerException(string message) : base(message) { }
   }
 }

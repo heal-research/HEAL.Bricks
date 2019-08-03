@@ -8,8 +8,10 @@
 using System;
 
 namespace HEAL.Bricks {
-  [AttributeUsage(AttributeTargets.Class)]
-  public class NonDiscoverableTypeAttribute : Attribute {
-    public NonDiscoverableTypeAttribute() { }
-  }
+  public enum PluginFileType {
+    Assembly,
+    NativeDll,
+    Data,
+    License
+  };
 }

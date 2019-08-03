@@ -8,38 +8,30 @@
 using System;
 
 namespace HEAL.Bricks {
-  /// <summary>
-  /// This attribute can be used to declare that a plugin depends on a another plugin.
-  /// </summary>
   [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-  public sealed class PluginDependencyAttribute : System.Attribute {
-    private string dependency;
+  public class PluginDependencyAttribute : Attribute {
+    public string Dependency { get; }
+    public Version Version { get; }
 
-    /// <summary>
-    /// Gets the name of the plugin that is needed to load a plugin.
-    /// </summary>
-    public string Dependency {
-      get { return dependency; }
-    }
-
-    private Version version;
-    /// <summary>
-    /// Gets the version of the plugin dependency.
-    /// </summary>
-    public Version Version {
-      get { return version; }
-    }
-
-    /// <summary>
-    /// Initializes a new instance of <see cref="PluginDependencyAttribute" />.
-    /// </summary>
-    /// <param name="dependency">Name of the plugin dependency.</param>
-    /// <param name="version">Version of the plugin dependency.</param>
     public PluginDependencyAttribute(string dependency, string version) {
-      if (string.IsNullOrEmpty(dependency)) throw new ArgumentException("Dependency name is null or empty.", "dependency");
-      if (string.IsNullOrEmpty(version)) throw new ArgumentException("Dependency version is null or empty.", "version");
-      this.dependency = dependency;
-      this.version = new Version(version); // throws format exception if the version string can't be parsed
+      #region Parameter Validation
+      if (string.IsNullOrWhiteSpace(dependency)) {
+        throw (dependency == null) ? new ArgumentNullException(nameof(dependency)) :
+                                     new ArgumentException($"{nameof(PluginDependencyAttribute)}.{nameof(Dependency)} must not be empty or all whitespace.", nameof(dependency));
+      }
+      if (string.IsNullOrWhiteSpace(version)) {
+        throw (version == null) ? new ArgumentNullException(nameof(version)) :
+                                  new ArgumentException($"{nameof(PluginDependencyAttribute)}.{nameof(Version)} must not be empty or all whitespace.", nameof(version));
+      }
+      #endregion
+
+      Dependency = dependency;
+      try {
+        Version = new Version(version);
+      } catch (Exception e) {
+        // throws exception if version string cannot be parsed into a valid version
+        throw new ArgumentException($"{nameof(PluginDependencyAttribute)}.{nameof(Version)} cannot be parsed into a valid version", nameof(version), e);
+      }
     }
   }
 }

@@ -7,7 +7,6 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using HEAL.Bricks.Attributes;
 
 namespace HEAL.Bricks.Tests {
   [TestClass]
@@ -21,76 +20,97 @@ namespace HEAL.Bricks.Tests {
     }
     #endregion
 
+    #region ApplicationAttribute
     [TestMethod]
-    public void ApplicationAttributeTest() {
-      ApplicationAttribute a;
-      a = new ApplicationAttribute("name");
+    public void ApplicationAttributeCtorTest() {
+      var a = new ApplicationAttribute("name");
       Assert.AreEqual("name", a.Name);
       Assert.AreEqual(string.Empty, a.Description);
-
       a = new ApplicationAttribute("name", "desc");
       Assert.AreEqual("name", a.Name);
       Assert.AreEqual("desc", a.Description);
-
+      // test invalid ctor params
       AssertArgumentNullException(() => new ApplicationAttribute(null), "name");
       AssertArgumentException(() => new ApplicationAttribute(""), "name");
       AssertArgumentException(() => new ApplicationAttribute("   "), "name");
-      AssertArgumentNullException(() => new ApplicationAttribute(null, "desc"), "name");
-      AssertArgumentException(() => new ApplicationAttribute("", "desc"), "name");
-      AssertArgumentException(() => new ApplicationAttribute("   ", "desc"), "name");
-      AssertArgumentNullException(() => new ApplicationAttribute(null, null), "name");
-      AssertArgumentException(() => new ApplicationAttribute("", null), "name");
-      AssertArgumentException(() => new ApplicationAttribute("   ", null), "name");
       AssertArgumentNullException(() => new ApplicationAttribute("name", null), "description");
     }
+    #endregion
 
+    #region ContactInformationAttribute
     [TestMethod]
-    public void ContactInformationAttributeTest() {
-      ContactInformationAttribute a;
-      a = new ContactInformationAttribute("name", "email");
+    public void ContactInformationAttributeCtorTest() {
+      var a = new ContactInformationAttribute("name", "email");
       Assert.AreEqual("name", a.Name);
       Assert.AreEqual("email", a.EMail);
-
+      // test invalid ctor params
       AssertArgumentNullException(() => new ContactInformationAttribute(null, "email"), "name");
       AssertArgumentException(() => new ContactInformationAttribute("", "email"), "name");
       AssertArgumentException(() => new ContactInformationAttribute("   ", "email"), "name");
-      AssertArgumentNullException(() => new ContactInformationAttribute(null, null), "name");
-      AssertArgumentException(() => new ContactInformationAttribute("", null), "name");
-      AssertArgumentException(() => new ContactInformationAttribute("   ", null), "name");
       AssertArgumentNullException(() => new ContactInformationAttribute("name", null), "email");
-      AssertArgumentNullException(() => new ContactInformationAttribute(null, ""), "name");
-      AssertArgumentException(() => new ContactInformationAttribute("", ""), "name");
-      AssertArgumentException(() => new ContactInformationAttribute("   ", ""), "name");
       AssertArgumentException(() => new ContactInformationAttribute("name", ""), "email");
-      AssertArgumentNullException(() => new ContactInformationAttribute(null, "   "), "name");
-      AssertArgumentException(() => new ContactInformationAttribute("", "   "), "name");
-      AssertArgumentException(() => new ContactInformationAttribute("   ", "   "), "name");
       AssertArgumentException(() => new ContactInformationAttribute("name", "   "), "email");
     }
+    #endregion
 
+    #region PluginAttribute
     [TestMethod]
-    public void PluginAttributeTest() {
-      PluginAttribute a;
-      a = new PluginAttribute("name", "1.2.3.4");
+    public void PluginAttributeCtorTest() {
+      var a = new PluginAttribute("name", "1.2.3.4");
       Assert.AreEqual("name", a.Name);
+      Assert.AreEqual(new Version(1, 2, 3, 4), a.Version);
       Assert.AreEqual(string.Empty, a.Description);
-      Assert.AreEqual(new Version(1, 2, 3, 4), a.Version);
-
-      a = new PluginAttribute("name", "desc", "1.2.3.4");
+      a = new PluginAttribute("name", "1.2.3.4", "desc");
       Assert.AreEqual("name", a.Name);
-      Assert.AreEqual("desc", a.Description);
       Assert.AreEqual(new Version(1, 2, 3, 4), a.Version);
-
-      AssertArgumentNullException(() => new ApplicationAttribute(null), "name");
-      AssertArgumentException(() => new ApplicationAttribute(""), "name");
-      AssertArgumentException(() => new ApplicationAttribute("   "), "name");
-      AssertArgumentNullException(() => new ApplicationAttribute(null, "desc"), "name");
-      AssertArgumentException(() => new ApplicationAttribute("", "desc"), "name");
-      AssertArgumentException(() => new ApplicationAttribute("   ", "desc"), "name");
-      AssertArgumentNullException(() => new ApplicationAttribute(null, null), "name");
-      AssertArgumentException(() => new ApplicationAttribute("", null), "name");
-      AssertArgumentException(() => new ApplicationAttribute("   ", null), "name");
-      AssertArgumentNullException(() => new ApplicationAttribute("name", null), "description");
+      Assert.AreEqual("desc", a.Description);
+      // test invalid ctor params
+      AssertArgumentNullException(() => new PluginAttribute(null, "1.2.3.4"), "name");
+      AssertArgumentException(() => new PluginAttribute("", "1.2.3.4"), "name");
+      AssertArgumentException(() => new PluginAttribute("   ", "1.2.3.4"), "name");
+      AssertArgumentNullException(() => new PluginAttribute("name", null), "version");
+      AssertArgumentException(() => new PluginAttribute("name", ""), "version");
+      AssertArgumentException(() => new PluginAttribute("name", "   "), "version");
+      AssertArgumentException(() => new PluginAttribute("name", "1"), "version");
+      AssertArgumentException(() => new PluginAttribute("name", "1.2.3.4.5"), "version");
+      AssertArgumentException(() => new PluginAttribute("name", "1.2.alpha"), "version");
+      AssertArgumentNullException(() => new PluginAttribute("name", "1.2.3.4", null), "description");
     }
+    #endregion
+
+    #region PluginDependencyAttribute
+    [TestMethod]
+    public void PluginDependencyAttributeCtorTest() {
+      var a = new PluginDependencyAttribute("dependency", "1.2.3.4");
+      Assert.AreEqual("dependency", a.Dependency);
+      Assert.AreEqual(new Version(1, 2, 3, 4), a.Version);
+      // test invalid ctor params
+      AssertArgumentNullException(() => new PluginDependencyAttribute(null, "1.2.3.4"), "dependency");
+      AssertArgumentException(() => new PluginDependencyAttribute("", "1.2.3.4"), "dependency");
+      AssertArgumentException(() => new PluginDependencyAttribute("   ", "1.2.3.4"), "dependency");
+      AssertArgumentNullException(() => new PluginDependencyAttribute("dependency", null), "version");
+      AssertArgumentException(() => new PluginDependencyAttribute("dependency", ""), "version");
+      AssertArgumentException(() => new PluginDependencyAttribute("dependency", "   "), "version");
+      AssertArgumentException(() => new PluginDependencyAttribute("dependency", "1"), "version");
+      AssertArgumentException(() => new PluginDependencyAttribute("dependency", "1.2.3.4.5"), "version");
+      AssertArgumentException(() => new PluginDependencyAttribute("dependency", "1.2.alpha"), "version");
+    }
+    #endregion
+
+    #region PluginFileAttribute
+    [TestMethod]
+    public void PluginFileAttributeCtorTest() {
+      var a = new PluginFileAttribute("name");
+      Assert.AreEqual("name", a.Name);
+      Assert.AreEqual(PluginFileType.Assembly, a.Type);
+      a = new PluginFileAttribute("name", PluginFileType.License);
+      Assert.AreEqual("name", a.Name);
+      Assert.AreEqual(PluginFileType.License, a.Type);
+      // test invalid ctor params
+      AssertArgumentNullException(() => new PluginFileAttribute(null), "name");
+      AssertArgumentException(() => new PluginFileAttribute(""), "name");
+      AssertArgumentException(() => new PluginFileAttribute("   "), "name");
+    }
+    #endregion
   }
 }
