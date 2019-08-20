@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -9,59 +9,18 @@
     <PackageProjectUrl>https://github.com/HeuristicLab/HEAL.Bricks</PackageProjectUrl>
     <RepositoryUrl>https://github.com/HeuristicLab/HEAL.Bricks.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>HEAL.snk</AssemblyOriginatorKeyFile>
     <Version>1.0.0-alpha.1</Version>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="CommandLineArgumentHandling\**" />
-    <Compile Remove="Exceptions\**" />
-    <Compile Remove="Isolation\**" />
-    <Compile Remove="Utils\**" />
-    <EmbeddedResource Remove="CommandLineArgumentHandling\**" />
-    <EmbeddedResource Remove="Exceptions\**" />
-    <EmbeddedResource Remove="Isolation\**" />
-    <EmbeddedResource Remove="Utils\**" />
-    <None Remove="CommandLineArgumentHandling\**" />
-    <None Remove="Exceptions\**" />
-    <None Remove="Isolation\**" />
-    <None Remove="Utils\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="CommandLineArgumentHandling\Arguments\HideStarterArgument.cs" />
-    <Compile Include="CommandLineArgumentHandling\Arguments\OpenArgument.cs" />
-    <Compile Include="CommandLineArgumentHandling\Arguments\StartArgument.cs" />
-    <Compile Include="CommandLineArgumentHandling\CommandLineArgument.cs" />
-    <Compile Include="CommandLineArgumentHandling\CommandLineArgumentHandling.cs" />
-    <Compile Include="CommandLineArgumentHandling\ICommandLineArgument.cs" />
-    <Compile Include="Exceptions\DockerException.cs" />
-    <Compile Include="Exceptions\InvalidPluginException.cs" />
-    <Compile Include="Isolation\ApplicationRunner.cs" />
-    <Compile Include="Isolation\AssemblyInfo.cs" />
-    <Compile Include="Isolation\AssemblyLoader.cs" />
-    <Compile Include="Isolation\DockerRunnerHost.cs" />
-    <Compile Include="Isolation\NativeRunnerHost.cs" />
-    <Compile Include="Isolation\PluginLoader.cs" />
-    <Compile Include="Isolation\PluginLoaderFactory.cs" />
-    <Compile Include="Isolation\Runner.cs" />
-    <Compile Include="Isolation\RunnerHost.cs" />
-    <Compile Include="Isolation\RunnerMessage.cs" />
-    <Compile Include="Utils\AssemblyExtensions.cs" />
-    <Compile Include="Utils\TypeExtensions.cs" />
-    <Compile Include="Utils\UniPath.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="..\..\LICENSE.txt" Link="LICENSE.txt" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="HEAL.Attic" Version="1.4.0" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+    <None Include="../../LICENSE.txt" Pack="true" PackagePath="" />
   </ItemGroup>
 
 </Project>
