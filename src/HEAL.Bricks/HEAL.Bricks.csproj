@@ -9,18 +9,22 @@
     <PackageProjectUrl>https://github.com/HeuristicLab/HEAL.Bricks</PackageProjectUrl>
     <RepositoryUrl>https://github.com/HeuristicLab/HEAL.Bricks.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <AssemblyVersion>1.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>HEAL.snk</AssemblyOriginatorKeyFile>
-    <Version>1.0.0-alpha.1</Version>
-    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <Version>0.1.0-alpha.1</Version>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="HEAL.Attic" Version="1.4.0" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
-    <None Include="../../LICENSE.txt" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\LICENSE.txt" Link="LICENSE.txt" />
   </ItemGroup>
 
 </Project>
