@@ -24,7 +24,8 @@ namespace HEAL.Bricks {
     /// <returns>The constructed type, a generic type definition or null, if a type construction is not possible</returns>
     /// <remarks>This method does not work with nested generic types</remarks>
     internal static Type BuildType(this Type type, Type protoType) {
-      if (type == null || protoType == null) throw new ArgumentNullException();
+      if (type == null) throw new ArgumentNullException(nameof(type));
+      if (protoType == null) throw new ArgumentNullException(nameof(protoType));
 
       if (!type.IsGenericTypeDefinition) return type;
       if (protoType.IsGenericTypeDefinition) return type;
@@ -64,9 +65,8 @@ namespace HEAL.Bricks {
       if (!baseType.IsGenericType) return false;
 
       if (RecursiveCheckGenericTypes(baseType, subType)) return true;
-      IEnumerable<Type> implementedInterfaces = subType.GetInterfaces().Where(t => t.IsGenericType);
-      foreach (var implementedInterface in implementedInterfaces.Where(i => i.IsGenericType)) {
-        if (baseType.CheckGenericTypes(implementedInterface)) return true;
+      foreach (Type genericInterfaceOfSubType in subType.GetInterfaces().Where(i => i.IsGenericType)) {
+        if (baseType.CheckGenericTypes(genericInterfaceOfSubType)) return true;
       }
 
       return false;
@@ -82,15 +82,15 @@ namespace HEAL.Bricks {
     }
 
     private static bool CheckGenericTypes(this Type baseType, Type subType) {
-      var baseTypeGenericTypeDefinition = baseType.GetGenericTypeDefinition();
-      var subTypeGenericTypeDefinition = subType.GetGenericTypeDefinition();
+      Type baseTypeGenericTypeDefinition = baseType.GetGenericTypeDefinition();
+      Type subTypeGenericTypeDefinition = subType.GetGenericTypeDefinition();
       if (baseTypeGenericTypeDefinition != subTypeGenericTypeDefinition) return false;
-      var baseTypeGenericArguments = baseType.GetGenericArguments();
-      var subTypeGenericArguments = subType.GetGenericArguments();
+      Type[] baseTypeGenericArguments = baseType.GetGenericArguments();
+      Type[] subTypeGenericArguments = subType.GetGenericArguments();
 
       for (int i = 0; i < baseTypeGenericArguments.Length; i++) {
-        var baseTypeGenericArgument = baseTypeGenericArguments[i];
-        var subTypeGenericArgument = subTypeGenericArguments[i];
+        Type baseTypeGenericArgument = baseTypeGenericArguments[i];
+        Type subTypeGenericArgument = subTypeGenericArguments[i];
 
         if (baseTypeGenericArgument.IsGenericParameter ^ subTypeGenericArgument.IsGenericParameter) return false;
         if (baseTypeGenericArgument == subTypeGenericArgument) continue;
@@ -103,7 +103,7 @@ namespace HEAL.Bricks {
         if (baseTypeGenericArgument.GenericParameterAttributes.HasFlag(GenericParameterAttributes.NotNullableValueTypeConstraint) &&
             !subTypeGenericArgument.GenericParameterAttributes.HasFlag(GenericParameterAttributes.NotNullableValueTypeConstraint)) return false;
 
-        foreach (var baseTypeGenericParameterConstraint in baseTypeGenericArgument.GetGenericParameterConstraints()) {
+        foreach (Type baseTypeGenericParameterConstraint in baseTypeGenericArgument.GetGenericParameterConstraints()) {
           if (!subTypeGenericArgument.GetGenericParameterConstraints().Any(t => baseTypeGenericParameterConstraint.IsAssignableFrom(t))) return false;
         }
       }
