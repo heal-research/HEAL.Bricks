@@ -1,4 +1,11 @@
-﻿using HEAL.Bricks;
+﻿#region License Information
+/*
+ * This file is part of HEAL.Bricks which is licensed under the MIT license.
+ * See the LICENSE file in the project root for more information.
+ */
+#endregion
+
+using HEAL.Bricks;
 using System;
 using System.IO;
 using System.Linq;
