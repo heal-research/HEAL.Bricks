@@ -27,4 +27,64 @@
     <Content Include="..\..\LICENSE.txt" Link="LICENSE.txt" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="TestPlugins\HEAL.Bricks.0.1.0-alpha.1.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginA.0.1.0-alpha.1.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginA.0.1.0-alpha.2.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginA.0.1.0.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginA.0.2.0-alpha.1.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginA.0.2.0.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginA.0.2.1.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginA.0.3.0-alpha.1.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginA.0.3.0-beta.1.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginA.0.3.0.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginB.0.1.0-alpha.1.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginB.0.1.0-alpha.2.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginB.0.1.0.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginB.0.2.0-alpha.1.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginB.0.2.0.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginB.0.3.0-alpha.1.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginB.0.3.0-alpha.2.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginB.0.3.0.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.PluginB.0.3.1.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
