@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <PackageReference Include="HEAL.Attic" Version="1.4.0" />
+    <PackageReference Include="NuGet.Resolver" Version="5.4.0" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
   </ItemGroup>
 
