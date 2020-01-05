@@ -17,7 +17,7 @@ namespace HEAL.Bricks.Tests {
     public const string pathBricks = @"TestPlugins\HEAL.Bricks.0.1.0-alpha.1.nupkg";
     public const string nameBricks = "HEAL.Bricks";
     public const string versionBricks = "0.1.0-alpha.1";
-
+    public const string nameVersionBricks = nameBricks + "." + versionBricks;
 
     // nupkg-files of test plugins
     public const string pathPluginA_010_alpha1 = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.1.0-alpha.1.nupkg";

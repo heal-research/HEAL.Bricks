@@ -16,33 +16,33 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   internal class NuGetConnector {
-    public string AppDirectory { get; }
-    public NuGetFramework CurrentFramework { get; }
-    public SourceRepository LocalRepository { get; }
+    public string AppDirectory => GetAppDirectory();
+    public NuGetFramework CurrentFramework => GetCurrentFramework();
+    public IEnumerable<SourceRepository> LocalRepositories { get; }
     public IEnumerable<SourceRepository> RemoteRepositories { get; }
     public IEnumerable<SourceRepository> AllRepositories {
       get {
-        return RemoteRepositories.Prepend(LocalRepository);
+        return LocalRepositories.Concat(RemoteRepositories);
       }
     }
 
-    public NuGetConnector(params string[] remoteRepositories) {
-      AppDirectory = GetAppDirectory();
-      CurrentFramework = GetCurrentFramework();
-      LocalRepository = CreateSourceRepository(AppDirectory);
+    //TODO: Add method to filter packages for those which support the current framework
+    //TODO: Add a method to resolve dependencies for several packages
+
+    public NuGetConnector(IEnumerable<string> localRepositoriesRelativePaths, IEnumerable<string> remoteRepositories) {
+      LocalRepositories = localRepositoriesRelativePaths.Select(x => Path.Combine(AppDirectory, x)).Select(y => CreateSourceRepository(y)).ToArray();
       RemoteRepositories = remoteRepositories.Select(x => CreateSourceRepository(x)).ToArray();
     }
+    public NuGetConnector(params string[] remoteRepositories) : this(Enumerable.Repeat(GetAppDirectory(), 1), remoteRepositories) { }
 
     public async Task<IPackageSearchMetadata> GetPackageAsync(PackageIdentity identity, IEnumerable<SourceRepository> sourceRepositories, CancellationToken cancellationToken) {
-      IEnumerable<IPackageSearchMetadata> packages = Enumerable.Empty<IPackageSearchMetadata>();
-      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
+      using (SourceCacheContext cacheContext = CreateNoSourceCacheContext()) {
         foreach (SourceRepository sourceRepository in sourceRepositories) {
           PackageMetadataResource packageMetadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>(cancellationToken);
           IPackageSearchMetadata package = await packageMetadataResource.GetMetadataAsync(identity, cacheContext, NullLogger.Instance, cancellationToken);
@@ -54,7 +54,7 @@ namespace HEAL.Bricks {
 
     public async Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(string packageId, IEnumerable<SourceRepository> sourceRepositories, bool includePreReleases, CancellationToken cancellationToken) {
       IEnumerable<IPackageSearchMetadata> packages = Enumerable.Empty<IPackageSearchMetadata>();
-      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
+      using (SourceCacheContext cacheContext = CreateNoSourceCacheContext()) {
         foreach (SourceRepository sourceRepository in sourceRepositories) {
           PackageMetadataResource packageMetadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>(cancellationToken);
           packages = packages.Concat(await packageMetadataResource.GetMetadataAsync(packageId, includePreReleases, false, cacheContext, NullLogger.Instance, cancellationToken));
@@ -63,10 +63,22 @@ namespace HEAL.Bricks {
       return packages.Distinct(PackageSearchMetadataEqualityComparer.Default);
     }
 
-    public async Task<IEnumerable<IPackageSearchMetadata>> SearchPackagesAsync(string searchString, IEnumerable<SourceRepository> sourceRepositories, bool includePreReleases, CancellationToken cancellationToken) {
+    public async Task<IEnumerable<IPackageSearchMetadata>> GetLocalPackagesAsync(bool includePreReleases, CancellationToken cancellationToken) {
       IEnumerable<IPackageSearchMetadata> packages = Enumerable.Empty<IPackageSearchMetadata>();
-      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
-        foreach (SourceRepository sourceRepository in sourceRepositories) {
+      using (SourceCacheContext cacheContext = CreateNoSourceCacheContext()) {
+        foreach (SourceRepository sourceRepository in LocalRepositories) {
+          PackageSearchResource packageSearchResource = await sourceRepository.GetResourceAsync<PackageSearchResource>(cancellationToken);
+          SearchFilter filter = new SearchFilter(includePreReleases);
+          packages = packages.Concat(await packageSearchResource.SearchAsync("", filter, 0, int.MaxValue, NullLogger.Instance, cancellationToken));
+        }
+      }
+      return packages.Distinct(PackageSearchMetadataEqualityComparer.Default);
+    }
+
+    public async Task<IEnumerable<IPackageSearchMetadata>> SearchRemotePackagesAsync(string searchString, bool includePreReleases, CancellationToken cancellationToken) {
+      IEnumerable<IPackageSearchMetadata> packages = Enumerable.Empty<IPackageSearchMetadata>();
+      using (SourceCacheContext cacheContext = CreateNoSourceCacheContext()) {
+        foreach (SourceRepository sourceRepository in RemoteRepositories) {
           PackageSearchResource packageSearchResource = await sourceRepository.GetResourceAsync<PackageSearchResource>(cancellationToken);
           SearchFilter filter = new SearchFilter(includePreReleases);
           packages = packages.Concat(await packageSearchResource.SearchAsync(searchString, filter, 0, int.MaxValue, NullLogger.Instance, cancellationToken));
@@ -77,7 +89,7 @@ namespace HEAL.Bricks {
 
     public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(PackageIdentity identity, IEnumerable<SourceRepository> sourceRepositories, bool resolveDependenciesRecursively, CancellationToken cancellationToken) {
       HashSet<SourcePackageDependencyInfo> resolvedDependencies = new HashSet<SourcePackageDependencyInfo>(PackageIdentityComparer.Default);
-      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
+      using (SourceCacheContext cacheContext = CreateNoSourceCacheContext()) {
 
         async Task ResolvePackageDependenciesAsync(PackageIdentity id) {
           if (resolvedDependencies.Contains(id)) return;
@@ -101,9 +113,9 @@ namespace HEAL.Bricks {
       return resolvedDependencies;
     }
 
-    public async Task<IPackageDownloader> GetPackageDownloaderAsync(PackageIdentity identity, IEnumerable<SourceRepository> sourceRepositories, CancellationToken cancellationToken) {
-      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
-        foreach (SourceRepository sourceRepository in sourceRepositories) {
+    public async Task<IPackageDownloader> GetPackageDownloaderAsync(PackageIdentity identity, CancellationToken cancellationToken) {
+      using (SourceCacheContext cacheContext = CreateNoSourceCacheContext()) {
+        foreach (SourceRepository sourceRepository in RemoteRepositories) {
           FindPackageByIdResource findPackageByIdResource = await sourceRepository.GetResourceAsync<FindPackageByIdResource>(cancellationToken);
           IPackageDownloader downloader = await findPackageByIdResource.GetPackageDownloaderAsync(identity, cacheContext, NullLogger.Instance, cancellationToken);
           if (downloader != null) return downloader;
@@ -112,17 +124,17 @@ namespace HEAL.Bricks {
       return null;
     }
 
-    private string GetAppDirectory() {
+    private static string GetAppDirectory() {
       return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
     }
-    private NuGetFramework GetCurrentFramework() {
+    private static NuGetFramework GetCurrentFramework() {
       string frameworkName = Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>().FrameworkName;
       return NuGetFramework.ParseFrameworkName(frameworkName, DefaultFrameworkNameProvider.Instance);
     }
-    private SourceRepository CreateSourceRepository(string packageSource) {
+    private static SourceRepository CreateSourceRepository(string packageSource) {
       return new SourceRepository(new PackageSource(packageSource), Repository.Provider.GetCoreV3());
     }
-    private SourceCacheContext CreateSourceCacheContext() {
+    private static SourceCacheContext CreateNoSourceCacheContext() {
       return new SourceCacheContext() { NoCache = true };
     }
 
