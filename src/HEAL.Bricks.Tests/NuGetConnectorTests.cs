@@ -6,12 +6,14 @@
 #endregion
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NuGet.Common;
 using NuGet.Frameworks;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -142,6 +144,8 @@ namespace HEAL.Bricks.Tests {
       version = Constants.version000;
       foundPackage = (await nuGetConnector.GetPackageAsync(new PackageIdentity(package, NuGetVersion.Parse(version)), nuGetConnector.AllRepositories, default))?.Identity.ToString();
       Assert.IsNull(foundPackage);
+
+      WriteLogToTestContextAndClear(nuGetConnector);
     }
     #endregion
 
@@ -195,6 +199,8 @@ namespace HEAL.Bricks.Tests {
       foundPackages = (await nuGetConnector.GetPackagesAsync(package, nuGetConnector.AllRepositories, includePreReleases, default)).Select(x => x.Identity.ToString()).ToArray();
       Assert.AreEqual(0, foundPackages.Length, "Number of found packages is incorrect.");
       #endregion
+
+      WriteLogToTestContextAndClear(nuGetConnector);
     }
     #endregion
 
@@ -215,6 +221,8 @@ namespace HEAL.Bricks.Tests {
       expectedPackages = new[] { Constants.namePluginA + "." + Constants.version010, Constants.namePluginB + "." + Constants.version010 };
       foundPackages = (await nuGetConnector.GetLocalPackagesAsync(includePreReleases, default)).Select(x => x.Identity.ToString()).ToArray();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
+
+      WriteLogToTestContextAndClear(nuGetConnector);
     }
     #endregion
 
@@ -243,6 +251,8 @@ namespace HEAL.Bricks.Tests {
       includePreReleases = true;
       foundPackages = (await nuGetConnector.SearchRemotePackagesAsync(searchString, includePreReleases, default)).Select(x => x.Identity.ToString()).ToArray();
       Assert.AreEqual(0, foundPackages.Length, "Number of found packages is incorrect.");
+
+      WriteLogToTestContextAndClear(nuGetConnector);
     }
     #endregion
 
@@ -254,48 +264,86 @@ namespace HEAL.Bricks.Tests {
       string version;
       bool resolveDependenciesRecursively;
       IEnumerable<SourcePackageDependencyInfo> foundDependencies;
+      IEnumerable<PackageDependency> packageDependencies;
+      Stopwatch sw = new Stopwatch();
 
-      NuGetFramework fw = nuGetConnector.CurrentFramework;
-      TestContext.WriteLine(fw.ToString());
-
-      package = Constants.namePluginA;
-      version = Constants.version030;
+      package = Constants.namePluginB;
+      version = Constants.version031;
       resolveDependenciesRecursively = false;
+      sw.Restart();
       foundDependencies = await nuGetConnector.GetPackageDependenciesAsync(new PackageIdentity(package, NuGetVersion.Parse(version)), nuGetConnector.AllRepositories, resolveDependenciesRecursively, default);
-      TestContext.WriteLine(foundDependencies.Count().ToString());
-      //foreach (var dependency in foundDependencies) {
-      //  TestContext.WriteLine(dependency.ToString());
-      //}
+      sw.Stop();
+      Assert.AreEqual(1, foundDependencies.Count(), "Number of found dependencies is incorrect.");
+      Assert.AreEqual(package, foundDependencies.First().Id);
+      Assert.AreEqual(version, foundDependencies.First().Version.ToString());
+      packageDependencies = foundDependencies.First().Dependencies;
+      Assert.AreEqual(1, packageDependencies.Count(), "Number of package dependencies is incorrect.");
+      Assert.AreEqual(Constants.namePluginA, packageDependencies.First().Id);
+      Assert.AreEqual(Constants.version030, packageDependencies.First().VersionRange.MinVersion.ToString());
+      TestContext.WriteLine($"{(resolveDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package}.{version}");
+      TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
+      WriteLogToTestContextAndClear(nuGetConnector);
       TestContext.WriteLine("");
 
-      package = Constants.namePluginA;
-      version = Constants.version030;
+      package = Constants.namePluginB;
+      version = Constants.version031;
       resolveDependenciesRecursively = true;
+      sw.Restart();
       foundDependencies = await nuGetConnector.GetPackageDependenciesAsync(new PackageIdentity(package, NuGetVersion.Parse(version)), nuGetConnector.AllRepositories, resolveDependenciesRecursively, default);
-      TestContext.WriteLine(foundDependencies.Count().ToString());
-      //foreach (var dependency in foundDependencies) {
-      //  TestContext.WriteLine(dependency.ToString());
-      //}
+      sw.Stop();
+      Assert.AreEqual(83, foundDependencies.Count(), "Number of found dependencies is incorrect.");
+      Assert.AreEqual(package, foundDependencies.First().Id);
+      Assert.AreEqual(version, foundDependencies.First().Version.ToString());
+      packageDependencies = foundDependencies.First().Dependencies;
+      Assert.AreEqual(1, packageDependencies.Count(), "Number of package dependencies is incorrect.");
+      Assert.AreEqual(Constants.namePluginA, packageDependencies.First().Id);
+      Assert.AreEqual(Constants.version030, packageDependencies.First().VersionRange.MinVersion.ToString());
+      TestContext.WriteLine($"{(resolveDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package}.{version}");
+      TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
+      WriteLogToTestContextAndClear(nuGetConnector);
       TestContext.WriteLine("");
 
-      package = "HEAL.Attic";
-      version = "1.4.0";
+      package = Constants.nameCollections;
+      version = Constants.versionCollections;
       resolveDependenciesRecursively = false;
+      sw.Restart();
       foundDependencies = await nuGetConnector.GetPackageDependenciesAsync(new PackageIdentity(package, NuGetVersion.Parse(version)), nuGetConnector.AllRepositories, resolveDependenciesRecursively, default);
-      TestContext.WriteLine(foundDependencies.Count().ToString());
-      //foreach (var dependency in foundDependencies) {
-      //  TestContext.WriteLine(dependency.ToString());
-      //}
+      sw.Stop();
+      Assert.AreEqual(1, foundDependencies.Count(), "Number of found dependencies is incorrect.");
+      Assert.AreEqual(package, foundDependencies.First().Id);
+      Assert.AreEqual(version, foundDependencies.First().Version.ToString());
+      packageDependencies = foundDependencies.First().Dependencies;
+      Assert.AreEqual(3, packageDependencies.Count(), "Number of package dependencies is incorrect.");
+      TestContext.WriteLine($"{(resolveDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package}.{version}");
+      TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
+      WriteLogToTestContextAndClear(nuGetConnector);
       TestContext.WriteLine("");
 
-      package = "HEAL.Attic";
-      version = "1.4.0";
+      package = Constants.nameCollections;
+      version = Constants.versionCollections;
       resolveDependenciesRecursively = true;
+      sw.Restart();
       foundDependencies = await nuGetConnector.GetPackageDependenciesAsync(new PackageIdentity(package, NuGetVersion.Parse(version)), nuGetConnector.AllRepositories, resolveDependenciesRecursively, default);
-      TestContext.WriteLine(foundDependencies.Count().ToString());
-      //foreach (var dependency in foundDependencies) {
-      //  TestContext.WriteLine(dependency.ToString());
-      //}
+      sw.Stop();
+      Assert.AreEqual(4, foundDependencies.Count(), "Number of found dependencies is incorrect.");
+      Assert.AreEqual(package, foundDependencies.First().Id);
+      Assert.AreEqual(version, foundDependencies.First().Version.ToString());
+      packageDependencies = foundDependencies.First().Dependencies;
+      Assert.AreEqual(3, packageDependencies.Count(), "Number of package dependencies is incorrect.");
+      TestContext.WriteLine($"{(resolveDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package}.{version}");
+      TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
+      WriteLogToTestContextAndClear(nuGetConnector);
+
+      package = Constants.nameInvalid;
+      version = Constants.version000;
+      resolveDependenciesRecursively = true;
+      sw.Restart();
+      foundDependencies = await nuGetConnector.GetPackageDependenciesAsync(new PackageIdentity(package, NuGetVersion.Parse(version)), nuGetConnector.AllRepositories, resolveDependenciesRecursively, default);
+      sw.Stop();
+      Assert.AreEqual(0, foundDependencies.Count(), "Number of found dependencies is incorrect.");
+      TestContext.WriteLine($"{(resolveDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package}.{version}");
+      TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
+      WriteLogToTestContextAndClear(nuGetConnector);
     }
     #endregion
 
@@ -345,15 +393,32 @@ namespace HEAL.Bricks.Tests {
       version = Constants.version000;
       foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(new PackageIdentity(package, NuGetVersion.Parse(version)), default);
       Assert.IsNull(foundPackageDownloader);
+
+      WriteLogToTestContextAndClear(nuGetConnector);
     }
     #endregion
 
     #region Helpers
     private NuGetConnector CreateNuGetConnector(bool includePublicNuGetRepository = false) {
-      return includePublicNuGetRepository switch {
+      NuGetConnector nuGetConnector = includePublicNuGetRepository switch {
         false => new NuGetConnector(new[] { localRepository }, new[] { remoteOfficialRepository, remoteDevRepository }),
         true => new NuGetConnector(new[] { localRepository }, new[] { remoteOfficialRepository, remoteDevRepository, publicNuGetRepository })
       };
+      nuGetConnector.EnableLogging(LogLevel.Debug);
+      nuGetConnector.SetFrameworkForUnitTests(".NETCoreApp,Version=v3.1");
+      return nuGetConnector;
+    }
+
+    private void WriteLogToTestContextAndClear(NuGetConnector nuGetConnector, string header = null) {
+      string[] log = nuGetConnector.GetLog();
+      if (log.Length > 0) {
+        if (header != null) TestContext.WriteLine(header);
+        TestContext.WriteLine("NuGetConnector Log:");
+        foreach (string line in log)
+          TestContext.WriteLine(line);
+        TestContext.WriteLine("");
+        nuGetConnector.ClearLog();
+      }
     }
     #endregion
   }

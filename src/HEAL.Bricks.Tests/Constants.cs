@@ -19,6 +19,11 @@ namespace HEAL.Bricks.Tests {
     public const string versionBricks = "0.1.0-alpha.1";
     public const string nameVersionBricks = nameBricks + "." + versionBricks;
 
+    // System.Collections package
+    public const string nameCollections = "System.Collections";
+    public const string versionCollections = "4.3.0";
+    public const string nameVersionCollections = nameCollections + "." + versionCollections;
+
     // nupkg-files of test plugins
     public const string pathPluginA_010_alpha1 = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.1.0-alpha.1.nupkg";
     public const string pathPluginA_010_alpha2 = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.1.0-alpha.2.nupkg";

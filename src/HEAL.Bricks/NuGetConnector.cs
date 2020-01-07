@@ -6,7 +6,6 @@
 #endregion
 
 using NuGet.Common;
-using NuGet.Configuration;
 using NuGet.Frameworks;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
@@ -22,8 +21,10 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   internal class NuGetConnector {
+    private ILogger logger = NullLogger.Instance;
+
     public string AppDirectory => GetAppDirectory();
-    public NuGetFramework CurrentFramework => GetCurrentFramework();
+    public NuGetFramework CurrentFramework { get; private set; } = GetCurrentFramework();
     public IEnumerable<SourceRepository> LocalRepositories { get; }
     public IEnumerable<SourceRepository> RemoteRepositories { get; }
     public IEnumerable<SourceRepository> AllRepositories {
@@ -33,7 +34,6 @@ namespace HEAL.Bricks {
     }
 
     //TODO: Add method to filter packages for those which support the current framework
-    //TODO: Add a method to resolve dependencies for several packages
 
     public NuGetConnector(IEnumerable<string> localRepositoriesRelativePaths, IEnumerable<string> remoteRepositories) {
       LocalRepositories = localRepositoriesRelativePaths.Select(x => Path.Combine(AppDirectory, x)).Select(y => CreateSourceRepository(y)).ToArray();
@@ -41,11 +41,24 @@ namespace HEAL.Bricks {
     }
     public NuGetConnector(params string[] remoteRepositories) : this(Enumerable.Repeat(GetAppDirectory(), 1), remoteRepositories) { }
 
+    public void EnableLogging(LogLevel minLevel = LogLevel.Information) {
+      logger = new NuGetLogger(minLevel);
+    }
+    public void DisableLogging() {
+      logger = NullLogger.Instance;
+    }
+    public void ClearLog() {
+      (logger as NuGetLogger)?.Clear();
+    }
+    public string[] GetLog() {
+      return (logger as NuGetLogger)?.GetLog() ?? Array.Empty<string>();
+    }
+
     public async Task<IPackageSearchMetadata> GetPackageAsync(PackageIdentity identity, IEnumerable<SourceRepository> sourceRepositories, CancellationToken cancellationToken) {
-      using (SourceCacheContext cacheContext = CreateNoSourceCacheContext()) {
+      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (SourceRepository sourceRepository in sourceRepositories) {
           PackageMetadataResource packageMetadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>(cancellationToken);
-          IPackageSearchMetadata package = await packageMetadataResource.GetMetadataAsync(identity, cacheContext, NullLogger.Instance, cancellationToken);
+          IPackageSearchMetadata package = await packageMetadataResource.GetMetadataAsync(identity, cacheContext, logger, cancellationToken);
           if (package != null) return package;
         }
       }
@@ -54,10 +67,10 @@ namespace HEAL.Bricks {
 
     public async Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(string packageId, IEnumerable<SourceRepository> sourceRepositories, bool includePreReleases, CancellationToken cancellationToken) {
       IEnumerable<IPackageSearchMetadata> packages = Enumerable.Empty<IPackageSearchMetadata>();
-      using (SourceCacheContext cacheContext = CreateNoSourceCacheContext()) {
+      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (SourceRepository sourceRepository in sourceRepositories) {
           PackageMetadataResource packageMetadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>(cancellationToken);
-          packages = packages.Concat(await packageMetadataResource.GetMetadataAsync(packageId, includePreReleases, false, cacheContext, NullLogger.Instance, cancellationToken));
+          packages = packages.Concat(await packageMetadataResource.GetMetadataAsync(packageId, includePreReleases, false, cacheContext, logger, cancellationToken));
         }
       }
       return packages.Distinct(PackageSearchMetadataEqualityComparer.Default);
@@ -65,11 +78,11 @@ namespace HEAL.Bricks {
 
     public async Task<IEnumerable<IPackageSearchMetadata>> GetLocalPackagesAsync(bool includePreReleases, CancellationToken cancellationToken) {
       IEnumerable<IPackageSearchMetadata> packages = Enumerable.Empty<IPackageSearchMetadata>();
-      using (SourceCacheContext cacheContext = CreateNoSourceCacheContext()) {
+      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (SourceRepository sourceRepository in LocalRepositories) {
           PackageSearchResource packageSearchResource = await sourceRepository.GetResourceAsync<PackageSearchResource>(cancellationToken);
           SearchFilter filter = new SearchFilter(includePreReleases);
-          packages = packages.Concat(await packageSearchResource.SearchAsync("", filter, 0, int.MaxValue, NullLogger.Instance, cancellationToken));
+          packages = packages.Concat(await packageSearchResource.SearchAsync("", filter, 0, int.MaxValue, logger, cancellationToken));
         }
       }
       return packages.Distinct(PackageSearchMetadataEqualityComparer.Default);
@@ -77,25 +90,28 @@ namespace HEAL.Bricks {
 
     public async Task<IEnumerable<IPackageSearchMetadata>> SearchRemotePackagesAsync(string searchString, bool includePreReleases, CancellationToken cancellationToken) {
       IEnumerable<IPackageSearchMetadata> packages = Enumerable.Empty<IPackageSearchMetadata>();
-      using (SourceCacheContext cacheContext = CreateNoSourceCacheContext()) {
+      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (SourceRepository sourceRepository in RemoteRepositories) {
           PackageSearchResource packageSearchResource = await sourceRepository.GetResourceAsync<PackageSearchResource>(cancellationToken);
           SearchFilter filter = new SearchFilter(includePreReleases);
-          packages = packages.Concat(await packageSearchResource.SearchAsync(searchString, filter, 0, int.MaxValue, NullLogger.Instance, cancellationToken));
+          packages = packages.Concat(await packageSearchResource.SearchAsync(searchString, filter, 0, int.MaxValue, logger, cancellationToken));
         }
       }
       return packages.Distinct(PackageSearchMetadataEqualityComparer.Default);
     }
 
     public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(PackageIdentity identity, IEnumerable<SourceRepository> sourceRepositories, bool resolveDependenciesRecursively, CancellationToken cancellationToken) {
+      return await GetPackageDependenciesAsync(Enumerable.Repeat(identity, 1), sourceRepositories, resolveDependenciesRecursively, cancellationToken);
+    }
+    public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(IEnumerable<PackageIdentity> identities, IEnumerable<SourceRepository> sourceRepositories, bool resolveDependenciesRecursively, CancellationToken cancellationToken) {
       HashSet<SourcePackageDependencyInfo> resolvedDependencies = new HashSet<SourcePackageDependencyInfo>(PackageIdentityComparer.Default);
-      using (SourceCacheContext cacheContext = CreateNoSourceCacheContext()) {
+      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
 
         async Task ResolvePackageDependenciesAsync(PackageIdentity id) {
           if (resolvedDependencies.Contains(id)) return;
           foreach (SourceRepository sourceRepository in sourceRepositories) {
             DependencyInfoResource dependencyInfoResource = await sourceRepository.GetResourceAsync<DependencyInfoResource>(cancellationToken);
-            SourcePackageDependencyInfo dependencies = await dependencyInfoResource.ResolvePackage(id, CurrentFramework, cacheContext, NullLogger.Instance, cancellationToken);
+            SourcePackageDependencyInfo dependencies = await dependencyInfoResource.ResolvePackage(id, CurrentFramework, cacheContext, logger, cancellationToken);
             if (dependencies != null) {
               resolvedDependencies.Add(dependencies);
               if (resolveDependenciesRecursively) {
@@ -108,16 +124,18 @@ namespace HEAL.Bricks {
           }
         };
 
-        await ResolvePackageDependenciesAsync(identity);
+        foreach (PackageIdentity identity in identities) {
+          await ResolvePackageDependenciesAsync(identity);
+        }
       }
       return resolvedDependencies;
     }
 
     public async Task<IPackageDownloader> GetPackageDownloaderAsync(PackageIdentity identity, CancellationToken cancellationToken) {
-      using (SourceCacheContext cacheContext = CreateNoSourceCacheContext()) {
+      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (SourceRepository sourceRepository in RemoteRepositories) {
           FindPackageByIdResource findPackageByIdResource = await sourceRepository.GetResourceAsync<FindPackageByIdResource>(cancellationToken);
-          IPackageDownloader downloader = await findPackageByIdResource.GetPackageDownloaderAsync(identity, cacheContext, NullLogger.Instance, cancellationToken);
+          IPackageDownloader downloader = await findPackageByIdResource.GetPackageDownloaderAsync(identity, cacheContext, logger, cancellationToken);
           if (downloader != null) return downloader;
         }
       }
@@ -128,16 +146,29 @@ namespace HEAL.Bricks {
       return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
     }
     private static NuGetFramework GetCurrentFramework() {
-      string frameworkName = Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>().FrameworkName;
-      return NuGetFramework.ParseFrameworkName(frameworkName, DefaultFrameworkNameProvider.Instance);
+      string frameworkName = Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName;
+      return frameworkName != null ? NuGetFramework.ParseFrameworkName(frameworkName, DefaultFrameworkNameProvider.Instance) : NuGetFramework.AnyFramework;
+    }
+    internal void SetFrameworkForUnitTests(string frameworkName) {
+      // only used for unit tests to correct the current NuGet framework manually
+      // Explanation: In unit tests, TargetFrameworkAttribute.FrameworkName of the entry assembly (testhost.dll) returns
+      // ".NETCoreApp,Version=v1.0". Consequently, GetCurrentFramework returns .NET Core 1.0 as the current .NET framework
+      // for NuGet packages. As HEAL.Bricks is a .NET Standard 2.0 library and applications using HEAL.Bricks therefore
+      // have to be at least .NET Core 2.0 or .NET Framework 4.6.1, the detected NuGet framework is wrong and has to be
+      // corrected. Otherwise, dependency resultion does not work correctly, as NuGet looks for dependencies of .NET Core 1.0.
+      CurrentFramework = NuGetFramework.ParseFrameworkName(frameworkName, DefaultFrameworkNameProvider.Instance);
     }
     private static SourceRepository CreateSourceRepository(string packageSource) {
-      return new SourceRepository(new PackageSource(packageSource), Repository.Provider.GetCoreV3());
+      return Repository.CreateSource(Repository.Provider.GetCoreV3(), packageSource);
+    }
+    private static SourceCacheContext CreateSourceCacheContext() {
+      return new SourceCacheContext();
     }
     private static SourceCacheContext CreateNoSourceCacheContext() {
       return new SourceCacheContext() { NoCache = true };
     }
 
+    #region PackageSearchMetadataEqualityComparer
     private class PackageSearchMetadataEqualityComparer : IEqualityComparer<IPackageSearchMetadata> {
       public static PackageSearchMetadataEqualityComparer Default => new PackageSearchMetadataEqualityComparer();
       private readonly PackageIdentityComparer identityComparer = PackageIdentityComparer.Default;
@@ -148,5 +179,63 @@ namespace HEAL.Bricks {
         return identityComparer.GetHashCode(obj.Identity);
       }
     }
+    #endregion
+
+    #region NuGetLogger
+    private class NuGetLogger : ILogger {
+      private List<string> log = new List<string>();
+      private LogLevel minLevel;
+
+      public NuGetLogger() {
+        minLevel = LogLevel.Verbose;
+      }
+      public NuGetLogger(LogLevel minLevel) {
+        this.minLevel = minLevel;
+      }
+
+      public string[] GetLog() {
+        return log.ToArray();
+      }
+      public void Clear() {
+        log.Clear();
+      }
+
+      public void Log(LogLevel level, string data) {
+        if (level >= minLevel)
+          log.Add($"{level.ToString()}: {data}");
+      }
+      public void Log(ILogMessage message) {
+        if (message.Level >= minLevel)
+          log.Add($"[{message.Time.ToString()}] {message.Level.ToString()}: {message.FormatWithCode()}");
+      }
+      public Task LogAsync(LogLevel level, string data) {
+        return Task.Run(() => Log(level, data));
+      }
+      public Task LogAsync(ILogMessage message) {
+        return Task.Run(() => Log(message));
+      }
+      public void LogDebug(string data) {
+        Log(LogLevel.Debug, data);
+      }
+      public void LogError(string data) {
+        Log(LogLevel.Error, data);
+      }
+      public void LogInformation(string data) {
+        Log(LogLevel.Information, data);
+      }
+      public void LogInformationSummary(string data) {
+        Log(LogLevel.Information, $"[Summary] {data}");
+      }
+      public void LogMinimal(string data) {
+        Log(LogLevel.Minimal, data);
+      }
+      public void LogVerbose(string data) {
+        Log(LogLevel.Verbose, data);
+      }
+      public void LogWarning(string data) {
+        Log(LogLevel.Warning, data);
+      }
+    }
+    #endregion
   }
 }
