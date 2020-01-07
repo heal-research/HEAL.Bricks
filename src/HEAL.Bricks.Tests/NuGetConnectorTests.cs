@@ -11,6 +11,7 @@ using NuGet.Frameworks;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.Protocol.Core.Types;
+using NuGet.Resolver;
 using NuGet.Versioning;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -397,6 +398,21 @@ namespace HEAL.Bricks.Tests {
       WriteLogToTestContextAndClear(nuGetConnector);
     }
     #endregion
+
+    [TestMethod]
+    public async Task TestResolveDependenciesOfLocalPackagesAsync() {
+      NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
+
+      IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = await nuGetConnector.ResolveDependenciesOfLocalPackagesAsync("HEALBricksPlugin", false, default);
+      TestContext.WriteLine($"Resolved Dependencies: {resolvedDependencies.Count()}");
+      foreach (var resolvedPackage in resolvedDependencies) {
+        TestContext.WriteLine(resolvedPackage.ToString());
+      }
+      TestContext.WriteLine("");
+
+      WriteLogToTestContextAndClear(nuGetConnector);
+    }
+
 
     #region Helpers
     private NuGetConnector CreateNuGetConnector(bool includePublicNuGetRepository = false) {

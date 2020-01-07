@@ -10,6 +10,7 @@ using NuGet.Frameworks;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.Protocol.Core.Types;
+using NuGet.Resolver;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -140,6 +141,23 @@ namespace HEAL.Bricks {
         }
       }
       return null;
+    }
+
+    public async Task<IEnumerable<SourcePackageDependencyInfo>> ResolveDependenciesOfLocalPackagesAsync(string packageTag, bool includePreReleases, CancellationToken cancellationToken) {
+      IEnumerable<PackageIdentity> localPackageIdentities = (await GetLocalPackagesAsync(includePreReleases, default)).Where(x => x.Tags.Contains(packageTag)).Select(x => x.Identity);
+      IEnumerable<SourcePackageDependencyInfo> dependencies = await GetPackageDependenciesAsync(localPackageIdentities, AllRepositories, true, default);
+      PackageResolverContext context = new PackageResolverContext(DependencyBehavior.Highest,
+                                                                  localPackageIdentities.Select(x => x.Id),
+                                                                  Enumerable.Empty<string>(),
+                                                                  Enumerable.Empty<PackageReference>(),
+                                                                  Enumerable.Empty<PackageIdentity>(),
+                                                                  dependencies,
+                                                                  AllRepositories.Select(x => x.PackageSource),
+                                                                  logger);
+      PackageResolver resolver = new PackageResolver();
+      IEnumerable<PackageIdentity> resolvedIdentities = resolver.Resolve(context, cancellationToken);
+      IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = resolvedIdentities.Select(i => dependencies.Single(x => PackageIdentityComparer.Default.Equals(i, x)));
+      return resolvedDependencies;
     }
 
     private static string GetAppDirectory() {
