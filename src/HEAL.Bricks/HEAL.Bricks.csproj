@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk" InitialTargets="SetVersion">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -11,14 +11,18 @@
     <RepositoryType>git</RepositoryType>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>HEAL.snk</AssemblyOriginatorKeyFile>
-    <Version>0.1.0-alpha.1</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <ThisAssemblyNamespace>HEAL.Bricks</ThisAssemblyNamespace>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="GitInfo" Version="2.0.26">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="HEAL.Attic" Version="1.4.0" />
     <PackageReference Include="NuGet.Resolver" Version="5.4.0" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
@@ -27,5 +31,15 @@
   <ItemGroup>
     <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="" />
   </ItemGroup>
+
+  <Target Name="SetVersion" DependsOnTargets="GitInfo">
+    <PropertyGroup>
+      <GitInfoReportImportance>high</GitInfoReportImportance>
+      <ThisAssemblyNamespace>HEAL.Bricks</ThisAssemblyNamespace>
+      <GitThisAssembly>true</GitThisAssembly>
+      <Version>0.1.0-alpha.$(GitCommits)+$(GitCommit)</Version>
+      <PackageVersion>0.1.0-alpha.$(GitCommits)+$(GitCommit)</PackageVersion>
+    </PropertyGroup>
+  </Target>
 
 </Project>
