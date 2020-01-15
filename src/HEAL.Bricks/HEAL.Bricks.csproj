@@ -18,6 +18,18 @@
     <ThisAssemblyNamespace>HEAL.Bricks</ThisAssemblyNamespace>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- <GitSkipCache>false</GitSkipCache> -->
+    <GitThisAssembly>true</GitThisAssembly>
+    <!-- <GitThisAssemblyMetadata>false</GitThisAssemblyMetadata> -->
+    <ThisAssemblyNamespace>HEAL.Bricks</ThisAssemblyNamespace>
+    <GitDefaultBranch>master</GitDefaultBranch>
+    <!-- <GitVersionFile>GitInfo.txt</GitVersionFile> -->
+    <GitInfoReportImportance>high</GitInfoReportImportance>
+    <!-- <GitIgnoreBranchVersion>false</GitIgnoreBranchVersion> -->
+    <!-- <GitIgnoreTagVersion>false</GitIgnoreTagVersion> -->
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="GitInfo" Version="2.0.26">
       <PrivateAssets>all</PrivateAssets>
@@ -32,13 +44,13 @@
     <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="" />
   </ItemGroup>
 
-  <Target Name="SetVersion" DependsOnTargets="GitInfo">
+  <Target Name="SetVersion"
+          DependsOnTargets="GitVersion"
+          Condition="'$(GitInfoImported)' == 'true' And '$(ExcludeRestorePackageImports)' != 'true'" >
     <PropertyGroup>
-      <GitInfoReportImportance>high</GitInfoReportImportance>
-      <ThisAssemblyNamespace>HEAL.Bricks</ThisAssemblyNamespace>
-      <GitThisAssembly>true</GitThisAssembly>
-      <Version>0.1.0-alpha.$(GitCommits)+$(GitCommit)</Version>
-      <PackageVersion>0.1.0-alpha.$(GitCommits)+$(GitCommit)</PackageVersion>
+      <Version Condition="'$(GitSemVerLabel)' != ''">$(GitBaseVersionMajor).$(GitBaseVersionMinor).$(GitBaseVersionPatch)$(GitSemVerDashLabel).$(GitCommits)+$(GitCommit)</Version>
+      <Version Condition="'$(GitSemVerLabel)' == ''">$(GitBaseVersionMajor).$(GitBaseVersionMinor).$(GitBaseVersionPatch)+$(GitCommit)</Version>
+      <PackageVersion>$(Version)</PackageVersion>
     </PropertyGroup>
   </Target>
 
