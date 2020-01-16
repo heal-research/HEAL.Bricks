@@ -144,8 +144,8 @@ namespace HEAL.Bricks {
     }
 
     public async Task<IEnumerable<SourcePackageDependencyInfo>> ResolveDependenciesOfLocalPackagesAsync(string packageTag, bool includePreReleases, CancellationToken cancellationToken) {
-      IEnumerable<PackageIdentity> localPackageIdentities = (await GetLocalPackagesAsync(includePreReleases, default)).Where(x => x.Tags.Contains(packageTag)).Select(x => x.Identity);
-      IEnumerable<SourcePackageDependencyInfo> dependencies = await GetPackageDependenciesAsync(localPackageIdentities, AllRepositories, true, default);
+      IEnumerable<PackageIdentity> localPackageIdentities = (await GetLocalPackagesAsync(includePreReleases, cancellationToken)).Where(x => x.Tags.Contains(packageTag)).Select(x => x.Identity);
+      IEnumerable<SourcePackageDependencyInfo> dependencies = await GetPackageDependenciesAsync(localPackageIdentities, AllRepositories, true, cancellationToken);
       PackageResolverContext context = new PackageResolverContext(DependencyBehavior.Highest,
                                                                   localPackageIdentities.Select(x => x.Id),
                                                                   Enumerable.Empty<string>(),
