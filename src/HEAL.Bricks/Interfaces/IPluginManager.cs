@@ -13,10 +13,8 @@ using System.Threading.Tasks;
 namespace HEAL.Bricks {
   public interface IPluginManager {
     IEnumerable<string> RemoteRepositories { get; }
+    IEnumerable<PackageInfo> Packages { get; }
 
-    Task<IEnumerable<IPluginInfo>> GetLocalPluginsAsync(string pluginTag, CancellationToken cancellationToken = default);
-    Task<IEnumerable<IPluginInfo>> GetLocalPluginDependenciesAsync(string pluginTag, CancellationToken cancellationToken = default);
-    Task<IEnumerable<IPluginInfo>> GetRemotePluginsAsync(string searchString, bool includePreReleases = true, bool allVersions = true, CancellationToken cancellationToken = default);
-    Task<bool> DownloadPluginAsync(IPluginInfo pluginInfo, string targetFolder, string packageSource = "https://api.nuget.org/v3/index.json", CancellationToken cancellationToken = default);
+    Task InitializeAsync(string pluginTag, CancellationToken cancellationToken = default);
   }
 }

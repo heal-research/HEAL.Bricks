@@ -19,14 +19,15 @@ namespace Calculator {
       string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
       IPluginManager pm = PluginManager.Create(nuGetRepository);
+      await pm.InitializeAsync("HEALBricksPlugin");
 
       Console.WriteLine("List local plugins:");
-      foreach (IPluginInfo plugin in await pm.GetLocalPluginsAsync("HEALBricksPlugin")) {
+      foreach (PackageInfo plugin in pm.Packages.Where(x => x.IsPlugin)) {
         Console.WriteLine(plugin.ToStringWithDependencies());
       }
       Console.WriteLine("Listing of local plugins finished.\n");
 
-      Console.WriteLine("List remote plugins:");
+/*      Console.WriteLine("List remote plugins:");
       foreach (IPluginInfo plugin in await pm.GetRemotePluginsAsync("heal")) {
       //foreach (IPluginInfo plugin in await pm.GetRemotePluginsAsync("owner:HeuristicLab")) {
       //foreach (IPluginInfo plugin in await pm.GetRemotePluginsAsync("id:System.Collections")) {
@@ -52,7 +53,7 @@ namespace Calculator {
       result = await pm.DownloadPluginAsync(pluginInfo, appDir);
       Console.WriteLine($"Download of plugin {pluginInfo.Name} ({pluginInfo.Version.ToString()}) was successful: {result}");
       Console.WriteLine("Download of remote plugin finished.\n");
-
+*/
       Console.WriteLine("Loading assemblies:");
       NuGetAssemblyLoader.Load();
       Console.WriteLine("Assembly loading finished.\n");

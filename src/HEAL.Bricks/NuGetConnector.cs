@@ -116,7 +116,7 @@ namespace HEAL.Bricks {
             if (dependencies != null) {
               resolvedDependencies.Add(dependencies);
               if (resolveDependenciesRecursively) {
-                foreach (PackageDependency dependency in dependencies.Dependencies) {
+                foreach (NuGet.Packaging.Core.PackageDependency dependency in dependencies.Dependencies) {
                   await ResolvePackageDependenciesAsync(new PackageIdentity(dependency.Id, dependency.VersionRange.MinVersion));
                 }
               }
@@ -143,20 +143,24 @@ namespace HEAL.Bricks {
       return null;
     }
 
-    public async Task<IEnumerable<SourcePackageDependencyInfo>> ResolveDependenciesOfLocalPackagesAsync(string packageTag, bool includePreReleases, CancellationToken cancellationToken) {
-      IEnumerable<PackageIdentity> localPackageIdentities = (await GetLocalPackagesAsync(includePreReleases, cancellationToken)).Where(x => x.Tags.Contains(packageTag)).Select(x => x.Identity);
-      IEnumerable<SourcePackageDependencyInfo> dependencies = await GetPackageDependenciesAsync(localPackageIdentities, AllRepositories, true, cancellationToken);
+    public IEnumerable<SourcePackageDependencyInfo> ResolveDependencies(IEnumerable<string> requiredIds, IEnumerable<SourcePackageDependencyInfo> availablePackages, CancellationToken cancellationToken, out bool resolveFailed) {
       PackageResolverContext context = new PackageResolverContext(DependencyBehavior.Highest,
-                                                                  localPackageIdentities.Select(x => x.Id),
+                                                                  requiredIds,
                                                                   Enumerable.Empty<string>(),
                                                                   Enumerable.Empty<PackageReference>(),
                                                                   Enumerable.Empty<PackageIdentity>(),
-                                                                  dependencies,
+                                                                  availablePackages,
                                                                   AllRepositories.Select(x => x.PackageSource),
                                                                   logger);
       PackageResolver resolver = new PackageResolver();
-      IEnumerable<PackageIdentity> resolvedIdentities = resolver.Resolve(context, cancellationToken);
-      IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = resolvedIdentities.Select(i => dependencies.Single(x => PackageIdentityComparer.Default.Equals(i, x)));
+      IEnumerable<PackageIdentity> resolvedIdentities = Enumerable.Empty<PackageIdentity>();
+      try {
+        resolvedIdentities = resolver.Resolve(context, cancellationToken);
+      } catch (NuGetResolverConstraintException) {
+        resolveFailed = true;
+      }
+      IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = resolvedIdentities.Select(i => availablePackages.Single(x => PackageIdentityComparer.Default.Equals(i, x)));
+      resolveFailed = false;
       return resolvedDependencies;
     }
 
@@ -201,8 +205,8 @@ namespace HEAL.Bricks {
 
     #region NuGetLogger
     private class NuGetLogger : ILogger {
-      private List<string> log = new List<string>();
-      private LogLevel minLevel;
+      private readonly List<string> log = new List<string>();
+      private readonly LogLevel minLevel;
 
       public NuGetLogger() {
         minLevel = LogLevel.Verbose;

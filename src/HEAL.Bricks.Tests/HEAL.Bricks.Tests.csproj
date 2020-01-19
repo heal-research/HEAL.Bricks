@@ -27,6 +27,11 @@
     <Content Include="..\..\LICENSE.txt" Link="LICENSE.txt" />
   </ItemGroup>
 
+  <Target Name="RemoveDeployedTestPackageSources" BeforeTargets="BeforeBuild" AfterTargets="AfterClean" Condition="Exists('$(OutDir)TestPackageSources')">
+    <RemoveDir Directories="$(OutDir)TestPackageSources" />
+    <Message Text="Removed package sources deployed for testing." />
+  </Target>
+
   <ItemGroup>
     <None Update="TestPlugins\HEAL.Bricks.0.1.0-alpha.1.nupkg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
