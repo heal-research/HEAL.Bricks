@@ -151,7 +151,6 @@ namespace HEAL.Bricks.Tests {
     }
     #endregion
 
-
     #region Helpers
     private NuGetConnector CreateNuGetConnector(bool includePublicNuGetRepository = false) {
       NuGetConnector nuGetConnector = includePublicNuGetRepository switch {

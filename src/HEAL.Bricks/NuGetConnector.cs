@@ -78,15 +78,21 @@ namespace HEAL.Bricks {
     }
 
     public async Task<IEnumerable<IPackageSearchMetadata>> GetLocalPackagesAsync(bool includePreReleases, CancellationToken cancellationToken) {
-      IEnumerable<IPackageSearchMetadata> packages = Enumerable.Empty<IPackageSearchMetadata>();
+      IEnumerable<IPackageSearchMetadata> latestPackages = Enumerable.Empty<IPackageSearchMetadata>();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (SourceRepository sourceRepository in LocalRepositories) {
           PackageSearchResource packageSearchResource = await sourceRepository.GetResourceAsync<PackageSearchResource>(cancellationToken);
           SearchFilter filter = new SearchFilter(includePreReleases);
-          packages = packages.Concat(await packageSearchResource.SearchAsync("", filter, 0, int.MaxValue, logger, cancellationToken));
+          latestPackages = latestPackages.Concat(await packageSearchResource.SearchAsync("", filter, 0, int.MaxValue, logger, cancellationToken));
         }
       }
-      return packages.Distinct(PackageSearchMetadataEqualityComparer.Default);
+      latestPackages = latestPackages.Distinct(PackageSearchMetadataEqualityComparer.Default);
+
+      IEnumerable<IPackageSearchMetadata> allPackages = Enumerable.Empty<IPackageSearchMetadata>();
+      foreach (IPackageSearchMetadata latestPackage in latestPackages) {
+        allPackages = allPackages.Concat(await GetPackagesAsync(latestPackage.Identity.Id, LocalRepositories, includePreReleases, cancellationToken));
+      }
+      return allPackages.Distinct(PackageSearchMetadataEqualityComparer.Default);
     }
 
     public async Task<IEnumerable<IPackageSearchMetadata>> SearchRemotePackagesAsync(string searchString, bool includePreReleases, CancellationToken cancellationToken) {

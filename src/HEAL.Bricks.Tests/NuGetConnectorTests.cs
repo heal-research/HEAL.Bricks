@@ -214,12 +214,19 @@ namespace HEAL.Bricks.Tests {
       bool includePreReleases;
 
       includePreReleases = true;
-      expectedPackages = new[] { Constants.nameVersionBricks, Constants.namePluginA + "." + Constants.version020_alpha1, Constants.namePluginB + "." + Constants.version020_alpha1 };
+      expectedPackages = new[] { Constants.nameVersionBricks,
+                                 Constants.namePluginA + "." + Constants.version010_alpha2,
+                                 Constants.namePluginA + "." + Constants.version010,
+                                 Constants.namePluginA + "." + Constants.version020_alpha1,
+                                 Constants.namePluginB + "." + Constants.version010_alpha2,
+                                 Constants.namePluginB + "." + Constants.version010,
+                                 Constants.namePluginB + "." + Constants.version020_alpha1 };
       foundPackages = (await nuGetConnector.GetLocalPackagesAsync(includePreReleases, default)).Select(x => x.Identity.ToString()).ToArray();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
 
       includePreReleases = false;
-      expectedPackages = new[] { Constants.namePluginA + "." + Constants.version010, Constants.namePluginB + "." + Constants.version010 };
+      expectedPackages = new[] { Constants.namePluginA + "." + Constants.version010,
+                                 Constants.namePluginB + "." + Constants.version010 };
       foundPackages = (await nuGetConnector.GetLocalPackagesAsync(includePreReleases, default)).Select(x => x.Identity.ToString()).ToArray();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
 
