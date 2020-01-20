@@ -67,6 +67,5 @@ namespace HEAL.Bricks.Tests {
       CollectionAssert.AreEquivalent(new[] { typeof(A), typeof(B), typeof(E) }, td.GetInstances<I1>().Select(x => x.GetType()).ToArray());
     }
     #endregion
-
   }
 }

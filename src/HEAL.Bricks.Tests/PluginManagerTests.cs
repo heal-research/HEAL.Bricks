@@ -13,6 +13,7 @@ using NuGet.Packaging.Core;
 using NuGet.Protocol.Core.Types;
 using NuGet.Resolver;
 using NuGet.Versioning;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -74,17 +75,63 @@ namespace HEAL.Bricks.Tests {
     public void TestCreate() {
       IPluginManager pluginManager;
 
-      pluginManager = PluginManager.Create();
+      pluginManager = PluginManager.Create(null);
       Assert.IsNotNull(pluginManager);
+      Assert.IsNotNull(pluginManager.RemoteRepositories);
       Assert.AreEqual(0, pluginManager.RemoteRepositories.Count());
+      Assert.AreEqual("", pluginManager.PluginTag);
+      Assert.IsNotNull(pluginManager.Packages);
       Assert.AreEqual(0, pluginManager.Packages.Count());
+      Assert.AreEqual(PluginManagerStatus.Uninitialized, pluginManager.Status);
 
-      pluginManager = PluginManager.Create(remoteOfficialRepository, remoteDevRepository);
+      pluginManager = PluginManager.Create("HEALBricksPlugin");
+      Assert.IsNotNull(pluginManager);
+      Assert.IsNotNull(pluginManager.RemoteRepositories);
+      Assert.AreEqual(0, pluginManager.RemoteRepositories.Count());
+      Assert.AreEqual("HEALBricksPlugin", pluginManager.PluginTag);
+      Assert.IsNotNull(pluginManager.Packages);
+      Assert.AreEqual(0, pluginManager.Packages.Count());
+      Assert.AreEqual(PluginManagerStatus.Uninitialized, pluginManager.Status);
+
+      pluginManager = PluginManager.Create("HEALBricksPlugin", remoteOfficialRepository, remoteDevRepository);
       Assert.IsNotNull(pluginManager);
       Assert.AreEqual(2, pluginManager.RemoteRepositories.Count());
       Assert.AreEqual(remoteOfficialRepository, pluginManager.RemoteRepositories.First());
       Assert.AreEqual(remoteDevRepository, pluginManager.RemoteRepositories.Skip(1).First());
+      Assert.AreEqual("HEALBricksPlugin", pluginManager.PluginTag);
+      Assert.IsNotNull(pluginManager.Packages);
       Assert.AreEqual(0, pluginManager.Packages.Count());
+      Assert.AreEqual(PluginManagerStatus.Uninitialized, pluginManager.Status);
+    }
+    #endregion
+
+    #region TestCtor
+    [TestMethod]
+    public void TestCtor() {
+      NuGetConnector nuGetConnector = CreateNuGetConnector();
+      IPluginManager pluginManager;
+
+      ArgumentNullException e;
+      e = Assert.ThrowsException<ArgumentNullException>(() => new PluginManager("", null));
+      Assert.IsFalse(string.IsNullOrEmpty(e.ParamName));
+
+      pluginManager = new PluginManager(null, nuGetConnector);
+      Assert.IsNotNull(pluginManager);
+      Assert.IsNotNull(pluginManager.RemoteRepositories);
+      CollectionAssert.AreEqual(nuGetConnector.RemoteRepositories.Select(x => x.PackageSource.Source).ToArray(), pluginManager.RemoteRepositories.ToArray());
+      Assert.AreEqual("", pluginManager.PluginTag);
+      Assert.IsNotNull(pluginManager.Packages);
+      Assert.AreEqual(0, pluginManager.Packages.Count());
+      Assert.AreEqual(PluginManagerStatus.Uninitialized, pluginManager.Status);
+
+      pluginManager = new PluginManager("HEALBricksPlugin", nuGetConnector);
+      Assert.IsNotNull(pluginManager);
+      Assert.IsNotNull(pluginManager.RemoteRepositories);
+      CollectionAssert.AreEqual(nuGetConnector.RemoteRepositories.Select(x => x.PackageSource.Source).ToArray(), pluginManager.RemoteRepositories.ToArray());
+      Assert.AreEqual("HEALBricksPlugin", pluginManager.PluginTag);
+      Assert.IsNotNull(pluginManager.Packages);
+      Assert.AreEqual(0, pluginManager.Packages.Count());
+      Assert.AreEqual(PluginManagerStatus.Uninitialized, pluginManager.Status);
     }
     #endregion
 
@@ -92,9 +139,9 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public async Task TestInitializeAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PluginManager pluginManager = new PluginManager("HEALBricksPlugin", nuGetConnector);
 
-      await pluginManager.InitializeAsync("HEALBricksPlugin");
+      await pluginManager.InitializeAsync();
 
       foreach (var plugin in pluginManager.Packages) {
         TestContext.WriteLine(plugin.ToStringWithDependencies());

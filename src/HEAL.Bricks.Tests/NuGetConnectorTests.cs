@@ -404,8 +404,8 @@ namespace HEAL.Bricks.Tests {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
       IEnumerable<PackageIdentity> localPackageIdentities = (await nuGetConnector.GetLocalPackagesAsync(true, default)).Where(x => x.Tags.Contains("HEALBricksPlugin")).Select(x => x.Identity);
       IEnumerable<SourcePackageDependencyInfo> dependencies = await nuGetConnector.GetPackageDependenciesAsync(localPackageIdentities, nuGetConnector.AllRepositories, true, default);
-      IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = nuGetConnector.ResolveDependencies(localPackageIdentities.Select(x => x.Id), dependencies, default, out bool resolveFailed);
-      Assert.AreEqual(false, resolveFailed);
+      IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = nuGetConnector.ResolveDependencies(localPackageIdentities.Select(x => x.Id), dependencies, default, out bool resolveSucceeded);
+      Assert.AreEqual(true, resolveSucceeded);
 
       TestContext.WriteLine($"Resolved Dependencies: {resolvedDependencies.Count()}");
       foreach (var resolvedPackage in resolvedDependencies) {

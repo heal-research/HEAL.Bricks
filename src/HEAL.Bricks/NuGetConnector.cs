@@ -143,7 +143,7 @@ namespace HEAL.Bricks {
       return null;
     }
 
-    public IEnumerable<SourcePackageDependencyInfo> ResolveDependencies(IEnumerable<string> requiredIds, IEnumerable<SourcePackageDependencyInfo> availablePackages, CancellationToken cancellationToken, out bool resolveFailed) {
+    public IEnumerable<SourcePackageDependencyInfo> ResolveDependencies(IEnumerable<string> requiredIds, IEnumerable<SourcePackageDependencyInfo> availablePackages, CancellationToken cancellationToken, out bool resolveSucceeded) {
       PackageResolverContext context = new PackageResolverContext(DependencyBehavior.Highest,
                                                                   requiredIds,
                                                                   Enumerable.Empty<string>(),
@@ -157,10 +157,11 @@ namespace HEAL.Bricks {
       try {
         resolvedIdentities = resolver.Resolve(context, cancellationToken);
       } catch (NuGetResolverConstraintException) {
-        resolveFailed = true;
+        resolveSucceeded = false;
+        return Enumerable.Empty<SourcePackageDependencyInfo>();
       }
       IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = resolvedIdentities.Select(i => availablePackages.Single(x => PackageIdentityComparer.Default.Equals(i, x)));
-      resolveFailed = false;
+      resolveSucceeded = true;
       return resolvedDependencies;
     }
 

@@ -13,8 +13,11 @@ using System.Threading.Tasks;
 namespace HEAL.Bricks {
   public interface IPluginManager {
     IEnumerable<string> RemoteRepositories { get; }
+    string PluginTag { get; }
     IEnumerable<PackageInfo> Packages { get; }
+    IEnumerable<PackageInfo> Plugins { get; }
+    PluginManagerStatus Status { get; }
 
-    Task InitializeAsync(string pluginTag, CancellationToken cancellationToken = default);
+    Task InitializeAsync(CancellationToken cancellationToken = default);
   }
 }

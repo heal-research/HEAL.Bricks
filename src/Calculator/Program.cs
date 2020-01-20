@@ -18,8 +18,8 @@ namespace Calculator {
       string nuGetRepository = "https://api.nuget.org/v3/index.json";
       string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-      IPluginManager pm = PluginManager.Create(nuGetRepository);
-      await pm.InitializeAsync("HEALBricksPlugin");
+      IPluginManager pm = PluginManager.Create("HEALBricksPlugin", nuGetRepository);
+      await pm.InitializeAsync();
 
       Console.WriteLine("List local plugins:");
       foreach (PackageInfo plugin in pm.Packages.Where(x => x.IsPlugin)) {
