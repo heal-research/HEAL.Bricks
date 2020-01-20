@@ -10,6 +10,7 @@ namespace HEAL.Bricks {
     OK,
     DependenciesMissing,
     IndirectDependenciesMissing,
+    LocalMissing,
     Unknown
   }
   public enum PackageDependencyStatus {

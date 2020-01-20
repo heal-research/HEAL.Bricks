@@ -49,11 +49,40 @@ namespace HEAL.Bricks {
     }
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default) {
-      (bool ResolveSucceeded, List<PackageInfo> Packages) readLocalPackagesResult = await ReadLocalPackages(nuGetConnector, PluginTag, cancellationToken);
+      (bool ResolveSucceeded, HashSet<PackageInfo> Packages) readLocalPackagesResult = await ReadLocalPackages(nuGetConnector, PluginTag, cancellationToken);
       UpdatePackageAndDependencyStatus(readLocalPackagesResult.Packages);
       PluginManagerStatus status = readLocalPackagesResult.ResolveSucceeded ? GetPluginManagerStatus(readLocalPackagesResult.Packages) : PluginManagerStatus.ResolveFailed;
       Packages = readLocalPackagesResult.Packages;
       Status = status;
+    }
+    public async Task ResolveMissingDependenciesAsync(CancellationToken cancellationToken = default) {
+      if (Status == PluginManagerStatus.Uninitialized) await InitializeAsync();
+      
+      IEnumerable<IPackageSearchMetadata> localPackages = Packages.Select(x => x.nuGetPackageMetadata);
+      IEnumerable<SourcePackageDependencyInfo> allDependencies = await nuGetConnector.GetPackageDependenciesAsync(localPackages.Select(x => x.Identity), nuGetConnector.AllRepositories, true, cancellationToken);
+      IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = nuGetConnector.ResolveDependencies(localPackages.Where(x => x.Tags.Contains(PluginTag)).Select(x => x.Identity.Id), allDependencies, cancellationToken, out bool resolveSucceeded);
+      IEnumerable<SourcePackageDependencyInfo> dependencies = resolveSucceeded ? resolvedDependencies : allDependencies;
+
+      HashSet<PackageInfo> packages = new HashSet<PackageInfo>(Packages, PackageInfoIdentityComparer.Default);
+      foreach (SourcePackageDependencyInfo dependency in dependencies.Where(x => !localPackages.Any(y => y.Identity.Id == x.Id && y.Identity.Version == x.Version))) {
+        IPackageSearchMetadata packageMetadata = await nuGetConnector.GetPackageAsync(new PackageIdentity(dependency.Id, dependency.Version), nuGetConnector.AllRepositories, cancellationToken);
+        packages.Add(new PackageInfo(packageMetadata, dependency.Dependencies, PluginTag) { Status = PackageStatus.LocalMissing });
+      }
+      UpdatePackageAndDependencyStatus(packages);
+      PluginManagerStatus status = resolveSucceeded ? GetPluginManagerStatus(Packages) : PluginManagerStatus.ResolveFailed;
+      Packages = packages;
+      Status = status;
+    }
+    public async Task DownloadMissingDependenciesAsync(CancellationToken cancellationToken = default) {
+      if (Status == PluginManagerStatus.Uninitialized) await InitializeAsync();
+
+      foreach (PackageInfo missingPackage in Packages.Where(x => x.Status == PackageStatus.LocalMissing)) {
+        using (IPackageDownloader downloader = await nuGetConnector.GetPackageDownloaderAsync(missingPackage.nuGetPackageMetadata.Identity, cancellationToken)) {
+          string path = Path.Combine(nuGetConnector.LocalRepositories.First().PackageSource.Source, missingPackage.Id + "." + missingPackage.Version.ToString() + ".nupkg");
+          bool ok = await downloader.CopyNupkgFileToAsync(path, cancellationToken);
+          if (!ok) throw new InvalidOperationException($"Download of package {missingPackage.ToString()} failed.");
+        }
+      }
     }
 
     public async Task<bool> DownloadPackageAsync(PackageInfo package, string targetFolder, CancellationToken cancellationToken = default) {
@@ -64,15 +93,15 @@ namespace HEAL.Bricks {
     }
 
     #region Static Helpers
-    private static async Task<(bool ResolveSucceeded, List<PackageInfo> Packages)> ReadLocalPackages(NuGetConnector nuGetConnector, string pluginTag, CancellationToken cancellationToken) {
+    private static async Task<(bool ResolveSucceeded, HashSet<PackageInfo> Packages)> ReadLocalPackages(NuGetConnector nuGetConnector, string pluginTag, CancellationToken cancellationToken) {
       IEnumerable<IPackageSearchMetadata> localPackages = await nuGetConnector.GetLocalPackagesAsync(true, cancellationToken);
       IEnumerable<SourcePackageDependencyInfo> localDependencies = await nuGetConnector.GetPackageDependenciesAsync(localPackages.Select(x => x.Identity), nuGetConnector.LocalRepositories, true, cancellationToken);
       IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = nuGetConnector.ResolveDependencies(localPackages.Where(x => x.Tags.Contains(pluginTag)).Select(x => x.Identity.Id), localDependencies, cancellationToken, out bool resolveSucceeded);
       IEnumerable<SourcePackageDependencyInfo> dependencies = resolveSucceeded ? resolvedDependencies : localDependencies;
 
-      List<PackageInfo> packages = new List<PackageInfo>();
-      foreach (IPackageSearchMetadata package in localPackages) {
-        packages.Add(new PackageInfo(package, dependencies.Single(x => x.Id == package.Identity.Id && x.Version == package.Identity.Version).Dependencies, pluginTag));
+      HashSet<PackageInfo> packages = new HashSet<PackageInfo>(PackageInfoIdentityComparer.Default);
+      foreach (SourcePackageDependencyInfo package in dependencies) {
+        packages.Add(new PackageInfo(localPackages.Single(x => x.Identity.Id == package.Id && x.Identity.Version == package.Version), package.Dependencies, pluginTag));
       }
       return (resolveSucceeded, packages);
     }
@@ -80,14 +109,16 @@ namespace HEAL.Bricks {
     private static void UpdatePackageAndDependencyStatus(IEnumerable<PackageInfo> packages) {
       foreach (PackageInfo package in packages) {
         foreach (PackageDependency dependency in package.Dependencies) {
-          dependency.Status = packages.Any(x => (x.Id == dependency.Id) && dependency.VersionRange.Satiesfies(x.Version)) ? PackageDependencyStatus.OK : PackageDependencyStatus.LocalMissing;
+          dependency.Status = packages.Any(x => (x.Id == dependency.Id) && dependency.VersionRange.Satiesfies(x.Version) && x.Status != PackageStatus.LocalMissing) ? PackageDependencyStatus.OK : PackageDependencyStatus.LocalMissing;
         }
-        if (package.Dependencies.Count() == 0) {
-          package.Status = PackageStatus.OK;
-        } else if (package.Dependencies.Any(x => x.Status == PackageDependencyStatus.LocalMissing)) {
-          package.Status = PackageStatus.DependenciesMissing;
-        } else {
-          package.Status = PackageStatus.Unknown;
+        if (package.Status != PackageStatus.LocalMissing) {
+          if (package.Dependencies.Count() == 0) {
+            package.Status = PackageStatus.OK;
+          } else if (package.Dependencies.Any(x => x.Status == PackageDependencyStatus.LocalMissing)) {
+            package.Status = PackageStatus.DependenciesMissing;
+          } else {
+            package.Status = PackageStatus.Unknown;
+          }
         }
       }
       bool packageStatusChanged;
@@ -95,11 +126,18 @@ namespace HEAL.Bricks {
         packageStatusChanged = false;
         foreach (PackageInfo package in packages.Where(x => x.Status == PackageStatus.Unknown)) {
           foreach (PackageDependency dependency in package.Dependencies.Where(x => x.Status == PackageDependencyStatus.OK)) {
-            if (packages.Where(x => (x.Id == dependency.Id) && dependency.VersionRange.Satiesfies(x.Version)).All(x => x.Status == PackageStatus.DependenciesMissing || x.Status == PackageStatus.IndirectDependenciesMissing)) {
+            var dependencyPackages = packages.Where(x => (x.Id == dependency.Id) && dependency.VersionRange.Satiesfies(x.Version));
+            if (dependencyPackages.Any(x => x.Status == PackageStatus.Unknown)) {
+              package.Status = PackageStatus.Unknown;
+              break;
+            } else if (dependencyPackages.All(x => x.Status == PackageStatus.DependenciesMissing || x.Status == PackageStatus.IndirectDependenciesMissing || x.Status == PackageStatus.LocalMissing)) {
               package.Status = PackageStatus.IndirectDependenciesMissing;
-              packageStatusChanged = true;
+              break;
+            } else if (dependencyPackages.Any(x => x.Status == PackageStatus.OK)) {
+              package.Status = PackageStatus.OK;
             }
           }
+          packageStatusChanged = packageStatusChanged || package.Status != PackageStatus.Unknown;
         }
       } while (packageStatusChanged);
     }
@@ -110,7 +148,7 @@ namespace HEAL.Bricks {
         return PluginManagerStatus.OK;
       } else if (plugins.Any(x => x.Status == PackageStatus.Unknown)) {
         return PluginManagerStatus.Unknown;
-      } else if (plugins.Any(x => x.Status == PackageStatus.DependenciesMissing || x.Status == PackageStatus.IndirectDependenciesMissing)) {
+      } else if (plugins.Any(x => x.Status == PackageStatus.DependenciesMissing || x.Status == PackageStatus.IndirectDependenciesMissing || x.Status == PackageStatus.LocalMissing)) {
         return PluginManagerStatus.DependenciesMissing;
       } else {
         return PluginManagerStatus.Unknown;

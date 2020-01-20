@@ -19,5 +19,7 @@ namespace HEAL.Bricks {
     PluginManagerStatus Status { get; }
 
     Task InitializeAsync(CancellationToken cancellationToken = default);
+    Task ResolveMissingDependenciesAsync(CancellationToken cancellationToken = default);
+    Task DownloadMissingDependenciesAsync(CancellationToken cancellationToken = default);
   }
 }

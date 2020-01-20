@@ -151,6 +151,49 @@ namespace HEAL.Bricks.Tests {
     }
     #endregion
 
+    #region TestResolveMissingDependenciesAsync
+    [TestMethod]
+    public async Task TestResolveMissingDependenciesAsync() {
+      NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
+      PluginManager pluginManager = new PluginManager("HEALBricksPlugin", nuGetConnector);
+
+      await pluginManager.ResolveMissingDependenciesAsync();
+
+      foreach (var plugin in pluginManager.Packages) {
+        TestContext.WriteLine(plugin.ToStringWithDependencies());
+      }
+
+      WriteLogToTestContextAndClear(nuGetConnector);
+    }
+    #endregion
+
+    #region TestDownloadMissingDependenciesAsync
+    [TestMethod]
+    public async Task TestDownloadMissingDependenciesAsync() {
+      NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
+      PluginManager pluginManager = new PluginManager("HEALBricksPlugin", nuGetConnector);
+
+      TestContext.WriteLine("BEFORE DOWNLOAD:");
+      await pluginManager.InitializeAsync();
+      await pluginManager.ResolveMissingDependenciesAsync();
+      foreach (var plugin in pluginManager.Packages) {
+        TestContext.WriteLine(plugin.ToStringWithDependencies());
+      }
+      
+      await pluginManager.DownloadMissingDependenciesAsync();
+
+      TestContext.WriteLine("");
+      TestContext.WriteLine("AFTER DOWNLOAD:");
+      await pluginManager.InitializeAsync();
+      await pluginManager.ResolveMissingDependenciesAsync();
+      foreach (var plugin in pluginManager.Packages) {
+        TestContext.WriteLine(plugin.ToStringWithDependencies());
+      }
+
+      WriteLogToTestContextAndClear(nuGetConnector);
+    }
+    #endregion
+
     #region Helpers
     private NuGetConnector CreateNuGetConnector(bool includePublicNuGetRepository = false) {
       NuGetConnector nuGetConnector = includePublicNuGetRepository switch {
