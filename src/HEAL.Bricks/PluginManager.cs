@@ -84,11 +84,20 @@ namespace HEAL.Bricks {
         }
       }
     }
-
     public async Task<bool> DownloadPackageAsync(PackageInfo package, string targetFolder, CancellationToken cancellationToken = default) {
       string path = Path.Combine(targetFolder, package.Id + "." + package.Version.ToString() + ".nupkg");
       using (IPackageDownloader downloader = await nuGetConnector.GetPackageDownloaderAsync(package.nuGetPackageMetadata.Identity, cancellationToken)) {
         return await downloader.CopyNupkgFileToAsync(path, cancellationToken);
+      }
+    }
+    public async Task InstallPackagesAsync(CancellationToken cancellationToken = default) {
+      IEnumerable<PackageIdentity> identities = Packages.Where(x => x.Status == PackageStatus.LocalMissing).Select(x => x.nuGetPackageMetadata.Identity);
+      IEnumerable<SourcePackageDependencyInfo> packages = await nuGetConnector.GetPackageDependenciesAsync(identities, nuGetConnector.RemoteRepositories, false, cancellationToken);
+      foreach (var package in packages) {
+        DownloadResourceResult downloadResult = await nuGetConnector.DownloadPackageAsync(package, cancellationToken);
+        if (downloadResult.Status != DownloadResourceResultStatus.Available) {
+          throw new InvalidOperationException($"Installation of package {package.Id} ({package.Version.ToString()}) failed.");
+        }
       }
     }
 

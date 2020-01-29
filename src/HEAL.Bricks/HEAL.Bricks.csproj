@@ -44,9 +44,7 @@
     <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="" />
   </ItemGroup>
 
-  <Target Name="SetVersion"
-          DependsOnTargets="GitVersion"
-          Condition="'$(GitInfoImported)' == 'true' And '$(ExcludeRestorePackageImports)' != 'true'" >
+  <Target Name="SetVersion" DependsOnTargets="GitVersion" Condition="'$(GitInfoImported)' == 'true' And '$(ExcludeRestorePackageImports)' != 'true'">
     <PropertyGroup>
       <Version Condition="'$(GitSemVerLabel)' != ''">$(GitBaseVersionMajor).$(GitBaseVersionMinor).$(GitBaseVersionPatch)$(GitSemVerDashLabel).$(GitCommits)+$(GitCommit)</Version>
       <Version Condition="'$(GitSemVerLabel)' == ''">$(GitBaseVersionMajor).$(GitBaseVersionMinor).$(GitBaseVersionPatch)+$(GitCommit)</Version>

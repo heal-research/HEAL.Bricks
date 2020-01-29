@@ -21,5 +21,7 @@ namespace HEAL.Bricks {
     Task InitializeAsync(CancellationToken cancellationToken = default);
     Task ResolveMissingDependenciesAsync(CancellationToken cancellationToken = default);
     Task DownloadMissingDependenciesAsync(CancellationToken cancellationToken = default);
+    Task<bool> DownloadPackageAsync(PackageInfo package, string targetFolder, CancellationToken cancellationToken = default);
+    Task InstallPackagesAsync(CancellationToken cancellationToken = default);
   }
 }

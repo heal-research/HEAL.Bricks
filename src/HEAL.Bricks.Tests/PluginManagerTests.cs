@@ -137,6 +137,7 @@ namespace HEAL.Bricks.Tests {
 
     #region TestInitializeAsync
     [TestMethod]
+    [TestCategory("WIP")]
     public async Task TestInitializeAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
       PluginManager pluginManager = new PluginManager("HEALBricksPlugin", nuGetConnector);
@@ -148,11 +149,13 @@ namespace HEAL.Bricks.Tests {
       }
 
       WriteLogToTestContextAndClear(nuGetConnector);
+      Assert.Fail("This unit test is incomplete and is still work in progress.");
     }
     #endregion
 
     #region TestResolveMissingDependenciesAsync
     [TestMethod]
+    [TestCategory("WIP")]
     public async Task TestResolveMissingDependenciesAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
       PluginManager pluginManager = new PluginManager("HEALBricksPlugin", nuGetConnector);
@@ -164,11 +167,13 @@ namespace HEAL.Bricks.Tests {
       }
 
       WriteLogToTestContextAndClear(nuGetConnector);
+      Assert.Fail("This unit test is incomplete and is still work in progress.");
     }
     #endregion
 
     #region TestDownloadMissingDependenciesAsync
     [TestMethod]
+    [TestCategory("WIP")]
     public async Task TestDownloadMissingDependenciesAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
       PluginManager pluginManager = new PluginManager("HEALBricksPlugin", nuGetConnector);
@@ -191,6 +196,23 @@ namespace HEAL.Bricks.Tests {
       }
 
       WriteLogToTestContextAndClear(nuGetConnector);
+      Assert.Fail("This unit test is incomplete and is still work in progress.");
+    }
+    #endregion
+
+    #region TestInstallPackagesAsync
+    [TestMethod]
+    [TestCategory("WIP")]
+    public async Task TestInstallPackagesAsync() {
+      NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
+      PluginManager pluginManager = new PluginManager("HEALBricksPlugin", nuGetConnector);
+
+      await pluginManager.InitializeAsync();
+      await pluginManager.ResolveMissingDependenciesAsync();
+      await pluginManager.InstallPackagesAsync();
+
+      WriteLogToTestContextAndClear(nuGetConnector);
+      Assert.Fail("This unit test is incomplete and is still work in progress.");
     }
     #endregion
 

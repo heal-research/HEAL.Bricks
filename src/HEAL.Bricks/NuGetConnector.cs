@@ -149,6 +149,20 @@ namespace HEAL.Bricks {
       return null;
     }
 
+    public async Task<DownloadResourceResult> DownloadPackageAsync(SourcePackageDependencyInfo package, CancellationToken cancellationToken) {
+      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
+        DownloadResource downloadResource = await package.Source.GetResourceAsync<DownloadResource>(cancellationToken);
+        string packagesFolder = Path.Combine(GetAppDirectory(), "packages");
+        return await downloadResource.GetDownloadResourceResultAsync(package, new PackageDownloadContext(cacheContext), packagesFolder, logger, cancellationToken);
+      }
+    }
+
+    public async Task InstallPackageAsync(DownloadResourceResult package, CancellationToken cancellationToken) {
+      var packagePathResolver = new PackagePathResolver(GetAppDirectory());
+      var packageExtractionContext = new PackageExtractionContext(PackageSaveMode.Defaultv3, XmlDocFileSaveMode.Skip, null, logger);
+      await PackageExtractor.ExtractPackageAsync(package.PackageSource, package.PackageStream, packagePathResolver, packageExtractionContext, cancellationToken);
+    }
+
     public IEnumerable<SourcePackageDependencyInfo> ResolveDependencies(IEnumerable<string> requiredIds, IEnumerable<SourcePackageDependencyInfo> availablePackages, CancellationToken cancellationToken, out bool resolveSucceeded) {
       PackageResolverContext context = new PackageResolverContext(DependencyBehavior.Highest,
                                                                   requiredIds,
@@ -162,7 +176,8 @@ namespace HEAL.Bricks {
       IEnumerable<PackageIdentity> resolvedIdentities = Enumerable.Empty<PackageIdentity>();
       try {
         resolvedIdentities = resolver.Resolve(context, cancellationToken);
-      } catch (NuGetResolverConstraintException) {
+      }
+      catch (NuGetResolverConstraintException) {
         resolveSucceeded = false;
         return Enumerable.Empty<SourcePackageDependencyInfo>();
       }

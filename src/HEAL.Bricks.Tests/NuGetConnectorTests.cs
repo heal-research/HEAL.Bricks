@@ -7,11 +7,9 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NuGet.Common;
-using NuGet.Frameworks;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.Protocol.Core.Types;
-using NuGet.Resolver;
 using NuGet.Versioning;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -87,7 +85,7 @@ namespace HEAL.Bricks.Tests {
       Assert.AreEqual(remoteOfficialRepository, nuGetConnector.AllRepositories.Skip(1).First().PackageSource.Source);
       Assert.AreEqual(remoteDevRepository, nuGetConnector.AllRepositories.Skip(2).First().PackageSource.Source);
 
-      nuGetConnector = new NuGetConnector(new[] {"", Constants.localRepositoryRelativePath }, new[] { remoteOfficialRepository, remoteDevRepository });
+      nuGetConnector = new NuGetConnector(new[] { "", Constants.localRepositoryRelativePath }, new[] { remoteOfficialRepository, remoteDevRepository });
       Assert.AreEqual(appDir, nuGetConnector.AppDirectory);
       Assert.AreEqual(".NETCoreApp,Version=v1.0", nuGetConnector.CurrentFramework.DotNetFrameworkName);
       Assert.AreEqual(2, nuGetConnector.LocalRepositories.Count());
@@ -251,7 +249,7 @@ namespace HEAL.Bricks.Tests {
 
       searchString = "PackageId:NuGet.Protocol";
       includePreReleases = true;
-      expectedPackages = new[] { "NuGet.Protocol.5.5.0-preview.1.6319" };
+      expectedPackages = new[] { "NuGet.Protocol.5.5.0-preview.2.6382" };
       foundPackages = (await nuGetConnector.SearchRemotePackagesAsync(searchString, includePreReleases, default)).Select(x => x.Identity.ToString()).ToArray();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
 
@@ -407,6 +405,7 @@ namespace HEAL.Bricks.Tests {
     #endregion
 
     [TestMethod]
+    [TestCategory("WIP")]
     public async Task TestResolveDependenciesOfLocalPackagesAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
       IEnumerable<PackageIdentity> localPackageIdentities = (await nuGetConnector.GetLocalPackagesAsync(true, default)).Where(x => x.Tags.Contains("HEALBricksPlugin")).Select(x => x.Identity);
@@ -421,8 +420,32 @@ namespace HEAL.Bricks.Tests {
       TestContext.WriteLine("");
 
       WriteLogToTestContextAndClear(nuGetConnector);
+      Assert.Fail("This unit test is incomplete and is still work in progress.");
     }
 
+    [TestMethod]
+    [TestCategory("WIP")]
+    public async Task TestDownloadPackageAsync() {
+      NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
+      SourcePackageDependencyInfo package = (await nuGetConnector.GetPackageDependenciesAsync(new PackageIdentity("SimSharp", new NuGetVersion("3.3.0")), nuGetConnector.RemoteRepositories, false, default)).Single();
+      DownloadResourceResult downloadResult = await nuGetConnector.DownloadPackageAsync(package, default);
+      Assert.AreEqual(DownloadResourceResultStatus.Available, downloadResult.Status);
+
+      WriteLogToTestContextAndClear(nuGetConnector);
+      Assert.Fail("This unit test is incomplete and is still work in progress.");
+    }
+
+    [TestMethod]
+    [TestCategory("WIP")]
+    public async Task TestInstallPackageAsync() {
+      NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
+      SourcePackageDependencyInfo package = (await nuGetConnector.GetPackageDependenciesAsync(new PackageIdentity("SimSharp", new NuGetVersion("3.3.0")), nuGetConnector.RemoteRepositories, false, default)).Single();
+      DownloadResourceResult downloadResult = await nuGetConnector.DownloadPackageAsync(package, default);
+      await nuGetConnector.InstallPackageAsync(downloadResult, default);
+
+      WriteLogToTestContextAndClear(nuGetConnector);
+      Assert.Fail("This unit test is incomplete and is still work in progress.");
+    }
 
     #region Helpers
     private NuGetConnector CreateNuGetConnector(bool includePublicNuGetRepository = false) {
