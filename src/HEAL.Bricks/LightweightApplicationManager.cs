@@ -128,27 +128,31 @@ namespace HEAL.Bricks {
     /// (interfaces, abstract classes...  are not returned)</param>
     /// <returns>Enumerable of the discovered types.</returns>
     public IEnumerable<Type> GetTypes(Type type, Assembly assembly, bool onlyInstantiable = true, bool includeGenericTypeDefinitions = false) {
-      try {
-        // necessary to make sure the exception is immediately thrown
-        // instead of later when the enumerable is iterated?
+      throw new NotSupportedException("WIP: will be removed");
 
-        var assemblyTypes = assembly.GetTypes();
+      // legacy code below:
 
-        var matchingTypes = from assemblyType in assembly.GetTypes()
-                            let t = assemblyType.BuildType(type)
-                            where t != null
-                            where t.IsSubTypeOf(type)
-                            where !t.IsNonDiscoverableType()
-                            where onlyInstantiable == false || (!t.IsAbstract && !t.IsInterface && !t.HasElementType)
-                            where includeGenericTypeDefinitions || !t.IsGenericTypeDefinition
-                            select t;
+      //try {
+      //  // necessary to make sure the exception is immediately thrown
+      //  // instead of later when the enumerable is iterated?
 
-        return matchingTypes;
-      } catch (TypeLoadException) {
-        return Enumerable.Empty<Type>();
-      } catch (ReflectionTypeLoadException) {
-        return Enumerable.Empty<Type>();
-      }
+      //  var assemblyTypes = assembly.GetTypes();
+
+      //  var matchingTypes = from assemblyType in assembly.GetTypes()
+      //                      let t = assemblyType.BuildType(type)
+      //                      where t != null
+      //                      where t.IsSubTypeOf(type)
+      //                      where !t.IsNonDiscoverableType()
+      //                      where onlyInstantiable == false || (!t.IsAbstract && !t.IsInterface && !t.HasElementType)
+      //                      where includeGenericTypeDefinitions || !t.IsGenericTypeDefinition
+      //                      select t;
+
+      //  return matchingTypes;
+      //} catch (TypeLoadException) {
+      //  return Enumerable.Empty<Type>();
+      //} catch (ReflectionTypeLoadException) {
+      //  return Enumerable.Empty<Type>();
+      //}
     }
 
     /// <summary>
