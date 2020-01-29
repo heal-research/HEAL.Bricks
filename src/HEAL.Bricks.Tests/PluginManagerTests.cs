@@ -23,10 +23,10 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks.Tests {
   [TestClass]
-  // HEAL.Bricks package
-  [DeploymentItem(Constants.pathBricks, Constants.localRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathBricks, Constants.remoteOfficialRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathBricks, Constants.remoteDevRepositoryRelativePath)]
+  // HEAL.Bricks.PluginTypes package
+  [DeploymentItem(Constants.pathBricksPluginTypes, Constants.localRepositoryRelativePath)]
+  [DeploymentItem(Constants.pathBricksPluginTypes, Constants.remoteOfficialRepositoryRelativePath)]
+  [DeploymentItem(Constants.pathBricksPluginTypes, Constants.remoteDevRepositoryRelativePath)]
   // local plugins
   [DeploymentItem(Constants.pathPluginA_010_alpha2, Constants.localRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginA_010, Constants.localRepositoryRelativePath)]

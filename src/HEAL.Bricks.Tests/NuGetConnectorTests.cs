@@ -20,10 +20,10 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks.Tests {
   [TestClass]
-  // HEAL.Bricks package
-  [DeploymentItem(Constants.pathBricks, Constants.localRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathBricks, Constants.remoteOfficialRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathBricks, Constants.remoteDevRepositoryRelativePath)]
+  // HEAL.Bricks.PluginTypes package
+  [DeploymentItem(Constants.pathBricksPluginTypes, Constants.localRepositoryRelativePath)]
+  [DeploymentItem(Constants.pathBricksPluginTypes, Constants.remoteOfficialRepositoryRelativePath)]
+  [DeploymentItem(Constants.pathBricksPluginTypes, Constants.remoteDevRepositoryRelativePath)]
   // local plugins
   [DeploymentItem(Constants.pathPluginA_010_alpha2, Constants.localRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginA_010, Constants.localRepositoryRelativePath)]
@@ -212,7 +212,7 @@ namespace HEAL.Bricks.Tests {
       bool includePreReleases;
 
       includePreReleases = true;
-      expectedPackages = new[] { Constants.nameVersionBricks,
+      expectedPackages = new[] { Constants.nameVersionBricksPluginTypes,
                                  Constants.namePluginA + "." + Constants.version010_alpha2,
                                  Constants.namePluginA + "." + Constants.version010,
                                  Constants.namePluginA + "." + Constants.version020_alpha1,
@@ -297,13 +297,26 @@ namespace HEAL.Bricks.Tests {
       sw.Restart();
       foundDependencies = await nuGetConnector.GetPackageDependenciesAsync(new PackageIdentity(package, NuGetVersion.Parse(version)), nuGetConnector.AllRepositories, resolveDependenciesRecursively, default);
       sw.Stop();
-      Assert.AreEqual(83, foundDependencies.Count(), "Number of found dependencies is incorrect.");
+      Assert.AreEqual(3, foundDependencies.Count(), "Number of found dependencies is incorrect.");
+      // PluginB 0.3.1 -> PluginA 0.3.0
       Assert.AreEqual(package, foundDependencies.First().Id);
       Assert.AreEqual(version, foundDependencies.First().Version.ToString());
       packageDependencies = foundDependencies.First().Dependencies;
       Assert.AreEqual(1, packageDependencies.Count(), "Number of package dependencies is incorrect.");
       Assert.AreEqual(Constants.namePluginA, packageDependencies.First().Id);
       Assert.AreEqual(Constants.version030, packageDependencies.First().VersionRange.MinVersion.ToString());
+      // PluginA 0.3.0 -> PluginTypes
+      Assert.AreEqual(Constants.namePluginA, foundDependencies.Skip(1).First().Id);
+      Assert.AreEqual(Constants.version030, foundDependencies.Skip(1).First().Version.ToString());
+      packageDependencies = foundDependencies.Skip(1).First().Dependencies;
+      Assert.AreEqual(1, packageDependencies.Count(), "Number of package dependencies is incorrect.");
+      Assert.AreEqual(Constants.nameBricksPluginTypes, packageDependencies.First().Id);
+      Assert.AreEqual(Constants.versionBricksPluginTypes, packageDependencies.First().VersionRange.MinVersion.ToString());
+      // PluginTypes -> no dependencies
+      Assert.AreEqual(Constants.nameBricksPluginTypes, foundDependencies.Skip(2).First().Id);
+      Assert.AreEqual(Constants.versionBricksPluginTypes, foundDependencies.Skip(2).First().Version.ToString());
+      packageDependencies = foundDependencies.Skip(2).First().Dependencies;
+      Assert.AreEqual(0, packageDependencies.Count(), "Number of package dependencies is incorrect.");
       TestContext.WriteLine($"{(resolveDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package}.{version}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
       WriteLogToTestContextAndClear(nuGetConnector);

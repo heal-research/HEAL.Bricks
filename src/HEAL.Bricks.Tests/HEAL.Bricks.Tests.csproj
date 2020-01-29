@@ -34,7 +34,7 @@
   </Target>
 
   <ItemGroup>
-    <None Update="TestPlugins\HEAL.Bricks.0.1.0-alpha.1.nupkg">
+    <None Update="TestPlugins\HEAL.Bricks.PluginTypes.0.1.0-alpha.9.nupkg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestPlugins\HEAL.Bricks.Tests.PluginA.0.1.0-alpha.1.nupkg">

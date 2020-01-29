@@ -14,10 +14,10 @@ namespace HEAL.Bricks.Tests {
     public const string remoteDevRepositoryRelativePath = @"TestPackageSources\remote_dev";
 
     // HEAL.Bricks package
-    public const string pathBricks = @"TestPlugins\HEAL.Bricks.0.1.0-alpha.1.nupkg";
-    public const string nameBricks = "HEAL.Bricks";
-    public const string versionBricks = "0.1.0-alpha.1";
-    public const string nameVersionBricks = nameBricks + "." + versionBricks;
+    public const string pathBricksPluginTypes = @"TestPlugins\HEAL.Bricks.PluginTypes.0.1.0-alpha.9.nupkg";
+    public const string nameBricksPluginTypes = "HEAL.Bricks.PluginTypes";
+    public const string versionBricksPluginTypes = "0.1.0-alpha.9";
+    public const string nameVersionBricksPluginTypes = nameBricksPluginTypes + "." + versionBricksPluginTypes;
 
     // System.Collections package
     public const string nameCollections = "System.Collections";
