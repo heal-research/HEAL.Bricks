@@ -14,14 +14,11 @@ namespace HEAL.Bricks {
   public interface IPluginManager {
     IEnumerable<string> RemoteRepositories { get; }
     string PluginTag { get; }
-    IEnumerable<PackageInfo> Packages { get; }
-    IEnumerable<PackageInfo> Plugins { get; }
+    IEnumerable<PackageInfo> InstalledPackages { get; }
     PluginManagerStatus Status { get; }
 
-    Task InitializeAsync(CancellationToken cancellationToken = default);
-    Task ResolveMissingDependenciesAsync(CancellationToken cancellationToken = default);
-    Task DownloadMissingDependenciesAsync(CancellationToken cancellationToken = default);
-    Task<bool> DownloadPackageAsync(PackageInfo package, string targetFolder, CancellationToken cancellationToken = default);
-    Task InstallPackagesAsync(CancellationToken cancellationToken = default);
+    void Initialize();
+    Task<IEnumerable<RemotePackageInfo>> ResolveMissingDependenciesAsync(CancellationToken cancellationToken = default);
+    Task InstallRemotePackageAsync(RemotePackageInfo package, CancellationToken cancellationToken = default);
   }
 }

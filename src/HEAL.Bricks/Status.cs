@@ -10,20 +10,18 @@ namespace HEAL.Bricks {
     OK,
     DependenciesMissing,
     IndirectDependenciesMissing,
-    LocalMissing,
+    IncompatibleFramework,
     Unknown
   }
   public enum PackageDependencyStatus {
     OK,
-    LocalMissing,
-    RemoteMissing,
+    Missing,
     Unknown
   }
   public enum PluginManagerStatus {
     Uninitialized,
     OK,
-    DependenciesMissing,
-    ResolveFailed,
+    InvalidPlugins,
     Unknown
   }
 }

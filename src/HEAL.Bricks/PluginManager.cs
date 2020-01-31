@@ -24,108 +24,65 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public sealed class PluginManager : IPluginManager {
-    public static IPluginManager Create(string pluginTag, params string[] remoteRepositories) {
-      return new PluginManager(pluginTag, remoteRepositories);
+    public static IPluginManager Create(ISettings settings) {
+      return new PluginManager(settings);
     }
 
     private readonly NuGetConnector nuGetConnector;
     public IEnumerable<string> RemoteRepositories {
-      get { return nuGetConnector?.RemoteRepositories.Select(x => x.PackageSource.Source) ?? Enumerable.Empty<string>(); }
+      get { return nuGetConnector?.Repositories.Select(x => x.PackageSource.Source) ?? Enumerable.Empty<string>(); }
     }
     public string PluginTag { get; } = "HEALBricksPlugin";
-    public IEnumerable<PackageInfo> Packages { get; private set; } = Enumerable.Empty<PackageInfo>();
-    public IEnumerable<PackageInfo> Plugins => Packages.Where(x => x.IsPlugin);
+    public IEnumerable<PackageInfo> InstalledPackages { get; private set; } = Enumerable.Empty<PackageInfo>();
     public PluginManagerStatus Status { get; private set; } = PluginManagerStatus.Uninitialized;
 
-    private PluginManager(string pluginTag) {
-      PluginTag = pluginTag ?? "";
+    private PluginManager(ISettings settings) {
+      nuGetConnector = new NuGetConnector(settings);
     }
-    private PluginManager(string pluginTag, params string[] remoteRepositories) : this(pluginTag) {
-      nuGetConnector = new NuGetConnector(remoteRepositories);
-    }
-    internal PluginManager(string pluginTag, NuGetConnector nuGetConnector) : this(pluginTag) {
+    internal PluginManager(NuGetConnector nuGetConnector) {
       // only used for unit tests, if a specially initialized NuGetConnector is required
       this.nuGetConnector = nuGetConnector ?? throw new ArgumentNullException(nameof(nuGetConnector));
     }
 
-    public async Task InitializeAsync(CancellationToken cancellationToken = default) {
-      (bool ResolveSucceeded, HashSet<PackageInfo> Packages) readLocalPackagesResult = await ReadLocalPackages(nuGetConnector, PluginTag, cancellationToken);
-      UpdatePackageAndDependencyStatus(readLocalPackagesResult.Packages);
-      PluginManagerStatus status = readLocalPackagesResult.ResolveSucceeded ? GetPluginManagerStatus(readLocalPackagesResult.Packages) : PluginManagerStatus.ResolveFailed;
-      Packages = readLocalPackagesResult.Packages;
-      Status = status;
-    }
-    public async Task ResolveMissingDependenciesAsync(CancellationToken cancellationToken = default) {
-      if (Status == PluginManagerStatus.Uninitialized) await InitializeAsync();
-      
-      IEnumerable<IPackageSearchMetadata> localPackages = Packages.Select(x => x.nuGetPackageMetadata);
-      IEnumerable<SourcePackageDependencyInfo> allDependencies = await nuGetConnector.GetPackageDependenciesAsync(localPackages.Select(x => x.Identity), nuGetConnector.AllRepositories, true, cancellationToken);
-      IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = nuGetConnector.ResolveDependencies(localPackages.Where(x => x.Tags.Contains(PluginTag)).Select(x => x.Identity.Id), allDependencies, cancellationToken, out bool resolveSucceeded);
-      IEnumerable<SourcePackageDependencyInfo> dependencies = resolveSucceeded ? resolvedDependencies : allDependencies;
+    public void Initialize() {
+      IEnumerable<PackageFolderReader> packageReaders = nuGetConnector.GetInstalledPackages();
+      PackageInfo[] installedPackages = packageReaders.Select(x => new PackageInfo(x, nuGetConnector.CurrentFramework, PluginTag)).ToArray();
+      foreach (PackageFolderReader packageReader in packageReaders) packageReader.Dispose();
 
-      HashSet<PackageInfo> packages = new HashSet<PackageInfo>(Packages, PackageInfoIdentityComparer.Default);
-      foreach (SourcePackageDependencyInfo dependency in dependencies.Where(x => !localPackages.Any(y => y.Identity.Id == x.Id && y.Identity.Version == x.Version))) {
-        IPackageSearchMetadata packageMetadata = await nuGetConnector.GetPackageAsync(new PackageIdentity(dependency.Id, dependency.Version), nuGetConnector.AllRepositories, cancellationToken);
-        packages.Add(new PackageInfo(packageMetadata, dependency.Dependencies, PluginTag) { Status = PackageStatus.LocalMissing });
-      }
-      UpdatePackageAndDependencyStatus(packages);
-      PluginManagerStatus status = resolveSucceeded ? GetPluginManagerStatus(Packages) : PluginManagerStatus.ResolveFailed;
-      Packages = packages;
-      Status = status;
+      UpdatePackageAndDependencyStatus(installedPackages);
+      Status = GetPluginManagerStatus(installedPackages);
+      InstalledPackages = installedPackages;
     }
-    public async Task DownloadMissingDependenciesAsync(CancellationToken cancellationToken = default) {
-      if (Status == PluginManagerStatus.Uninitialized) await InitializeAsync();
+    public async Task<IEnumerable<RemotePackageInfo>> ResolveMissingDependenciesAsync(CancellationToken cancellationToken = default) {
+      if (Status == PluginManagerStatus.Uninitialized) Initialize();
 
-      foreach (PackageInfo missingPackage in Packages.Where(x => x.Status == PackageStatus.LocalMissing)) {
-        using (IPackageDownloader downloader = await nuGetConnector.GetPackageDownloaderAsync(missingPackage.nuGetPackageMetadata.Identity, cancellationToken)) {
-          string path = Path.Combine(nuGetConnector.LocalRepositories.First().PackageSource.Source, missingPackage.Id + "." + missingPackage.Version.ToString() + ".nupkg");
-          bool ok = await downloader.CopyNupkgFileToAsync(path, cancellationToken);
-          if (!ok) throw new InvalidOperationException($"Download of package {missingPackage.ToString()} failed.");
-        }
-      }
+      IEnumerable<PackageIdentity> installedPackages = InstalledPackages.Select(x => x.nuspecReader.GetIdentity());
+      IEnumerable<PackageIdentity> installedPlugins = InstalledPackages.Where(x => x.IsPlugin).Select(x => x.nuspecReader.GetIdentity());
+      IEnumerable<SourcePackageDependencyInfo> allDependencies = await nuGetConnector.GetPackageDependenciesAsync(installedPackages, true, cancellationToken);
+      IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = nuGetConnector.ResolveDependencies(installedPlugins.Select(x => x.Id), allDependencies, cancellationToken, out bool resolveSucceeded);
+      if (!resolveSucceeded) throw new InvalidOperationException("Dependency resolution failed.");
+
+      IEnumerable<SourcePackageDependencyInfo> missingDependencies = resolvedDependencies.Where(x => !InstalledPackages.Any(y => x.Equals(y.nuspecReader.GetIdentity())));
+      return missingDependencies.Select(x => new RemotePackageInfo(x));
     }
-    public async Task<bool> DownloadPackageAsync(PackageInfo package, string targetFolder, CancellationToken cancellationToken = default) {
-      string path = Path.Combine(targetFolder, package.Id + "." + package.Version.ToString() + ".nupkg");
-      using (IPackageDownloader downloader = await nuGetConnector.GetPackageDownloaderAsync(package.nuGetPackageMetadata.Identity, cancellationToken)) {
-        return await downloader.CopyNupkgFileToAsync(path, cancellationToken);
-      }
-    }
-    public async Task InstallPackagesAsync(CancellationToken cancellationToken = default) {
-      IEnumerable<PackageIdentity> identities = Packages.Where(x => x.Status == PackageStatus.LocalMissing).Select(x => x.nuGetPackageMetadata.Identity);
-      IEnumerable<SourcePackageDependencyInfo> packages = await nuGetConnector.GetPackageDependenciesAsync(identities, nuGetConnector.RemoteRepositories, false, cancellationToken);
-      foreach (var package in packages) {
-        DownloadResourceResult downloadResult = await nuGetConnector.DownloadPackageAsync(package, cancellationToken);
-        if (downloadResult.Status != DownloadResourceResultStatus.Available) {
-          throw new InvalidOperationException($"Installation of package {package.Id} ({package.Version.ToString()}) failed.");
-        }
-      }
+    public async Task InstallRemotePackageAsync(RemotePackageInfo package, CancellationToken cancellationToken = default) {
+      DownloadResourceResult downloadResult = await nuGetConnector.DownloadPackageAsync(package.sourcePackageDependencyInfo, cancellationToken);
+      await nuGetConnector.InstallPackageAsync(downloadResult, cancellationToken);
     }
 
     #region Static Helpers
-    private static async Task<(bool ResolveSucceeded, HashSet<PackageInfo> Packages)> ReadLocalPackages(NuGetConnector nuGetConnector, string pluginTag, CancellationToken cancellationToken) {
-      IEnumerable<IPackageSearchMetadata> localPackages = await nuGetConnector.GetLocalPackagesAsync(true, cancellationToken);
-      IEnumerable<SourcePackageDependencyInfo> localDependencies = await nuGetConnector.GetPackageDependenciesAsync(localPackages.Select(x => x.Identity), nuGetConnector.LocalRepositories, true, cancellationToken);
-      IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = nuGetConnector.ResolveDependencies(localPackages.Where(x => x.Tags.Contains(pluginTag)).Select(x => x.Identity.Id), localDependencies, cancellationToken, out bool resolveSucceeded);
-      IEnumerable<SourcePackageDependencyInfo> dependencies = resolveSucceeded ? resolvedDependencies : localDependencies;
-
-      HashSet<PackageInfo> packages = new HashSet<PackageInfo>(PackageInfoIdentityComparer.Default);
-      foreach (SourcePackageDependencyInfo package in dependencies) {
-        packages.Add(new PackageInfo(localPackages.Single(x => x.Identity.Id == package.Id && x.Identity.Version == package.Version), package.Dependencies, pluginTag));
-      }
-      return (resolveSucceeded, packages);
-    }
-
     private static void UpdatePackageAndDependencyStatus(IEnumerable<PackageInfo> packages) {
       foreach (PackageInfo package in packages) {
         foreach (PackageDependency dependency in package.Dependencies) {
-          dependency.Status = packages.Any(x => (x.Id == dependency.Id) && dependency.VersionRange.Satiesfies(x.Version) && x.Status != PackageStatus.LocalMissing) ? PackageDependencyStatus.OK : PackageDependencyStatus.LocalMissing;
+          dependency.Status = packages.Any(x => (x.Id == dependency.Id) && dependency.VersionRange.Satiesfies(x.Version)) ? PackageDependencyStatus.OK : PackageDependencyStatus.Missing;
         }
-        if (package.Status != PackageStatus.LocalMissing) {
+        if (package.Status == PackageStatus.Unknown) {
           if (package.Dependencies.Count() == 0) {
             package.Status = PackageStatus.OK;
-          } else if (package.Dependencies.Any(x => x.Status == PackageDependencyStatus.LocalMissing)) {
+          } else if (package.Dependencies.Any(x => x.Status == PackageDependencyStatus.Missing)) {
             package.Status = PackageStatus.DependenciesMissing;
           } else {
+            // in this case we do not know, if dependencies of dependencies might be missing; so status is still unknown
             package.Status = PackageStatus.Unknown;
           }
         }
@@ -137,12 +94,15 @@ namespace HEAL.Bricks {
           foreach (PackageDependency dependency in package.Dependencies.Where(x => x.Status == PackageDependencyStatus.OK)) {
             var dependencyPackages = packages.Where(x => (x.Id == dependency.Id) && dependency.VersionRange.Satiesfies(x.Version));
             if (dependencyPackages.Any(x => x.Status == PackageStatus.Unknown)) {
+              // some of the packages which fulfill the dependency are still unknown, so we need to reset the package status to unknown
               package.Status = PackageStatus.Unknown;
               break;
-            } else if (dependencyPackages.All(x => x.Status == PackageStatus.DependenciesMissing || x.Status == PackageStatus.IndirectDependenciesMissing || x.Status == PackageStatus.LocalMissing)) {
+            } else if (dependencyPackages.All(x => x.Status == PackageStatus.DependenciesMissing || x.Status == PackageStatus.IndirectDependenciesMissing || x.Status == PackageStatus.IncompatibleFramework)) {
+              // all packages which fulfill the dependency are either missing or incompatible
               package.Status = PackageStatus.IndirectDependenciesMissing;
               break;
             } else if (dependencyPackages.Any(x => x.Status == PackageStatus.OK)) {
+              // all packages which fulfill the dependency are known and at least one of these packages is ok
               package.Status = PackageStatus.OK;
             }
           }
@@ -157,8 +117,8 @@ namespace HEAL.Bricks {
         return PluginManagerStatus.OK;
       } else if (plugins.Any(x => x.Status == PackageStatus.Unknown)) {
         return PluginManagerStatus.Unknown;
-      } else if (plugins.Any(x => x.Status == PackageStatus.DependenciesMissing || x.Status == PackageStatus.IndirectDependenciesMissing || x.Status == PackageStatus.LocalMissing)) {
-        return PluginManagerStatus.DependenciesMissing;
+      } else if (plugins.Any(x => x.Status == PackageStatus.DependenciesMissing || x.Status == PackageStatus.IndirectDependenciesMissing || x.Status == PackageStatus.IncompatibleFramework)) {
+        return PluginManagerStatus.InvalidPlugins;
       } else {
         return PluginManagerStatus.Unknown;
       }

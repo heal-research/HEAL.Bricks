@@ -24,23 +24,14 @@ namespace HEAL.Bricks {
   internal class NuGetConnector {
     private ILogger logger = NullLogger.Instance;
 
-    public string AppDirectory => GetAppDirectory();
+    public ISettings Settings { get; }
     public NuGetFramework CurrentFramework { get; private set; } = GetCurrentFramework();
-    public IEnumerable<SourceRepository> LocalRepositories { get; }
-    public IEnumerable<SourceRepository> RemoteRepositories { get; }
-    public IEnumerable<SourceRepository> AllRepositories {
-      get {
-        return LocalRepositories.Concat(RemoteRepositories);
-      }
-    }
+    public IEnumerable<SourceRepository> Repositories { get; }
 
-    //TODO: Add method to filter packages for those which support the current framework
-
-    public NuGetConnector(IEnumerable<string> localRepositoriesRelativePaths, IEnumerable<string> remoteRepositories) {
-      LocalRepositories = localRepositoriesRelativePaths.Select(x => Path.Combine(AppDirectory, x)).Select(y => CreateSourceRepository(y)).ToArray();
-      RemoteRepositories = remoteRepositories.Select(x => CreateSourceRepository(x)).ToArray();
+    public NuGetConnector(ISettings settings) {
+      Settings = settings;
+      Repositories = settings.Repositories.Select(x => CreateSourceRepository(x)).ToArray();
     }
-    public NuGetConnector(params string[] remoteRepositories) : this(Enumerable.Repeat(GetAppDirectory(), 1), remoteRepositories) { }
 
     public void EnableLogging(LogLevel minLevel = LogLevel.Information) {
       logger = new NuGetLogger(minLevel);
@@ -55,68 +46,75 @@ namespace HEAL.Bricks {
       return (logger as NuGetLogger)?.GetLog() ?? Array.Empty<string>();
     }
 
-    public async Task<IPackageSearchMetadata> GetPackageAsync(PackageIdentity identity, IEnumerable<SourceRepository> sourceRepositories, CancellationToken cancellationToken) {
+    public async Task<IPackageSearchMetadata> GetPackageAsync(PackageIdentity identity, CancellationToken cancellationToken) {
+      if (identity == null) throw new ArgumentNullException(nameof(identity));
+      return (await GetPackagesAsync(Enumerable.Repeat(identity, 1), cancellationToken)).SingleOrDefault();
+    }
+    public async Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(IEnumerable<PackageIdentity> identities, CancellationToken cancellationToken) {
+      if (identities == null) throw new ArgumentNullException(nameof(identities));
+      if (identities.Any(x => x == null)) throw new ArgumentException($"{nameof(identities)} contains null values.", nameof(identities));
+
+      List<IPackageSearchMetadata> packages = new List<IPackageSearchMetadata>();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
-        foreach (SourceRepository sourceRepository in sourceRepositories) {
-          PackageMetadataResource packageMetadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>(cancellationToken);
-          IPackageSearchMetadata package = await packageMetadataResource.GetMetadataAsync(identity, cacheContext, logger, cancellationToken);
-          if (package != null) return package;
+        foreach (PackageIdentity identity in identities) {
+          foreach (SourceRepository sourceRepository in Repositories) {
+            PackageMetadataResource packageMetadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>(cancellationToken);
+            IPackageSearchMetadata package = await packageMetadataResource.GetMetadataAsync(identity, cacheContext, logger, cancellationToken);
+            if (package != null) {
+              packages.Add(package);
+              break;
+            }
+          }
         }
       }
-      return null;
+      return packages.Distinct(PackageSearchMetadataComparer.Default).OrderBy(x => x, PackageSearchMetadataComparer.Default).ToArray();
     }
+    public async Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(IEnumerable<string> packageIds, bool includePreReleases, CancellationToken cancellationToken) {
+      if (packageIds == null) throw new ArgumentNullException(nameof(packageIds));
+      if (packageIds.Any(x => x == null)) throw new ArgumentException($"{nameof(packageIds)} contains null values.", nameof(packageIds));
 
-    public async Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(string packageId, IEnumerable<SourceRepository> sourceRepositories, bool includePreReleases, CancellationToken cancellationToken) {
-      IEnumerable<IPackageSearchMetadata> packages = Enumerable.Empty<IPackageSearchMetadata>();
+      List<IPackageSearchMetadata> packages = new List<IPackageSearchMetadata>();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
-        foreach (SourceRepository sourceRepository in sourceRepositories) {
-          PackageMetadataResource packageMetadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>(cancellationToken);
-          packages = packages.Concat(await packageMetadataResource.GetMetadataAsync(packageId, includePreReleases, false, cacheContext, logger, cancellationToken));
+        foreach (string packageId in packageIds) {
+          foreach (SourceRepository sourceRepository in Repositories) {
+            PackageMetadataResource packageMetadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>(cancellationToken);
+            packages.AddRange(await packageMetadataResource.GetMetadataAsync(packageId, includePreReleases, false, cacheContext, logger, cancellationToken));
+          }
         }
       }
-      return packages.Distinct(PackageSearchMetadataEqualityComparer.Default);
+      return packages.Distinct(PackageSearchMetadataComparer.Default).OrderBy(x => x, PackageSearchMetadataComparer.Default).ToArray();
+    }
+    public async Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(string packageId, bool includePreReleases, CancellationToken cancellationToken) {
+      if (packageId == null) throw new ArgumentNullException(nameof(packageId));
+      return await GetPackagesAsync(Enumerable.Repeat(packageId, 1), includePreReleases, cancellationToken);
     }
 
-    public async Task<IEnumerable<IPackageSearchMetadata>> GetLocalPackagesAsync(bool includePreReleases, CancellationToken cancellationToken) {
-      IEnumerable<IPackageSearchMetadata> latestPackages = Enumerable.Empty<IPackageSearchMetadata>();
+    public async Task<IEnumerable<IPackageSearchMetadata>> SearchPackagesAsync(string searchString, bool includePreReleases, CancellationToken cancellationToken) {
+      List<IPackageSearchMetadata> packages = new List<IPackageSearchMetadata>();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
-        foreach (SourceRepository sourceRepository in LocalRepositories) {
+        foreach (SourceRepository sourceRepository in Repositories) {
           PackageSearchResource packageSearchResource = await sourceRepository.GetResourceAsync<PackageSearchResource>(cancellationToken);
           SearchFilter filter = new SearchFilter(includePreReleases);
-          latestPackages = latestPackages.Concat(await packageSearchResource.SearchAsync("", filter, 0, int.MaxValue, logger, cancellationToken));
+          packages.AddRange(await packageSearchResource.SearchAsync(searchString, filter, 0, int.MaxValue, logger, cancellationToken));
         }
       }
-      latestPackages = latestPackages.Distinct(PackageSearchMetadataEqualityComparer.Default);
-
-      IEnumerable<IPackageSearchMetadata> allPackages = Enumerable.Empty<IPackageSearchMetadata>();
-      foreach (IPackageSearchMetadata latestPackage in latestPackages) {
-        allPackages = allPackages.Concat(await GetPackagesAsync(latestPackage.Identity.Id, LocalRepositories, includePreReleases, cancellationToken));
-      }
-      return allPackages.Distinct(PackageSearchMetadataEqualityComparer.Default);
+      return packages.Distinct(PackageSearchMetadataComparer.Default).OrderBy(x => x, PackageSearchMetadataComparer.Default).ToArray();
     }
 
-    public async Task<IEnumerable<IPackageSearchMetadata>> SearchRemotePackagesAsync(string searchString, bool includePreReleases, CancellationToken cancellationToken) {
-      IEnumerable<IPackageSearchMetadata> packages = Enumerable.Empty<IPackageSearchMetadata>();
-      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
-        foreach (SourceRepository sourceRepository in RemoteRepositories) {
-          PackageSearchResource packageSearchResource = await sourceRepository.GetResourceAsync<PackageSearchResource>(cancellationToken);
-          SearchFilter filter = new SearchFilter(includePreReleases);
-          packages = packages.Concat(await packageSearchResource.SearchAsync(searchString, filter, 0, int.MaxValue, logger, cancellationToken));
-        }
-      }
-      return packages.Distinct(PackageSearchMetadataEqualityComparer.Default);
+    public IEnumerable<PackageFolderReader> GetInstalledPackages() {
+      return Directory.GetDirectories(Settings.PackagesPath).Select(x => new PackageFolderReader(x));
     }
 
-    public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(PackageIdentity identity, IEnumerable<SourceRepository> sourceRepositories, bool resolveDependenciesRecursively, CancellationToken cancellationToken) {
-      return await GetPackageDependenciesAsync(Enumerable.Repeat(identity, 1), sourceRepositories, resolveDependenciesRecursively, cancellationToken);
+    public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(PackageIdentity identity, bool resolveDependenciesRecursively, CancellationToken cancellationToken) {
+      return await GetPackageDependenciesAsync(Enumerable.Repeat(identity, 1), resolveDependenciesRecursively, cancellationToken);
     }
-    public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(IEnumerable<PackageIdentity> identities, IEnumerable<SourceRepository> sourceRepositories, bool resolveDependenciesRecursively, CancellationToken cancellationToken) {
+    public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(IEnumerable<PackageIdentity> identities, bool resolveDependenciesRecursively, CancellationToken cancellationToken) {
       HashSet<SourcePackageDependencyInfo> resolvedDependencies = new HashSet<SourcePackageDependencyInfo>(PackageIdentityComparer.Default);
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
 
         async Task ResolvePackageDependenciesAsync(PackageIdentity id) {
           if (resolvedDependencies.Contains(id)) return;
-          foreach (SourceRepository sourceRepository in sourceRepositories) {
+          foreach (SourceRepository sourceRepository in Repositories) {
             DependencyInfoResource dependencyInfoResource = await sourceRepository.GetResourceAsync<DependencyInfoResource>(cancellationToken);
             SourcePackageDependencyInfo dependencies = await dependencyInfoResource.ResolvePackage(id, CurrentFramework, cacheContext, logger, cancellationToken);
             if (dependencies != null) {
@@ -140,7 +138,7 @@ namespace HEAL.Bricks {
 
     public async Task<IPackageDownloader> GetPackageDownloaderAsync(PackageIdentity identity, CancellationToken cancellationToken) {
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
-        foreach (SourceRepository sourceRepository in RemoteRepositories) {
+        foreach (SourceRepository sourceRepository in Repositories) {
           FindPackageByIdResource findPackageByIdResource = await sourceRepository.GetResourceAsync<FindPackageByIdResource>(cancellationToken);
           IPackageDownloader downloader = await findPackageByIdResource.GetPackageDownloaderAsync(identity, cacheContext, logger, cancellationToken);
           if (downloader != null) return downloader;
@@ -152,13 +150,13 @@ namespace HEAL.Bricks {
     public async Task<DownloadResourceResult> DownloadPackageAsync(SourcePackageDependencyInfo package, CancellationToken cancellationToken) {
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         DownloadResource downloadResource = await package.Source.GetResourceAsync<DownloadResource>(cancellationToken);
-        string packagesFolder = Path.Combine(GetAppDirectory(), "packages");
+        string packagesFolder = Path.Combine(Settings.AppPath, "packages_cache");
         return await downloadResource.GetDownloadResourceResultAsync(package, new PackageDownloadContext(cacheContext), packagesFolder, logger, cancellationToken);
       }
     }
 
     public async Task InstallPackageAsync(DownloadResourceResult package, CancellationToken cancellationToken) {
-      var packagePathResolver = new PackagePathResolver(GetAppDirectory());
+      var packagePathResolver = new PackagePathResolver(Settings.PackagesPath);
       var packageExtractionContext = new PackageExtractionContext(PackageSaveMode.Defaultv3, XmlDocFileSaveMode.Skip, null, logger);
       await PackageExtractor.ExtractPackageAsync(package.PackageSource, package.PackageStream, packagePathResolver, packageExtractionContext, cancellationToken);
     }
@@ -170,7 +168,7 @@ namespace HEAL.Bricks {
                                                                   Enumerable.Empty<PackageReference>(),
                                                                   Enumerable.Empty<PackageIdentity>(),
                                                                   availablePackages,
-                                                                  AllRepositories.Select(x => x.PackageSource),
+                                                                  Repositories.Select(x => x.PackageSource),
                                                                   logger);
       PackageResolver resolver = new PackageResolver();
       IEnumerable<PackageIdentity> resolvedIdentities = Enumerable.Empty<PackageIdentity>();
@@ -186,9 +184,6 @@ namespace HEAL.Bricks {
       return resolvedDependencies;
     }
 
-    private static string GetAppDirectory() {
-      return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-    }
     private static NuGetFramework GetCurrentFramework() {
       string frameworkName = Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName;
       return frameworkName != null ? NuGetFramework.ParseFrameworkName(frameworkName, DefaultFrameworkNameProvider.Instance) : NuGetFramework.AnyFramework;
@@ -213,14 +208,17 @@ namespace HEAL.Bricks {
     }
 
     #region PackageSearchMetadataEqualityComparer
-    private class PackageSearchMetadataEqualityComparer : IEqualityComparer<IPackageSearchMetadata> {
-      public static PackageSearchMetadataEqualityComparer Default => new PackageSearchMetadataEqualityComparer();
+    private class PackageSearchMetadataComparer : IEqualityComparer<IPackageSearchMetadata>, IComparer<IPackageSearchMetadata> {
+      public static PackageSearchMetadataComparer Default => new PackageSearchMetadataComparer();
       private readonly PackageIdentityComparer identityComparer = PackageIdentityComparer.Default;
       public bool Equals(IPackageSearchMetadata x, IPackageSearchMetadata y) {
         return identityComparer.Equals(x.Identity, y.Identity);
       }
       public int GetHashCode(IPackageSearchMetadata obj) {
         return identityComparer.GetHashCode(obj.Identity);
+      }
+      public int Compare(IPackageSearchMetadata x, IPackageSearchMetadata y) {
+        return identityComparer.Compare(x.Identity, y.Identity);
       }
     }
     #endregion

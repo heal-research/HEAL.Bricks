@@ -5,33 +5,32 @@
  */
 #endregion
 
+using NuGet.Frameworks;
 using NuGet.Packaging;
-using NuGet.Packaging.Core;
-using NuGet.Protocol.Core.Types;
-using NuGet.Versioning;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace HEAL.Bricks {
   public sealed class PackageInfo : IEquatable<PackageInfo>, IComparable<PackageInfo> {
-    internal readonly IPackageSearchMetadata nuGetPackageMetadata;
+    internal readonly NuspecReader nuspecReader;
 
     public static PackageInfoIdentityComparer Comparer => PackageInfoIdentityComparer.Default;
 
-    public string Id => nuGetPackageMetadata.Identity.Id;
+    public string Id => nuspecReader.GetId();
     public PackageVersion Version { get; }
-    public string Description => nuGetPackageMetadata.Description;
+    public string Description => nuspecReader.GetDescription();
     public IEnumerable<PackageDependency> Dependencies { get; }
     public bool IsPlugin { get; }
     public PackageStatus Status { get; internal set; }
 
-    internal PackageInfo(IPackageSearchMetadata nuGetPackageMetadata, IEnumerable<NuGet.Packaging.Core.PackageDependency> nuGetPackageDependencies, string pluginTag = "") {
-      this.nuGetPackageMetadata = nuGetPackageMetadata ?? throw new ArgumentNullException(nameof(nuGetPackageMetadata));
-      Version = new PackageVersion(nuGetPackageMetadata.Identity.Version);
-      Dependencies = nuGetPackageDependencies?.Select(x => new PackageDependency(x)).ToArray() ?? throw new ArgumentNullException(nameof(nuGetPackageDependencies));
-      IsPlugin = !string.IsNullOrEmpty(pluginTag) && nuGetPackageMetadata.Tags.Contains(pluginTag);
-      Status = Dependencies.Count() == 0 ? PackageStatus.OK : PackageStatus.Unknown;
+    internal PackageInfo(PackageFolderReader packageReader, NuGetFramework currentFramework, string pluginTag = "") {
+      this.nuspecReader = packageReader?.NuspecReader ?? throw new ArgumentNullException(nameof(packageReader));
+      Version = new PackageVersion(nuspecReader.GetVersion());
+      Dependencies = NuGetFrameworkUtility.GetNearest(nuspecReader.GetDependencyGroups(), currentFramework).Packages.Select(x => new PackageDependency(x)).ToArray();
+      IsPlugin = !string.IsNullOrEmpty(pluginTag) && nuspecReader.GetTags().Contains(pluginTag);
+      bool frameworkNotSupported = new FrameworkReducer().GetNearest(currentFramework, packageReader.GetSupportedFrameworks()) == null;
+      Status = frameworkNotSupported ? PackageStatus.IncompatibleFramework : PackageStatus.Unknown;
     }
 
     public override string ToString() {
@@ -45,16 +44,16 @@ namespace HEAL.Bricks {
     }
 
     public bool Equals(PackageInfo other) {
-      return nuGetPackageMetadata.Identity.Equals(other.nuGetPackageMetadata.Identity);
+      return nuspecReader.GetIdentity().Equals(other.nuspecReader.GetIdentity());
     }
     public override bool Equals(object obj) {
-      return nuGetPackageMetadata.Identity.Equals(obj);
+      return nuspecReader.GetIdentity().Equals(obj);
     }
     public override int GetHashCode() {
-      return nuGetPackageMetadata.Identity.GetHashCode();
+      return nuspecReader.GetIdentity().GetHashCode();
     }
     public int CompareTo(PackageInfo other) {
-      return nuGetPackageMetadata.Identity.CompareTo(other.nuGetPackageMetadata.Identity);
+      return nuspecReader.GetIdentity().CompareTo(other.nuspecReader.GetIdentity());
     }
   }
 }

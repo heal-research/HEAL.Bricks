@@ -20,13 +20,13 @@ namespace HEAL.Bricks {
     public static PackageInfoIdentityComparer Default => new PackageInfoIdentityComparer();
 
     public bool Equals(PackageInfo x, PackageInfo y) {
-      return nuGetPackageIdentityComparer.Equals(x.nuGetPackageMetadata.Identity, y.nuGetPackageMetadata.Identity);
+      return nuGetPackageIdentityComparer.Equals(x.nuspecReader.GetIdentity(), y.nuspecReader.GetIdentity());
     }
     public int GetHashCode(PackageInfo obj) {
-      return obj.nuGetPackageMetadata.Identity.GetHashCode();
+      return obj.nuspecReader.GetIdentity().GetHashCode();
     }
     public int Compare(PackageInfo x, PackageInfo y) {
-      return nuGetPackageIdentityComparer.Compare(x.nuGetPackageMetadata.Identity, y.nuGetPackageMetadata.Identity);
+      return nuGetPackageIdentityComparer.Compare(x.nuspecReader.GetIdentity(), y.nuspecReader.GetIdentity());
     }
   }
 }

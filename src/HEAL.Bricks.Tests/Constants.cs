@@ -8,8 +8,8 @@
 namespace HEAL.Bricks.Tests {
   public class Constants {
     // package repositories
-    public const string nuGetGalleryURL = "https://api.nuget.org/v3/index.json";
-    public const string localRepositoryRelativePath = @"TestPackageSources\local";
+    public const string publicNuGetRepository = "https://api.nuget.org/v3/index.json";
+    public const string localPackagesRelativePath = @"TestPackageSources\local";
     public const string remoteOfficialRepositoryRelativePath = @"TestPackageSources\remote";
     public const string remoteDevRepositoryRelativePath = @"TestPackageSources\remote_dev";
 
