@@ -10,6 +10,7 @@ namespace HEAL.Bricks.Tests {
     // package repositories
     public const string publicNuGetRepository = "https://api.nuget.org/v3/index.json";
     public const string localPackagesRelativePath = @"TestPackageSources\local";
+    public const string localPackagesCacheRelativePath = @"TestPackageSources\cache";
     public const string remoteOfficialRepositoryRelativePath = @"TestPackageSources\remote";
     public const string remoteDevRepositoryRelativePath = @"TestPackageSources\remote_dev";
 

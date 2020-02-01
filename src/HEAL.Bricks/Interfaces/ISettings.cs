@@ -13,5 +13,6 @@ namespace HEAL.Bricks {
     IEnumerable<string> Repositories { get; }
     string AppPath { get; }
     string PackagesPath { get; }
+    string PackagesCachePath { get; }
   }
 }
