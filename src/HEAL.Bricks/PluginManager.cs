@@ -25,33 +25,38 @@ using System.Threading.Tasks;
 namespace HEAL.Bricks {
   public sealed class PluginManager : IPluginManager {
     public static IPluginManager Create(ISettings settings) {
+      if (settings == null) throw new ArgumentNullException(nameof(settings));
+
       return new PluginManager(settings);
     }
 
     private readonly NuGetConnector nuGetConnector;
-    public IEnumerable<string> RemoteRepositories {
-      get { return nuGetConnector?.Repositories.Select(x => x.PackageSource.Source) ?? Enumerable.Empty<string>(); }
-    }
-    public string PluginTag { get; } = "HEALBricksPlugin";
+    public ISettings Settings { get; }
     public IEnumerable<PackageInfo> InstalledPackages { get; private set; } = Enumerable.Empty<PackageInfo>();
     public PluginManagerStatus Status { get; private set; } = PluginManagerStatus.Uninitialized;
 
     private PluginManager(ISettings settings) {
+      Settings = settings;
       nuGetConnector = new NuGetConnector(settings);
     }
     internal PluginManager(NuGetConnector nuGetConnector) {
       // only used for unit tests, if a specially initialized NuGetConnector is required
       this.nuGetConnector = nuGetConnector ?? throw new ArgumentNullException(nameof(nuGetConnector));
+      Settings = nuGetConnector?.Settings;
     }
 
     public void Initialize() {
-      IEnumerable<PackageFolderReader> packageReaders = nuGetConnector.GetInstalledPackages();
-      PackageInfo[] installedPackages = packageReaders.Select(x => new PackageInfo(x, nuGetConnector.CurrentFramework, PluginTag)).ToArray();
-      foreach (PackageFolderReader packageReader in packageReaders) packageReader.Dispose();
-
-      UpdatePackageAndDependencyStatus(installedPackages);
-      Status = GetPluginManagerStatus(installedPackages);
-      InstalledPackages = installedPackages;
+      IEnumerable<PackageFolderReader> packageReaders = Enumerable.Empty<PackageFolderReader>();
+      try {
+        packageReaders = nuGetConnector.GetInstalledPackages();
+        PackageInfo[] installedPackages = packageReaders.Select(x => new PackageInfo(x, nuGetConnector.CurrentFramework, Settings.PluginTag)).ToArray();
+        UpdatePackageAndDependencyStatus(installedPackages);
+        Status = GetPluginManagerStatus(installedPackages);
+        InstalledPackages = installedPackages;
+      }
+      finally {
+        foreach (PackageFolderReader packageReader in packageReaders) packageReader.Dispose();
+      }
     }
     public async Task<IEnumerable<RemotePackageInfo>> ResolveMissingDependenciesAsync(CancellationToken cancellationToken = default) {
       if (Status == PluginManagerStatus.Uninitialized) Initialize();
@@ -66,10 +71,12 @@ namespace HEAL.Bricks {
       return missingDependencies.Select(x => new RemotePackageInfo(x));
     }
     public async Task InstallRemotePackageAsync(RemotePackageInfo package, CancellationToken cancellationToken = default) {
+      if (package == null) throw new ArgumentNullException(nameof(package));
+
       await nuGetConnector.InstallPackageAsync(package.sourcePackageDependencyInfo, cancellationToken);
     }
 
-    #region Static Helpers
+    #region Helpers
     private static void UpdatePackageAndDependencyStatus(IEnumerable<PackageInfo> packages) {
       foreach (PackageInfo package in packages) {
         foreach (PackageDependency dependency in package.Dependencies) {

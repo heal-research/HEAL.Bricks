@@ -6,101 +6,37 @@
 #endregion
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NuGet.Common;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 
 namespace HEAL.Bricks.Tests {
-
   [TestClass]
-  // HEAL.Bricks.PluginTypes package
-  [DeploymentItem(Constants.pathBricksPluginTypes, Constants.localPackagesRelativePath)]
-  [DeploymentItem(Constants.pathBricksPluginTypes, Constants.remoteOfficialRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathBricksPluginTypes, Constants.remoteDevRepositoryRelativePath)]
-  // local plugins
-  [DeploymentItem(Constants.pathPluginB_010, Constants.localPackagesRelativePath)]
-  [DeploymentItem(Constants.pathPluginB_020_alpha1, Constants.localPackagesRelativePath)]
-  // released plugins
-  [DeploymentItem(Constants.pathPluginA_010_alpha1, Constants.remoteOfficialRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginA_010_alpha2, Constants.remoteOfficialRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginA_010, Constants.remoteOfficialRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginA_020_alpha1, Constants.remoteOfficialRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginA_020, Constants.remoteOfficialRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginA_021, Constants.remoteOfficialRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginB_010_alpha1, Constants.remoteOfficialRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginB_010_alpha2, Constants.remoteOfficialRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginB_010, Constants.remoteOfficialRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginB_020_alpha1, Constants.remoteOfficialRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginB_020, Constants.remoteOfficialRepositoryRelativePath)]
-  // plugins in development
-  [DeploymentItem(Constants.pathPluginA_020_alpha1, Constants.remoteDevRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginA_020, Constants.remoteDevRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginA_021, Constants.remoteDevRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginA_030_alpha1, Constants.remoteDevRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginA_030_beta1, Constants.remoteDevRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginA_030, Constants.remoteDevRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginB_020_alpha1, Constants.remoteDevRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginB_020, Constants.remoteDevRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginB_030_alpha1, Constants.remoteDevRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginB_030_alpha2, Constants.remoteDevRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginB_030, Constants.remoteDevRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathPluginB_031, Constants.remoteDevRepositoryRelativePath)]
-  public class NuGetConnectorTests {
-    public TestContext TestContext { get; set; }
-    private string TestDeploymentPath {
-      get { return TestContext.DeploymentDirectory; }
-    }
-    private string UniqueTestId {
-      get { return TestContext.FullyQualifiedTestClassName + "." + TestContext.TestName; }
-    }
-    private string TestExecutionPath {
-      get { return Path.Combine(TestContext.TestRunDirectory, UniqueTestId); }
-    }
-
-    #region Initialize
-    [AssemblyInitialize]
-    public static void UnpackLocalPackages(TestContext testContext) {
-      string packagesPath = Path.Combine(testContext.DeploymentDirectory, Constants.localPackagesRelativePath);
-      string packagesCachePath = Path.Combine(testContext.DeploymentDirectory, Constants.localPackagesCacheRelativePath);
-      PackagePathResolver packagePathResolver = new PackagePathResolver(packagesPath);
-      PackageExtractionContext packageExtractionContext = new PackageExtractionContext(PackageSaveMode.Defaultv3, XmlDocFileSaveMode.Skip, null, NullLogger.Instance);
-
-      Directory.CreateDirectory(packagesPath);
-      Directory.CreateDirectory(packagesCachePath);
-
-      foreach (string package in Directory.GetFiles(packagesPath, "*.nupkg")) {
-        PackageArchiveReader packageReader = new PackageArchiveReader(package);
-        PackageExtractor.ExtractPackageAsync(package, packageReader, packagePathResolver, packageExtractionContext, default);
-      }
-    }
-
-    [TestInitialize]
-    public void DeployTestPackageSources() {
-      string sourcePath = Path.Combine(TestDeploymentPath, Constants.testPackageSourcesRelativePath);
-      string targetPath = Path.Combine(TestExecutionPath, Constants.testPackageSourcesRelativePath);
-      CopyDirectory(sourcePath, targetPath);
-      TestContext.WriteLine($"Deployed TestPackageSources to {targetPath}.");
-    }
-    #endregion
-
+  public class NuGetConnectorTests : PluginTestsBase {
     #region TestCtor
     [TestMethod]
     public void TestCtor() {
-      ISettings settings = Settings.Default;
+      ISettings settings;
+      ArgumentNullException argumentNullException;
+
+      settings = Settings.Default;
       NuGetConnector nuGetConnector = new NuGetConnector(settings);
       Assert.AreEqual(settings, nuGetConnector.Settings);
       Assert.AreEqual(".NETCoreApp,Version=v1.0", nuGetConnector.CurrentFramework.DotNetFrameworkName);
       CollectionAssert.AreEqual(settings.Repositories.ToArray(), nuGetConnector.Repositories.Select(x => x.PackageSource.Source).ToArray());
+
+      settings = null;
+      argumentNullException = Assert.ThrowsException<ArgumentNullException>(() => { new NuGetConnector(settings); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
     }
     #endregion
 
@@ -696,9 +632,12 @@ namespace HEAL.Bricks.Tests {
       PackageFolderReader[] packageReaders;
       string[] foundPackages;
 
-      expectedPackages = new[] { Constants.nameVersionBricksPluginTypes,
-                                 Constants.namePluginB + "." + Constants.version010,
-                                 Constants.namePluginB + "." + Constants.version020_alpha1 };
+      List<string> expectedPackagesList = new List<string>();
+      foreach (string expectedPackageDirectory in Directory.GetDirectories(nuGetConnector.Settings.PackagesPath)) {
+        using PackageFolderReader reader = new PackageFolderReader(expectedPackageDirectory);
+        expectedPackagesList.Add(reader.GetIdentity().ToString());
+      }
+      expectedPackages = expectedPackagesList.ToArray();
       packageReaders = nuGetConnector.GetInstalledPackages().ToArray();
       foundPackages = packageReaders.Select(x => x.GetIdentity().ToString()).ToArray();
       foreach (PackageFolderReader packageReader in packageReaders) packageReader.Dispose();
@@ -721,28 +660,32 @@ namespace HEAL.Bricks.Tests {
       ArgumentException argumentException;
 
       package = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version010_alpha1));
-      foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default);
-      Assert.IsNotNull(foundPackageDownloader);
-      Assert.AreEqual(package, await foundPackageDownloader.CoreReader.GetIdentityAsync(default));
-      Assert.AreEqual(remoteOfficialRepository, foundPackageDownloader.Source);
+      using (foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default)) {
+        Assert.IsNotNull(foundPackageDownloader);
+        Assert.AreEqual(package, await foundPackageDownloader.CoreReader.GetIdentityAsync(default));
+        Assert.AreEqual(remoteOfficialRepository, foundPackageDownloader.Source);
+      }
 
       package = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version010));
-      foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default);
-      Assert.IsNotNull(foundPackageDownloader);
-      Assert.AreEqual(package, await foundPackageDownloader.CoreReader.GetIdentityAsync(default));
-      Assert.AreEqual(remoteOfficialRepository, foundPackageDownloader.Source);
+      using (foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default)) {
+        Assert.IsNotNull(foundPackageDownloader);
+        Assert.AreEqual(package, await foundPackageDownloader.CoreReader.GetIdentityAsync(default));
+        Assert.AreEqual(remoteOfficialRepository, foundPackageDownloader.Source);
+      }
 
       package = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version030_beta1));
-      foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default);
-      Assert.IsNotNull(foundPackageDownloader);
-      Assert.AreEqual(package, await foundPackageDownloader.CoreReader.GetIdentityAsync(default));
-      Assert.AreEqual(remoteDevRepository, foundPackageDownloader.Source);
+      using (foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default)) {
+        Assert.IsNotNull(foundPackageDownloader);
+        Assert.AreEqual(package, await foundPackageDownloader.CoreReader.GetIdentityAsync(default));
+        Assert.AreEqual(remoteDevRepository, foundPackageDownloader.Source);
+      }
 
       package = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version030));
-      foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default);
-      Assert.IsNotNull(foundPackageDownloader);
-      Assert.AreEqual(package, await foundPackageDownloader.CoreReader.GetIdentityAsync(default));
-      Assert.AreEqual(remoteDevRepository, foundPackageDownloader.Source);
+      using (foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default)) {
+        Assert.IsNotNull(foundPackageDownloader);
+        Assert.AreEqual(package, await foundPackageDownloader.CoreReader.GetIdentityAsync(default));
+        Assert.AreEqual(remoteDevRepository, foundPackageDownloader.Source);
+      }
 
       package = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version000));
       foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default);
@@ -826,49 +769,6 @@ namespace HEAL.Bricks.Tests {
     #endregion
 
     #region Helpers
-    private NuGetConnector CreateNuGetConnector(bool includePublicNuGetRepository = false) {
-      Settings settings = new Settings();
-      settings.SetAppPath(TestExecutionPath);
-      settings.PluginTag = "HEALBricksPlugin";
-      settings.PackagesPath = Constants.localPackagesRelativePath;
-      settings.PackagesCachePath = Constants.localPackagesCacheRelativePath;
-      settings.Repositories.Clear();
-      settings.Repositories.Add(Path.Combine(settings.AppPath, Constants.remoteOfficialRepositoryRelativePath));
-      settings.Repositories.Add(Path.Combine(settings.AppPath, Constants.remoteDevRepositoryRelativePath));
-      if (includePublicNuGetRepository)
-        settings.Repositories.Add(Constants.publicNuGetRepository);
-
-      NuGetConnector nuGetConnector = new NuGetConnector(settings);
-      nuGetConnector.EnableLogging(LogLevel.Debug);
-      nuGetConnector.SetFrameworkForUnitTests(".NETCoreApp,Version=v3.1");
-      return nuGetConnector;
-    }
-
-    private void WriteLogToTestContextAndClear(NuGetConnector nuGetConnector, string header = null) {
-      string[] log = nuGetConnector.GetLog();
-      if (log.Length > 0) {
-        if (header != null) TestContext.WriteLine(header);
-        TestContext.WriteLine("NuGetConnector Log:");
-        foreach (string line in log)
-          TestContext.WriteLine(line);
-        TestContext.WriteLine("");
-        nuGetConnector.ClearLog();
-      }
-    }
-
-    private void CopyDirectory(string sourcePath, string targetPath) {
-      DirectoryInfo source = new DirectoryInfo(sourcePath);
-      DirectoryInfo target = new DirectoryInfo(targetPath);
-
-      Directory.CreateDirectory(target.FullName);
-      foreach (FileInfo file in source.GetFiles())
-        file.CopyTo(Path.Combine(target.FullName, file.Name), true);
-
-      foreach (DirectoryInfo subdir in source.GetDirectories())
-        CopyDirectory(subdir.FullName, Path.Combine(target.FullName, subdir.Name));
-    }
-
-    #region NuGetPackageDependencyComparer
     private class NuGetPackageDependencyComparer : IComparer {
       public static NuGetPackageDependencyComparer Default => new NuGetPackageDependencyComparer();
       private readonly IVersionRangeComparer versionRangeComparer = VersionRangeComparer.Default;
@@ -879,7 +779,6 @@ namespace HEAL.Bricks.Tests {
           return x.Equals(y) ? 0 : 1;
       }
     }
-    #endregion
     #endregion
   }
 }

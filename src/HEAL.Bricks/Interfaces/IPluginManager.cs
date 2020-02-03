@@ -12,8 +12,7 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public interface IPluginManager {
-    IEnumerable<string> RemoteRepositories { get; }
-    string PluginTag { get; }
+    ISettings Settings { get; }
     IEnumerable<PackageInfo> InstalledPackages { get; }
     PluginManagerStatus Status { get; }
 

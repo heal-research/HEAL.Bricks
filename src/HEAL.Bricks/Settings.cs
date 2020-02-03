@@ -30,6 +30,7 @@ namespace HEAL.Bricks {
     public string PackagesPath {
       get { return packagesPath; }
       set {
+        if (string.IsNullOrEmpty(value)) throw new ArgumentException($"{nameof(PackagesPath)} cannot be null or empty.", nameof(PackagesPath));
         packagesPath = value;
         if (!Path.IsPathRooted(packagesPath))
           packagesPath = Path.Combine(AppPath, packagesPath);
@@ -38,6 +39,7 @@ namespace HEAL.Bricks {
     public string PackagesCachePath {
       get { return packagesCachePath; }
       set {
+        if (string.IsNullOrEmpty(value)) throw new ArgumentException($"{nameof(PackagesCachePath)} cannot be null or empty.", nameof(PackagesCachePath));
         packagesCachePath = value;
         if (!Path.IsPathRooted(packagesCachePath))
           packagesCachePath = Path.Combine(AppPath, packagesCachePath);

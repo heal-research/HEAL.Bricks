@@ -29,6 +29,8 @@ namespace HEAL.Bricks {
     public IEnumerable<SourceRepository> Repositories { get; }
 
     public NuGetConnector(ISettings settings) {
+      if (settings == null) throw new ArgumentNullException(nameof(settings));
+
       Settings = settings;
       Repositories = settings.Repositories.Select(x => CreateSourceRepository(x)).ToArray();
     }
