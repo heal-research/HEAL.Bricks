@@ -26,7 +26,7 @@ namespace HEAL.Bricks {
     public string PluginTag { get; set; }
     IEnumerable<string> ISettings.Repositories => Repositories;
     public List<string> Repositories { get; }
-    public string AppPath { get; }
+    public string AppPath { get; private set; }
     public string PackagesPath {
       get { return packagesPath; }
       set {
@@ -50,6 +50,12 @@ namespace HEAL.Bricks {
       AppPath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
       PackagesPath = "packages";
       PackagesCachePath = "packages_cache";
+    }
+
+    internal void SetAppPath(string appPath) {
+      // only used for unit test to set AppPath manually
+      // Explanation: In unit tests it is required to store packages in another directory and not at the location of the entry assembly.
+      AppPath = appPath;
     }
   }
 }

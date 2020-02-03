@@ -197,21 +197,26 @@ namespace HEAL.Bricks {
       return null;
     }
 
-    public async Task<DownloadResourceResult> DownloadPackageAsync(SourcePackageDependencyInfo package, CancellationToken cancellationToken) {
+    public async Task InstallPackageAsync(SourcePackageDependencyInfo package, CancellationToken cancellationToken) {
+      if (package == null) throw new ArgumentNullException(nameof(package));
+      if (string.IsNullOrEmpty(package.Id)) throw new ArgumentException($"{nameof(package)}.Id is null or empty.", nameof(package));
+      if (!package.HasVersion) throw new ArgumentException($"{nameof(package)} has no version.", nameof(package));
+      if (package.Source == null) throw new ArgumentException($"{nameof(package)}.Source is null.", nameof(package));
+
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         DownloadResource downloadResource = await package.Source.GetResourceAsync<DownloadResource>(cancellationToken);
-        string packagesFolder = Settings.PackagesCachePath;
-        return await downloadResource.GetDownloadResourceResultAsync(package, new PackageDownloadContext(cacheContext), packagesFolder, logger, cancellationToken);
+        PackageDownloadContext downloadContext = new PackageDownloadContext(cacheContext, Settings.PackagesCachePath, cacheContext.DirectDownload);
+        using (DownloadResourceResult downloadResult = await downloadResource.GetDownloadResourceResultAsync(package, downloadContext, Settings.PackagesCachePath, logger, cancellationToken)) {
+          if (downloadResult.Status == DownloadResourceResultStatus.NotFound) throw new ArgumentException($"{nameof(package)} at {nameof(package)}.Source not found.", nameof(package));
+
+          PackagePathResolver packagePathResolver = new PackagePathResolver(Settings.PackagesPath);
+          PackageExtractionContext packageExtractionContext = new PackageExtractionContext(PackageSaveMode.Defaultv3, XmlDocFileSaveMode.Skip, null, logger);
+          await PackageExtractor.ExtractPackageAsync(downloadResult.PackageSource, downloadResult.PackageStream, packagePathResolver, packageExtractionContext, cancellationToken);
+        }
       }
     }
 
-    public async Task InstallPackageAsync(DownloadResourceResult package, CancellationToken cancellationToken) {
-      var packagePathResolver = new PackagePathResolver(Settings.PackagesPath);
-      var packageExtractionContext = new PackageExtractionContext(PackageSaveMode.Defaultv3, XmlDocFileSaveMode.Skip, null, logger);
-      await PackageExtractor.ExtractPackageAsync(package.PackageSource, package.PackageStream, packagePathResolver, packageExtractionContext, cancellationToken);
-    }
-
-    #region Static Helpers
+    #region Helpers
     private static NuGetFramework GetCurrentFramework() {
       string frameworkName = Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName;
       return frameworkName != null ? NuGetFramework.ParseFrameworkName(frameworkName, DefaultFrameworkNameProvider.Instance) : NuGetFramework.AnyFramework;
@@ -232,9 +237,8 @@ namespace HEAL.Bricks {
       return new SourceCacheContext();
     }
     private static SourceCacheContext CreateNoSourceCacheContext() {
-      return new SourceCacheContext() { NoCache = true };
+      return new SourceCacheContext() { NoCache = true, DirectDownload = true };
     }
-    #endregion
 
     #region PackageSearchMetadataEqualityComparer
     private class PackageSearchMetadataComparer : IEqualityComparer<IPackageSearchMetadata>, IComparer<IPackageSearchMetadata> {
@@ -307,6 +311,7 @@ namespace HEAL.Bricks {
         Log(LogLevel.Warning, data);
       }
     }
+    #endregion
     #endregion
   }
 }

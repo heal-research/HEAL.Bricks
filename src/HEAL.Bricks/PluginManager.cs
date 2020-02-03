@@ -66,8 +66,7 @@ namespace HEAL.Bricks {
       return missingDependencies.Select(x => new RemotePackageInfo(x));
     }
     public async Task InstallRemotePackageAsync(RemotePackageInfo package, CancellationToken cancellationToken = default) {
-      DownloadResourceResult downloadResult = await nuGetConnector.DownloadPackageAsync(package.sourcePackageDependencyInfo, cancellationToken);
-      await nuGetConnector.InstallPackageAsync(downloadResult, cancellationToken);
+      await nuGetConnector.InstallPackageAsync(package.sourcePackageDependencyInfo, cancellationToken);
     }
 
     #region Static Helpers

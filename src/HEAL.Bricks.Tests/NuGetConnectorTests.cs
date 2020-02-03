@@ -13,9 +13,7 @@ using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -59,30 +57,41 @@ namespace HEAL.Bricks.Tests {
   [DeploymentItem(Constants.pathPluginB_031, Constants.remoteDevRepositoryRelativePath)]
   public class NuGetConnectorTests {
     public TestContext TestContext { get; set; }
+    private string TestDeploymentPath {
+      get { return TestContext.DeploymentDirectory; }
+    }
+    private string UniqueTestId {
+      get { return TestContext.FullyQualifiedTestClassName + "." + TestContext.TestName; }
+    }
+    private string TestExecutionPath {
+      get { return Path.Combine(TestContext.TestRunDirectory, UniqueTestId); }
+    }
 
-//    [TestInitialize]
-    [ClassInitialize]
+    #region Initialize
+    [AssemblyInitialize]
     public static void UnpackLocalPackages(TestContext testContext) {
-      string appPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-      string packagesPath = Path.Combine(appPath, Constants.localPackagesRelativePath);
-      string packagesCachePath = Path.Combine(appPath, Constants.localPackagesCacheRelativePath);
+      string packagesPath = Path.Combine(testContext.DeploymentDirectory, Constants.localPackagesRelativePath);
+      string packagesCachePath = Path.Combine(testContext.DeploymentDirectory, Constants.localPackagesCacheRelativePath);
       PackagePathResolver packagePathResolver = new PackagePathResolver(packagesPath);
       PackageExtractionContext packageExtractionContext = new PackageExtractionContext(PackageSaveMode.Defaultv3, XmlDocFileSaveMode.Skip, null, NullLogger.Instance);
 
       Directory.CreateDirectory(packagesPath);
-      foreach (string package in Directory.GetDirectories(packagesPath)) {
-        Directory.Delete(package, true);
-      }
       Directory.CreateDirectory(packagesCachePath);
-      foreach (string package in Directory.GetDirectories(packagesCachePath)) {
-        Directory.Delete(package, true);
-      }
 
       foreach (string package in Directory.GetFiles(packagesPath, "*.nupkg")) {
         PackageArchiveReader packageReader = new PackageArchiveReader(package);
         PackageExtractor.ExtractPackageAsync(package, packageReader, packagePathResolver, packageExtractionContext, default);
       }
     }
+
+    [TestInitialize]
+    public void DeployTestPackageSources() {
+      string sourcePath = Path.Combine(TestDeploymentPath, Constants.testPackageSourcesRelativePath);
+      string targetPath = Path.Combine(TestExecutionPath, Constants.testPackageSourcesRelativePath);
+      CopyDirectory(sourcePath, targetPath);
+      TestContext.WriteLine($"Deployed TestPackageSources to {targetPath}.");
+    }
+    #endregion
 
     #region TestCtor
     [TestMethod]
@@ -763,33 +772,66 @@ namespace HEAL.Bricks.Tests {
     }
     #endregion
 
+    #region TestInstallPackageAsync
     [TestMethod]
-    [TestCategory("WIP")]
-    public async Task TestDownloadPackageAsync() {
-      NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      SourcePackageDependencyInfo package = (await nuGetConnector.GetPackageDependenciesAsync(new PackageIdentity("SimSharp", new NuGetVersion("3.3.0")), false, default)).Single();
-      DownloadResourceResult downloadResult = await nuGetConnector.DownloadPackageAsync(package, default);
-      Assert.AreEqual(DownloadResourceResultStatus.Available, downloadResult.Status);
-
-      WriteLogToTestContextAndClear(nuGetConnector);
-      Assert.Fail("This unit test is incomplete and is still work in progress.");
-    }
-
-    [TestMethod]
-    [TestCategory("WIP")]
     public async Task TestInstallPackageAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      SourcePackageDependencyInfo package = (await nuGetConnector.GetPackageDependenciesAsync(new PackageIdentity("SimSharp", new NuGetVersion("3.3.0")), false, default)).Single();
-      DownloadResourceResult downloadResult = await nuGetConnector.DownloadPackageAsync(package, default);
-      await nuGetConnector.InstallPackageAsync(downloadResult, default);
+      PackageIdentity identity;
+      SourcePackageDependencyInfo package;
+      ArgumentNullException argumentNullException;
+      ArgumentException argumentException;
+
+      identity = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version020));
+      package = (await nuGetConnector.GetPackageDependenciesAsync(identity, false, default)).Single();
+      await nuGetConnector.InstallPackageAsync(package, default);
+      Assert.IsTrue(Directory.Exists(Path.Combine(nuGetConnector.Settings.PackagesPath, identity.ToString())));
+
+      identity = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version020));
+      package = (await nuGetConnector.GetPackageDependenciesAsync(identity, false, default)).Single();
+      await nuGetConnector.InstallPackageAsync(package, default);
+      Assert.IsTrue(Directory.Exists(Path.Combine(nuGetConnector.Settings.PackagesPath, identity.ToString())));
+
+      identity = new PackageIdentity(Constants.namePluginB, new NuGetVersion(Constants.version031));
+      package = (await nuGetConnector.GetPackageDependenciesAsync(identity, false, default)).Single();
+      await nuGetConnector.InstallPackageAsync(package, default);
+      Assert.IsTrue(Directory.Exists(Path.Combine(nuGetConnector.Settings.PackagesPath, identity.ToString())));
+
+      identity = new PackageIdentity("SimSharp", new NuGetVersion("3.3.0"));
+      package = (await nuGetConnector.GetPackageDependenciesAsync(identity, false, default)).Single();
+      await nuGetConnector.InstallPackageAsync(package, default);
+      Assert.IsTrue(Directory.Exists(Path.Combine(nuGetConnector.Settings.PackagesPath, identity.ToString())));
+
+      package = new SourcePackageDependencyInfo(Constants.namePluginA, new NuGetVersion(Constants.version000), Enumerable.Empty<NuGetPackageDependency>(), true, nuGetConnector.Repositories.First());
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.InstallPackageAsync(package, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      package = null;
+      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.InstallPackageAsync(package, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
+
+      package = new SourcePackageDependencyInfo("", new NuGetVersion(Constants.version030), Enumerable.Empty<NuGetPackageDependency>(), true, nuGetConnector.Repositories.First());
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.InstallPackageAsync(package, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      package = new SourcePackageDependencyInfo(Constants.namePluginA, null, Enumerable.Empty<NuGetPackageDependency>(), true, nuGetConnector.Repositories.First());
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.InstallPackageAsync(package, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      package = new SourcePackageDependencyInfo(Constants.namePluginA, new NuGetVersion(Constants.version030), Enumerable.Empty<NuGetPackageDependency>(), true, null);
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.InstallPackageAsync(package, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
       WriteLogToTestContextAndClear(nuGetConnector);
-      Assert.Fail("This unit test is incomplete and is still work in progress.");
     }
+    #endregion
 
     #region Helpers
     private NuGetConnector CreateNuGetConnector(bool includePublicNuGetRepository = false) {
-      Settings settings = new Settings() { PackagesPath = Constants.localPackagesRelativePath, PackagesCachePath = Constants.localPackagesCacheRelativePath, PluginTag = "HEALBricksPlugin" };
+      Settings settings = new Settings();
+      settings.SetAppPath(TestExecutionPath);
+      settings.PluginTag = "HEALBricksPlugin";
+      settings.PackagesPath = Constants.localPackagesRelativePath;
+      settings.PackagesCachePath = Constants.localPackagesCacheRelativePath;
       settings.Repositories.Clear();
       settings.Repositories.Add(Path.Combine(settings.AppPath, Constants.remoteOfficialRepositoryRelativePath));
       settings.Repositories.Add(Path.Combine(settings.AppPath, Constants.remoteDevRepositoryRelativePath));
@@ -813,7 +855,18 @@ namespace HEAL.Bricks.Tests {
         nuGetConnector.ClearLog();
       }
     }
-    #endregion
+
+    private void CopyDirectory(string sourcePath, string targetPath) {
+      DirectoryInfo source = new DirectoryInfo(sourcePath);
+      DirectoryInfo target = new DirectoryInfo(targetPath);
+
+      Directory.CreateDirectory(target.FullName);
+      foreach (FileInfo file in source.GetFiles())
+        file.CopyTo(Path.Combine(target.FullName, file.Name), true);
+
+      foreach (DirectoryInfo subdir in source.GetDirectories())
+        CopyDirectory(subdir.FullName, Path.Combine(target.FullName, subdir.Name));
+    }
 
     #region NuGetPackageDependencyComparer
     private class NuGetPackageDependencyComparer : IComparer {
@@ -826,6 +879,7 @@ namespace HEAL.Bricks.Tests {
           return x.Equals(y) ? 0 : 1;
       }
     }
+    #endregion
     #endregion
   }
 }
