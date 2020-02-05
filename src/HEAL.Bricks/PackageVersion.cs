@@ -5,13 +5,8 @@
  */
 #endregion
 
-using NuGet.Packaging;
-using NuGet.Packaging.Core;
-using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace HEAL.Bricks {
   public sealed class PackageVersion : IComparable, IComparable<PackageVersion>, IEquatable<PackageVersion> {

@@ -5,9 +5,6 @@
  */
 #endregion
 
-using NuGet.Packaging;
-using NuGet.Packaging.Core;
-using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 using System;
 using System.Collections.Generic;
@@ -15,13 +12,15 @@ using System.Linq;
 
 namespace HEAL.Bricks {
   public sealed class PackageVersionRange : IEquatable<PackageVersionRange> {
-    internal readonly NuGet.Versioning.VersionRange nuGetVersionRange;
+    internal readonly VersionRange nuGetVersionRange;
 
-    internal PackageVersion MaxVersion => new PackageVersion(nuGetVersionRange.MaxVersion);
-    internal PackageVersion MinVersion => new PackageVersion(nuGetVersionRange.MinVersion);
+    internal PackageVersion MinVersion { get; }
+    internal PackageVersion MaxVersion { get; }
     
-    internal PackageVersionRange(NuGet.Versioning.VersionRange nuGetVersionRange) {
+    internal PackageVersionRange(VersionRange nuGetVersionRange) {
       this.nuGetVersionRange = nuGetVersionRange ?? throw new ArgumentNullException(nameof(PackageVersionRange.nuGetVersionRange));
+      MinVersion = nuGetVersionRange.MinVersion != null ? new PackageVersion(nuGetVersionRange.MinVersion) : null;
+      MaxVersion = nuGetVersionRange.MaxVersion != null ? new PackageVersion(nuGetVersionRange.MaxVersion) : null;
     }
 
     internal PackageVersion FindBestMatch(IEnumerable<PackageVersion> versions) {

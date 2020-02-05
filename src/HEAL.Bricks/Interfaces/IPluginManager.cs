@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace HEAL.Bricks {
   public interface IPluginManager {
     ISettings Settings { get; }
-    IEnumerable<PackageInfo> InstalledPackages { get; }
+    IEnumerable<LocalPackageInfo> InstalledPackages { get; }
     PluginManagerStatus Status { get; }
 
     void Initialize();

@@ -5,25 +5,24 @@
  */
 #endregion
 
-using NuGet.Packaging;
-using NuGet.Packaging.Core;
-using NuGet.Protocol.Core.Types;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 
 namespace HEAL.Bricks {
   public sealed class PackageDependency : IEquatable<PackageDependency> {
-    internal readonly NuGet.Packaging.Core.PackageDependency nuGetPackageDependency;
+    internal readonly NuGetPackageDependency nuGetPackageDependency;
 
     public string Id => nuGetPackageDependency.Id;
     public PackageVersionRange VersionRange { get; }
     public PackageDependencyStatus Status { get; internal set; }
     
-    internal PackageDependency(NuGet.Packaging.Core.PackageDependency nuGetPackageDependency) {
-      this.nuGetPackageDependency = nuGetPackageDependency ?? throw new ArgumentNullException(nameof(nuGetPackageDependency));
-      this.VersionRange = new PackageVersionRange(nuGetPackageDependency.VersionRange);
-      this.Status = PackageDependencyStatus.Unknown;
+    internal PackageDependency(NuGetPackageDependency nuGetPackageDependency) {
+      if (nuGetPackageDependency == null) throw new ArgumentNullException(nameof(nuGetPackageDependency));
+      if (string.IsNullOrEmpty(nuGetPackageDependency.Id)) throw new ArgumentException($"{nameof(nuGetPackageDependency)}.Id is null or empty.", nameof(nuGetPackageDependency));
+
+      this.nuGetPackageDependency = nuGetPackageDependency;
+      VersionRange = new PackageVersionRange(nuGetPackageDependency.VersionRange);
+      Status = PackageDependencyStatus.Unknown;
     }
 
     public override string ToString() {

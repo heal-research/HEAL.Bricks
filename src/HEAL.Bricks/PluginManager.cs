@@ -32,7 +32,7 @@ namespace HEAL.Bricks {
 
     private readonly NuGetConnector nuGetConnector;
     public ISettings Settings { get; }
-    public IEnumerable<PackageInfo> InstalledPackages { get; private set; } = Enumerable.Empty<PackageInfo>();
+    public IEnumerable<LocalPackageInfo> InstalledPackages { get; private set; } = Enumerable.Empty<LocalPackageInfo>();
     public PluginManagerStatus Status { get; private set; } = PluginManagerStatus.Uninitialized;
 
     private PluginManager(ISettings settings) {
@@ -49,7 +49,7 @@ namespace HEAL.Bricks {
       IEnumerable<PackageFolderReader> packageReaders = Enumerable.Empty<PackageFolderReader>();
       try {
         packageReaders = nuGetConnector.GetInstalledPackages();
-        PackageInfo[] installedPackages = packageReaders.Select(x => new PackageInfo(x, nuGetConnector.CurrentFramework, Settings.PluginTag)).ToArray();
+        LocalPackageInfo[] installedPackages = packageReaders.Select(x => new LocalPackageInfo(x, nuGetConnector.CurrentFramework, Settings.PluginTag)).ToArray();
         UpdatePackageAndDependencyStatus(installedPackages);
         Status = GetPluginManagerStatus(installedPackages);
         InstalledPackages = installedPackages;
@@ -62,9 +62,11 @@ namespace HEAL.Bricks {
       if (Status == PluginManagerStatus.Uninitialized) Initialize();
 
       IEnumerable<PackageIdentity> installedPackages = InstalledPackages.Select(x => x.nuspecReader.GetIdentity());
-      IEnumerable<PackageIdentity> installedPlugins = InstalledPackages.Where(x => x.IsPlugin).Select(x => x.nuspecReader.GetIdentity());
       IEnumerable<SourcePackageDependencyInfo> allDependencies = await nuGetConnector.GetPackageDependenciesAsync(installedPackages, true, cancellationToken);
-      IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = nuGetConnector.ResolveDependencies(installedPlugins.Select(x => x.Id), allDependencies, cancellationToken, out bool resolveSucceeded);
+      IEnumerable<LocalPackageInfo> latestVersionOfInstalledPlugins = InstalledPackages.Where(x => x.IsPlugin).GroupBy(x => x.Id).Select(x => x.OrderByDescending(y => y, PackageInfoIdentityComparer.Default).First());
+      IEnumerable<PackageIdentity> installedPlugins = latestVersionOfInstalledPlugins.Select(x => x.nuspecReader.GetIdentity());
+
+      IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = nuGetConnector.ResolveDependencies(Enumerable.Empty<string>(), installedPlugins, allDependencies, cancellationToken, out bool resolveSucceeded);
       if (!resolveSucceeded) throw new InvalidOperationException("Dependency resolution failed.");
 
       IEnumerable<SourcePackageDependencyInfo> missingDependencies = resolvedDependencies.Where(x => !InstalledPackages.Any(y => x.Equals(y.nuspecReader.GetIdentity())));
@@ -77,8 +79,8 @@ namespace HEAL.Bricks {
     }
 
     #region Helpers
-    private static void UpdatePackageAndDependencyStatus(IEnumerable<PackageInfo> packages) {
-      foreach (PackageInfo package in packages) {
+    private static void UpdatePackageAndDependencyStatus(IEnumerable<LocalPackageInfo> packages) {
+      foreach (LocalPackageInfo package in packages) {
         foreach (PackageDependency dependency in package.Dependencies) {
           dependency.Status = packages.Any(x => (x.Id == dependency.Id) && dependency.VersionRange.Satiesfies(x.Version)) ? PackageDependencyStatus.OK : PackageDependencyStatus.Missing;
         }
@@ -96,7 +98,7 @@ namespace HEAL.Bricks {
       bool packageStatusChanged;
       do {
         packageStatusChanged = false;
-        foreach (PackageInfo package in packages.Where(x => x.Status == PackageStatus.Unknown)) {
+        foreach (LocalPackageInfo package in packages.Where(x => x.Status == PackageStatus.Unknown)) {
           foreach (PackageDependency dependency in package.Dependencies.Where(x => x.Status == PackageDependencyStatus.OK)) {
             var dependencyPackages = packages.Where(x => (x.Id == dependency.Id) && dependency.VersionRange.Satiesfies(x.Version));
             if (dependencyPackages.Any(x => x.Status == PackageStatus.Unknown)) {
@@ -117,8 +119,8 @@ namespace HEAL.Bricks {
       } while (packageStatusChanged);
     }
 
-    private static PluginManagerStatus GetPluginManagerStatus(IEnumerable<PackageInfo> packages) {
-      IEnumerable<PackageInfo> plugins = packages.Where(x => x.IsPlugin);
+    private static PluginManagerStatus GetPluginManagerStatus(IEnumerable<LocalPackageInfo> packages) {
+      IEnumerable<LocalPackageInfo> plugins = packages.Where(x => x.IsPlugin);
       if (plugins.All(x => x.Status == PackageStatus.OK)) {
         return PluginManagerStatus.OK;
       } else if (plugins.Any(x => x.Status == PackageStatus.Unknown)) {

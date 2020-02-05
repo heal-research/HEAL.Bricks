@@ -8,18 +8,19 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NuGet.Common;
 using NuGet.Packaging;
+using NuGet.Packaging.Core;
+using NuGet.Versioning;
 using System.IO;
+using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 
 namespace HEAL.Bricks.Tests {
   [TestClass]
-  // HEAL.Bricks.PluginTypes package
-  [DeploymentItem(Constants.pathBricksPluginTypes, Constants.localPackagesRelativePath)]
-  [DeploymentItem(Constants.pathBricksPluginTypes, Constants.remoteOfficialRepositoryRelativePath)]
-  [DeploymentItem(Constants.pathBricksPluginTypes, Constants.remoteDevRepositoryRelativePath)]
   // local plugins
-  [DeploymentItem(Constants.pathPluginB_010, Constants.localPackagesRelativePath)]
-  [DeploymentItem(Constants.pathPluginB_020_alpha1, Constants.localPackagesRelativePath)]
+  [DeploymentItem(Constants.pathBricksPluginTypes, Constants.localPackagesRelativePath)]
+  [DeploymentItem(Constants.pathPluginB_010_alpha1, Constants.localPackagesRelativePath)]
+  [DeploymentItem(Constants.pathPluginB_020, Constants.localPackagesRelativePath)]
   // released plugins
+  [DeploymentItem(Constants.pathBricksPluginTypes, Constants.remoteOfficialRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginA_010_alpha1, Constants.remoteOfficialRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginA_010_alpha2, Constants.remoteOfficialRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginA_010, Constants.remoteOfficialRepositoryRelativePath)]
@@ -32,6 +33,7 @@ namespace HEAL.Bricks.Tests {
   [DeploymentItem(Constants.pathPluginB_020_alpha1, Constants.remoteOfficialRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginB_020, Constants.remoteOfficialRepositoryRelativePath)]
   // plugins in development
+  [DeploymentItem(Constants.pathBricksPluginTypes, Constants.remoteDevRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginA_020_alpha1, Constants.remoteDevRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginA_020, Constants.remoteDevRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginA_021, Constants.remoteDevRepositoryRelativePath)]
@@ -97,6 +99,12 @@ namespace HEAL.Bricks.Tests {
       nuGetConnector.SetFrameworkForUnitTests(".NETCoreApp,Version=v3.1");
       return nuGetConnector;
     }
+    private protected PackageIdentity CreatePackageIdentity(string id, string version) {
+      return new PackageIdentity(id, version != null ? new NuGetVersion(version) : null);
+    }
+    private protected NuGetPackageDependency CreateNuGetPackageDependency(string id, string minVersion) {
+      return new NuGetPackageDependency(id, new VersionRange(new NuGetVersion(minVersion)));
+    }
 
     private protected void WriteLogToTestContextAndClear(NuGetConnector nuGetConnector, string header = null) {
       string[] log = nuGetConnector.GetLog();
@@ -110,7 +118,7 @@ namespace HEAL.Bricks.Tests {
       }
     }
 
-    protected void CopyDirectory(string sourcePath, string targetPath) {
+    private void CopyDirectory(string sourcePath, string targetPath) {
       DirectoryInfo source = new DirectoryInfo(sourcePath);
       DirectoryInfo target = new DirectoryInfo(targetPath);
 

@@ -5,55 +5,49 @@
  */
 #endregion
 
-using NuGet.Frameworks;
-using NuGet.Packaging;
+using NuGet.Packaging.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 
 namespace HEAL.Bricks {
-  public sealed class PackageInfo : IEquatable<PackageInfo>, IComparable<PackageInfo> {
-    internal readonly NuspecReader nuspecReader;
-
+  public class PackageInfo : IEquatable<PackageInfo>, IComparable<PackageInfo> {
+    internal readonly PackageIdentity packageIdentity;
     public static PackageInfoIdentityComparer Comparer => PackageInfoIdentityComparer.Default;
 
-    public string Id => nuspecReader.GetId();
+    public string Id => packageIdentity.Id;
     public PackageVersion Version { get; }
-    public string Description => nuspecReader.GetDescription();
-    public IEnumerable<PackageDependency> Dependencies { get; }
-    public bool IsPlugin { get; }
-    public PackageStatus Status { get; internal set; }
+    public IEnumerable<PackageDependency> Dependencies { get; protected set; }
 
-    internal PackageInfo(PackageFolderReader packageReader, NuGetFramework currentFramework, string pluginTag = "") {
-      this.nuspecReader = packageReader?.NuspecReader ?? throw new ArgumentNullException(nameof(packageReader));
-      Version = new PackageVersion(nuspecReader.GetVersion());
-      Dependencies = NuGetFrameworkUtility.GetNearest(nuspecReader.GetDependencyGroups(), currentFramework).Packages.Select(x => new PackageDependency(x)).ToArray();
-      IsPlugin = !string.IsNullOrEmpty(pluginTag) && nuspecReader.GetTags().Contains(pluginTag);
-      bool frameworkNotSupported = new FrameworkReducer().GetNearest(currentFramework, packageReader.GetSupportedFrameworks()) == null;
-      Status = frameworkNotSupported ? PackageStatus.IncompatibleFramework : PackageStatus.Unknown;
+    internal PackageInfo(PackageIdentity identity) {
+      if (identity == null) throw new ArgumentNullException(nameof(identity));
+      if (string.IsNullOrEmpty(identity.Id)) throw new ArgumentException($"{nameof(identity)}.Id is null or empty.", nameof(identity));
+
+      packageIdentity = identity;
+      Version = new PackageVersion(identity.Version);
+      Dependencies = Enumerable.Empty<PackageDependency>();
+    }
+    internal PackageInfo(PackageIdentity identity, IEnumerable<NuGetPackageDependency> dependencies) : this(identity) {
+      if (dependencies == null) throw new ArgumentNullException(nameof(dependencies));
+      Dependencies = dependencies.Select(x => new PackageDependency(x)).ToArray();
     }
 
     public override string ToString() {
-      return $"{Id} ({Version}) [{Status.ToString()}]";
-    }
-    public string ToStringWithDependencies() {
-      string s = $"{Id} ({Version}) [{Status.ToString()}]";
-      if (Dependencies.Any())
-        s += Dependencies.Aggregate("", (a, b) => a.ToString() + "\n  - " + b.ToString());
-      return s;
+      return packageIdentity.ToString();
     }
 
     public bool Equals(PackageInfo other) {
-      return nuspecReader.GetIdentity().Equals(other.nuspecReader.GetIdentity());
+      return packageIdentity.Equals(other.packageIdentity);
     }
     public override bool Equals(object obj) {
-      return nuspecReader.GetIdentity().Equals(obj);
+      return packageIdentity.Equals(obj);
     }
     public override int GetHashCode() {
-      return nuspecReader.GetIdentity().GetHashCode();
+      return packageIdentity.GetHashCode();
     }
     public int CompareTo(PackageInfo other) {
-      return nuspecReader.GetIdentity().CompareTo(other.nuspecReader.GetIdentity());
+      return packageIdentity.CompareTo(other.packageIdentity);
     }
   }
 }

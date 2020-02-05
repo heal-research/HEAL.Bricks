@@ -5,29 +5,21 @@
  */
 #endregion
 
-using NuGet.Frameworks;
-using NuGet.Packaging;
-using NuGet.Packaging.Core;
 using NuGet.Protocol.Core.Types;
-using NuGet.Versioning;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace HEAL.Bricks {
-  public sealed class RemotePackageInfo : IEquatable<RemotePackageInfo>, IComparable<RemotePackageInfo> {
+  public sealed class RemotePackageInfo : PackageInfo {
     internal readonly SourcePackageDependencyInfo sourcePackageDependencyInfo;
 
-    public static RemotePackageInfoIdentityComparer Comparer => RemotePackageInfoIdentityComparer.Default;
-
-    public string Id => sourcePackageDependencyInfo.Id;
-    public PackageVersion Version { get; }
-    public IEnumerable<PackageDependency> Dependencies { get; }
     public string Source => sourcePackageDependencyInfo.Source.PackageSource.Source;
 
-    internal RemotePackageInfo(SourcePackageDependencyInfo sourcePackageDependencyInfo) {
-      this.sourcePackageDependencyInfo = sourcePackageDependencyInfo ?? throw new ArgumentNullException(nameof(sourcePackageDependencyInfo));
-      Version = new PackageVersion(sourcePackageDependencyInfo.Version);
+    internal RemotePackageInfo(SourcePackageDependencyInfo sourcePackageDependencyInfo) : base(sourcePackageDependencyInfo) {
+      if (sourcePackageDependencyInfo == null) throw new ArgumentNullException(nameof(sourcePackageDependencyInfo));
+      if (sourcePackageDependencyInfo.Dependencies == null) throw new ArgumentException($"{nameof(sourcePackageDependencyInfo)}.Dependencies is null.", nameof(sourcePackageDependencyInfo));
+
+      this.sourcePackageDependencyInfo = sourcePackageDependencyInfo;
       Dependencies = sourcePackageDependencyInfo.Dependencies.Select(x => new PackageDependency(x)).ToArray();
     }
 
@@ -39,19 +31,6 @@ namespace HEAL.Bricks {
       if (Dependencies.Any())
         s += Dependencies.Aggregate("", (a, b) => a.ToString() + "\n  - " + b.ToString());
       return s;
-    }
-
-    public bool Equals(RemotePackageInfo other) {
-      return sourcePackageDependencyInfo.Equals(other.sourcePackageDependencyInfo);
-    }
-    public override bool Equals(object obj) {
-      return sourcePackageDependencyInfo.Equals(obj);
-    }
-    public override int GetHashCode() {
-      return sourcePackageDependencyInfo.GetHashCode();
-    }
-    public int CompareTo(RemotePackageInfo other) {
-      return sourcePackageDependencyInfo.CompareTo(other.sourcePackageDependencyInfo);
     }
   }
 }

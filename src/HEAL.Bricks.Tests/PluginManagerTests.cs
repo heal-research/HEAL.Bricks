@@ -8,11 +8,11 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
-using NuGet.Versioning;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace HEAL.Bricks.Tests {
   [TestClass]
@@ -44,7 +44,7 @@ namespace HEAL.Bricks.Tests {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
       PluginManager pluginManager = new PluginManager(nuGetConnector);
       PackageIdentity[] expectedPackages;
-      PackageInfo[] installedPackages;
+      LocalPackageInfo[] installedPackages;
 
       List<PackageIdentity> expectedPackagesList = new List<PackageIdentity>();
       foreach (PackageFolderReader expectedPackageReader in nuGetConnector.GetInstalledPackages()) {
@@ -56,27 +56,29 @@ namespace HEAL.Bricks.Tests {
       installedPackages = pluginManager.InstalledPackages.ToArray();
       CollectionAssert.AreEqual(expectedPackages, installedPackages, PackageInfoComparer.Default);
       Assert.IsTrue((pluginManager.Status == PluginManagerStatus.OK) || (pluginManager.Status == PluginManagerStatus.InvalidPlugins));
+      foreach (LocalPackageInfo installedPackage in installedPackages) {
+        Assert.IsTrue(installedPackage.Status != PackageStatus.Unknown);
+        Assert.IsTrue(installedPackage.Dependencies.All(x => x.Status != PackageDependencyStatus.Unknown));
+      }
 
       WriteLogToTestContextAndClear(nuGetConnector);
     }
     #endregion
 
     #region TestResolveMissingDependenciesAsync
-    /*[TestMethod]
-    [TestCategory("WIP")]
+    [TestMethod]
     public async Task TestResolveMissingDependenciesAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager("HEALBricksPlugin", nuGetConnector);
+      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PackageIdentity[] expectedPackages;
+      RemotePackageInfo[] missingPackages;
 
-      IEnumerable<RemotePackageInfo> missingDependencies = await pluginManager.ResolveMissingDependenciesAsync();
-
-      foreach (var dependency in missingDependencies) {
-        TestContext.WriteLine(dependency.ToStringWithDependencies());
-      }
+      expectedPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version020) };
+      missingPackages = (await pluginManager.ResolveMissingDependenciesAsync()).ToArray();
+      CollectionAssert.AreEqual(expectedPackages, missingPackages, PackageInfoComparer.Default);
 
       WriteLogToTestContextAndClear(nuGetConnector);
-      Assert.Fail("This unit test is incomplete and is still work in progress.");
-    }*/
+    }
     #endregion
 
     #region TestDownloadMissingDependenciesAsync
@@ -118,8 +120,8 @@ namespace HEAL.Bricks.Tests {
       public static PackageInfoComparer Default => new PackageInfoComparer();
       private readonly IPackageIdentityComparer packageIdentityComparer = PackageIdentityComparer.Default;
       public int Compare(object x, object y) {
-        PackageIdentity a = (x as PackageIdentity) ?? (x as PackageInfo)?.nuspecReader.GetIdentity();
-        PackageIdentity b = (y as PackageIdentity) ?? (y as PackageInfo)?.nuspecReader.GetIdentity();
+        PackageIdentity a = (x as PackageIdentity) ?? (x as PackageInfo)?.packageIdentity;
+        PackageIdentity b = (y as PackageIdentity) ?? (y as PackageInfo)?.packageIdentity;
 
         if ((a != null) && (b != null)) {
           return packageIdentityComparer.Compare(a, b);

@@ -49,35 +49,35 @@ namespace HEAL.Bricks.Tests {
       ArgumentNullException argumentNullException;
       ArgumentException argumentException;
 
-      package = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version010));
+      package = CreatePackageIdentity(Constants.namePluginA, Constants.version010);
       foundPackage = (await nuGetConnector.GetPackageAsync(package, default))?.Identity.ToString();
       Assert.AreEqual(package.ToString(), foundPackage);
 
-      package = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version010_alpha1));
+      package = CreatePackageIdentity(Constants.namePluginA, Constants.version010_alpha1);
       foundPackage = (await nuGetConnector.GetPackageAsync(package, default))?.Identity.ToString();
       Assert.AreEqual(package.ToString(), foundPackage);
 
-      package = new PackageIdentity(Constants.namePluginB, new NuGetVersion(Constants.version020));
+      package = CreatePackageIdentity(Constants.namePluginB, Constants.version020);
       foundPackage = (await nuGetConnector.GetPackageAsync(package, default))?.Identity.ToString();
       Assert.AreEqual(package.ToString(), foundPackage);
 
-      package = new PackageIdentity(Constants.namePluginB, new NuGetVersion(Constants.version030_alpha1));
+      package = CreatePackageIdentity(Constants.namePluginB, Constants.version030_alpha1);
       foundPackage = (await nuGetConnector.GetPackageAsync(package, default))?.Identity.ToString();
       Assert.AreEqual(package.ToString(), foundPackage);
 
-      package = new PackageIdentity(Constants.nameCollections, new NuGetVersion(Constants.versionCollections));
+      package = CreatePackageIdentity(Constants.nameCollections, Constants.versionCollections);
       foundPackage = (await nuGetConnector.GetPackageAsync(package, default))?.Identity.ToString();
       Assert.AreEqual(package.ToString(), foundPackage);
 
-      package = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version000));
+      package = CreatePackageIdentity(Constants.namePluginA, Constants.version000);
       foundPackage = (await nuGetConnector.GetPackageAsync(package, default))?.Identity.ToString();
       Assert.IsNull(foundPackage);
 
-      package = new PackageIdentity(Constants.nameInvalid, new NuGetVersion(Constants.version010));
+      package = CreatePackageIdentity(Constants.nameInvalid, Constants.version010);
       foundPackage = (await nuGetConnector.GetPackageAsync(package, default))?.Identity.ToString();
       Assert.IsNull(foundPackage);
 
-      package = new PackageIdentity(Constants.nameInvalid, new NuGetVersion(Constants.version000));
+      package = CreatePackageIdentity(Constants.nameInvalid, Constants.version000);
       foundPackage = (await nuGetConnector.GetPackageAsync(package, default))?.Identity.ToString();
       Assert.IsNull(foundPackage);
 
@@ -85,11 +85,11 @@ namespace HEAL.Bricks.Tests {
       argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.GetPackageAsync(package, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
 
-      package = new PackageIdentity("", new NuGetVersion(Constants.version000));
+      package = CreatePackageIdentity("", Constants.version000);
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageAsync(package, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
-      package = new PackageIdentity(Constants.namePluginA, null);
+      package = CreatePackageIdentity(Constants.namePluginA, null);
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageAsync(package, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
@@ -233,22 +233,22 @@ namespace HEAL.Bricks.Tests {
       #endregion
 
       #region get by PackageIdentities
-      packageIdentities = new[] { new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version010_alpha1)),
-                                  new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version030)) };
+      packageIdentities = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version010_alpha1),
+                                  CreatePackageIdentity(Constants.namePluginA, Constants.version030) };
       expectedPackages = new[] { Constants.version010_alpha1, Constants.version030 }.Select(x => Constants.namePluginA + "." + x).ToArray();
       foundPackages = (await nuGetConnector.GetPackagesAsync(packageIdentities, default)).Select(x => x.Identity.ToString()).ToArray();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
 
-      packageIdentities = new[] { new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version020)),
-                                  new PackageIdentity(Constants.namePluginB, new NuGetVersion(Constants.version031)) };
+      packageIdentities = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version020),
+                                  CreatePackageIdentity(Constants.namePluginB, Constants.version031) };
       expectedPackages = new[] { Constants.namePluginA + "." + Constants.version020, Constants.namePluginB + "." + Constants.version031 };
       foundPackages = (await nuGetConnector.GetPackagesAsync(packageIdentities, default)).Select(x => x.Identity.ToString()).ToArray();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
 
-      packageIdentities = new[] { new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version020)),
-                                  new PackageIdentity(Constants.namePluginB, new NuGetVersion(Constants.version031)),
-                                  new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version020)),
-                                  new PackageIdentity(Constants.namePluginB, new NuGetVersion(Constants.version031)) };
+      packageIdentities = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version020),
+                                  CreatePackageIdentity(Constants.namePluginB, Constants.version031),
+                                  CreatePackageIdentity(Constants.namePluginA, Constants.version020),
+                                  CreatePackageIdentity(Constants.namePluginB, Constants.version031) };
       expectedPackages = new[] { Constants.namePluginA + "." + Constants.version020, Constants.namePluginB + "." + Constants.version031 };
       foundPackages = (await nuGetConnector.GetPackagesAsync(packageIdentities, default)).Select(x => x.Identity.ToString()).ToArray();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
@@ -257,19 +257,19 @@ namespace HEAL.Bricks.Tests {
       argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.GetPackagesAsync(packageIdentities, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
 
-      packageIdentities = new[] { new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version010_alpha1)),
-                                  new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version030)),
+      packageIdentities = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version010_alpha1),
+                                  CreatePackageIdentity(Constants.namePluginA, Constants.version030),
                                   null };
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackagesAsync(packageIdentities, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
-      packageIdentities = new[] { new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version010_alpha1)),
-                                  new PackageIdentity("", new NuGetVersion(Constants.version000)) };
+      packageIdentities = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version010_alpha1),
+                                  CreatePackageIdentity("", Constants.version000) };
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackagesAsync(packageIdentities, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
-      packageIdentities = new[] { new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version010_alpha1)),
-                                  new PackageIdentity(Constants.namePluginA, null) };
+      packageIdentities = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version010_alpha1),
+                                  CreatePackageIdentity(Constants.namePluginA, null) };
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackagesAsync(packageIdentities, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
       #endregion
@@ -343,11 +343,11 @@ namespace HEAL.Bricks.Tests {
 
       #region single package as input
       #region PluginB 0.3.1, non-recursive
-      package = new PackageIdentity(Constants.namePluginB, new NuGetVersion(Constants.version031));
+      package = CreatePackageIdentity(Constants.namePluginB, Constants.version031);
       resolveDependenciesRecursively = false;
       // expected dependencies: PluginB 0.3.1 -> PluginA [0.3.0, )
       expectedPackages = new[] { package };
-      expectedDependencies = new[] { new[] { new NuGetPackageDependency(Constants.namePluginA, new VersionRange(new NuGetVersion(Constants.version030))) } };
+      expectedDependencies = new[] { new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030) } };
       sw.Restart();
       foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default)).ToArray();
       sw.Stop();
@@ -363,16 +363,16 @@ namespace HEAL.Bricks.Tests {
       #endregion
 
       #region PluginB 0.3.1, recursive
-      package = new PackageIdentity(Constants.namePluginB, new NuGetVersion(Constants.version031));
+      package = CreatePackageIdentity(Constants.namePluginB, Constants.version031);
       resolveDependenciesRecursively = true;
       // expected dependencies: PluginB 0.3.1 -> PluginA [0.3.0, )
       //                        PluginA 0.3.0 -> PluginTypes
       //                        PluginTypes   -> no dependencies
       expectedPackages = new[] { package,
-                                 new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version030)),
-                                 new PackageIdentity(Constants.nameBricksPluginTypes, new NuGetVersion(Constants.versionBricksPluginTypes)) };
-      expectedDependencies = new[] { new[] { new NuGetPackageDependency(Constants.namePluginA, new VersionRange(new NuGetVersion(Constants.version030))) },
-                                     new[] { new NuGetPackageDependency(Constants.nameBricksPluginTypes, new VersionRange(new NuGetVersion(Constants.versionBricksPluginTypes))) },
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030),
+                                 CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) };
+      expectedDependencies = new[] { new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030) },
+                                     new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
                                      Array.Empty<NuGetPackageDependency>() };
       sw.Restart();
       foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default)).ToArray();
@@ -389,13 +389,13 @@ namespace HEAL.Bricks.Tests {
       #endregion
 
       #region System.Collections 4.3.0, non-recursive
-      package = new PackageIdentity(Constants.nameCollections, new NuGetVersion(Constants.versionCollections));
+      package = CreatePackageIdentity(Constants.nameCollections, Constants.versionCollections);
       resolveDependenciesRecursively = false;
       // expected dependencies: System.Collections 4.3.0 -> Microsoft.NETCore.Targets [1.1.0, ), System.Runtime [4.3.0, ), Microsoft.NETCore.Platforms [1.1.0, )
       expectedPackages = new[] { package };
-      expectedDependencies = new[] { new[] { new NuGetPackageDependency("Microsoft.NETCore.Targets", new VersionRange(new NuGetVersion("1.1.0"))),
-                                             new NuGetPackageDependency("System.Runtime", new VersionRange(new NuGetVersion("4.3.0"))),
-                                             new NuGetPackageDependency("Microsoft.NETCore.Platforms", new VersionRange(new NuGetVersion("1.1.0"))) } };
+      expectedDependencies = new[] { new[] { CreateNuGetPackageDependency("Microsoft.NETCore.Targets", "1.1.0"),
+                                             CreateNuGetPackageDependency("System.Runtime", "4.3.0"),
+                                             CreateNuGetPackageDependency("Microsoft.NETCore.Platforms", "1.1.0") } };
       sw.Restart();
       foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default)).ToArray();
       sw.Stop();
@@ -411,22 +411,22 @@ namespace HEAL.Bricks.Tests {
       #endregion
 
       #region System.Collections 4.3.0, recursive
-      package = new PackageIdentity(Constants.nameCollections, new NuGetVersion(Constants.versionCollections));
+      package = CreatePackageIdentity(Constants.nameCollections, Constants.versionCollections);
       resolveDependenciesRecursively = true;
       // expected dependencies: System.Collections 4.3.0          -> Microsoft.NETCore.Targets [1.1.0, ), System.Runtime [4.3.0, ), Microsoft.NETCore.Platforms [1.1.0, )
       //                        Microsoft.NETCore.Targets 1.1.0   -> no dependencies
       //                        System.Runtime 4.3.0              -> Microsoft.NETCore.Targets [1.1.0, ), Microsoft.NETCore.Platforms [1.1.0, )
       //                        Microsoft.NETCore.Platforms 1.1.0 -> no dependencies
       expectedPackages = new[] { package,
-                                 new PackageIdentity("Microsoft.NETCore.Targets", new NuGetVersion("1.1.0")),
-                                 new PackageIdentity("System.Runtime", new NuGetVersion("4.3.0")),
-                                 new PackageIdentity("Microsoft.NETCore.Platforms", new NuGetVersion("1.1.0")) };
-      expectedDependencies = new[] { new[] { new NuGetPackageDependency("Microsoft.NETCore.Targets", new VersionRange(new NuGetVersion("1.1.0"))),
-                                             new NuGetPackageDependency("System.Runtime", new VersionRange(new NuGetVersion("4.3.0"))),
-                                             new NuGetPackageDependency("Microsoft.NETCore.Platforms", new VersionRange(new NuGetVersion("1.1.0"))) },
+                                 CreatePackageIdentity("Microsoft.NETCore.Targets", "1.1.0"),
+                                 CreatePackageIdentity("System.Runtime", "4.3.0"),
+                                 CreatePackageIdentity("Microsoft.NETCore.Platforms", "1.1.0") };
+      expectedDependencies = new[] { new[] { CreateNuGetPackageDependency("Microsoft.NETCore.Targets", "1.1.0"),
+                                             CreateNuGetPackageDependency("System.Runtime", "4.3.0"),
+                                             CreateNuGetPackageDependency("Microsoft.NETCore.Platforms", "1.1.0") },
                                      Array.Empty<NuGetPackageDependency>(),
-                                     new[] { new NuGetPackageDependency("Microsoft.NETCore.Targets", new VersionRange(new NuGetVersion("1.1.0"))),
-                                             new NuGetPackageDependency("Microsoft.NETCore.Platforms", new VersionRange(new NuGetVersion("1.1.0"))) },
+                                     new[] { CreateNuGetPackageDependency("Microsoft.NETCore.Targets", "1.1.0"),
+                                             CreateNuGetPackageDependency("Microsoft.NETCore.Platforms", "1.1.0") },
                                      Array.Empty<NuGetPackageDependency>() };
       sw.Restart();
       foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default)).ToArray();
@@ -442,31 +442,21 @@ namespace HEAL.Bricks.Tests {
       TestContext.WriteLine("");
       #endregion
 
-      #region InvalidPluginName 0.0.0, recursive
-      package = new PackageIdentity(Constants.nameInvalid, new NuGetVersion(Constants.version000));
+      package = CreatePackageIdentity(Constants.nameInvalid, Constants.version000);
       resolveDependenciesRecursively = true;
-      expectedPackages = Array.Empty<PackageIdentity>();
-      sw.Restart();
-      foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default)).ToArray();
-      sw.Stop();
-      CollectionAssert.AreEqual(expectedPackages, foundPackages);
-      TestContext.WriteLine($"{(resolveDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package.ToString()}");
-      TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
-      WriteLogToTestContextAndClear(nuGetConnector);
-      TestContext.WriteLine("");
-      #endregion
+      await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => { return nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default); });
 
       package = null;
       resolveDependenciesRecursively = false;
       argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
 
-      package = new PackageIdentity("", new NuGetVersion(Constants.version000));
+      package = CreatePackageIdentity("", Constants.version000);
       resolveDependenciesRecursively = false;
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
-      package = new PackageIdentity(Constants.namePluginA, null);
+      package = CreatePackageIdentity(Constants.namePluginA, null);
       resolveDependenciesRecursively = false;
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
@@ -474,8 +464,8 @@ namespace HEAL.Bricks.Tests {
 
       #region multiple packages as input
       #region PluginB 0.3.1 and PluginB 0.2.0, recursive
-      packages = new[] { new PackageIdentity(Constants.namePluginB, new NuGetVersion(Constants.version031)),
-                         new PackageIdentity(Constants.namePluginB, new NuGetVersion(Constants.version020)) };
+      packages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version031),
+                         CreatePackageIdentity(Constants.namePluginB, Constants.version020) };
       resolveDependenciesRecursively = true;
       // expected dependencies: PluginB 0.3.1 -> PluginA [0.3.0, )
       //                        PluginA 0.3.0 -> PluginTypes
@@ -483,15 +473,15 @@ namespace HEAL.Bricks.Tests {
       //                        PluginB 0.2.0 -> PluginA [0.2.0, )
       //                        PluginA 0.2.0 -> PluginTypes
       expectedPackages = new[] { packages[0],
-                                 new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version030)),
-                                 new PackageIdentity(Constants.nameBricksPluginTypes, new NuGetVersion(Constants.versionBricksPluginTypes)),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030),
+                                 CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
                                  packages[1],
-                                 new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version020)) };
-      expectedDependencies = new[] { new[] { new NuGetPackageDependency(Constants.namePluginA, new VersionRange(new NuGetVersion(Constants.version030))) },
-                                     new[] { new NuGetPackageDependency(Constants.nameBricksPluginTypes, new VersionRange(new NuGetVersion(Constants.versionBricksPluginTypes))) },
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version020) };
+      expectedDependencies = new[] { new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030) },
+                                     new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
                                      Array.Empty<NuGetPackageDependency>(),
-                                     new[] { new NuGetPackageDependency(Constants.namePluginA, new VersionRange(new NuGetVersion(Constants.version020))) },
-                                     new[] { new NuGetPackageDependency(Constants.nameBricksPluginTypes, new VersionRange(new NuGetVersion(Constants.versionBricksPluginTypes))) } };
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version020) },
+                                     new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) } };
       sw.Restart();
       foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(packages, resolveDependenciesRecursively, default)).ToArray();
       sw.Stop();
@@ -511,20 +501,20 @@ namespace HEAL.Bricks.Tests {
       argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.GetPackageDependenciesAsync(packages, resolveDependenciesRecursively, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
 
-      packages = new[] { new PackageIdentity(Constants.namePluginB, new NuGetVersion(Constants.version031)),
+      packages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version031),
                          null };
       resolveDependenciesRecursively = false;
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDependenciesAsync(packages, resolveDependenciesRecursively, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
-      packages = new[] { new PackageIdentity(Constants.namePluginB, new NuGetVersion(Constants.version031)),
-                         new PackageIdentity("", new NuGetVersion(Constants.version000)) };
+      packages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version031),
+                         CreatePackageIdentity("", Constants.version000) };
       resolveDependenciesRecursively = false;
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDependenciesAsync(packages, resolveDependenciesRecursively, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
-      packages = new[] { new PackageIdentity(Constants.namePluginB, new NuGetVersion(Constants.version031)),
-                         new PackageIdentity(Constants.namePluginA, null) };
+      packages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version031),
+                         CreatePackageIdentity(Constants.namePluginA, null) };
       resolveDependenciesRecursively = false;
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDependenciesAsync(packages, resolveDependenciesRecursively, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
@@ -539,7 +529,8 @@ namespace HEAL.Bricks.Tests {
       SourcePackageDependencyInfo[] allAvailablePackages;
       SourcePackageDependencyInfo[] allAvailablePackagesPluginB;
 
-      string[] requiredIds;
+      string[] additionalPackages;
+      PackageIdentity[] existingPackages;
       SourcePackageDependencyInfo[] availablePackages;
       PackageIdentity[] expectedPackages;
       SourcePackageDependencyInfo[] resolvedPackages;
@@ -555,70 +546,234 @@ namespace HEAL.Bricks.Tests {
       allAvailablePackagesPluginB = nuGetConnector.GetPackageDependenciesAsync(packages, false, default).Result.ToArray();
       #endregion
 
-      requiredIds = new[] { Constants.namePluginB };
+      #region input additional packages
+      additionalPackages = new[] { Constants.namePluginA };
+      existingPackages = null;
       availablePackages = allAvailablePackages;
-      expectedPackages = new[] { new PackageIdentity(Constants.nameBricksPluginTypes, new NuGetVersion(Constants.versionBricksPluginTypes)),
-                                 new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version030)),
-                                 new PackageIdentity(Constants.namePluginB, new NuGetVersion(Constants.version031)) };
-      resolvedPackages = nuGetConnector.ResolveDependencies(requiredIds, availablePackages, default, out resolveSucceeded).ToArray();
+      expectedPackages = new[] { CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030) };
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
       Assert.IsTrue(resolveSucceeded);
       CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
 
-      requiredIds = new[] { Constants.namePluginB, Constants.namePluginA };
+      additionalPackages = new[] { Constants.namePluginA, Constants.namePluginA };
+      existingPackages = null;
       availablePackages = allAvailablePackages;
-      expectedPackages = new[] { new PackageIdentity(Constants.nameBricksPluginTypes, new NuGetVersion(Constants.versionBricksPluginTypes)),
-                                 new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version030)),
-                                 new PackageIdentity(Constants.namePluginB, new NuGetVersion(Constants.version031)) };
-      resolvedPackages = nuGetConnector.ResolveDependencies(requiredIds, availablePackages, default, out resolveSucceeded).ToArray();
+      expectedPackages = new[] { CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030) };
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
       Assert.IsTrue(resolveSucceeded);
       CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
 
-      requiredIds = new[] { Constants.namePluginA };
+      additionalPackages = new[] { Constants.namePluginB };
+      existingPackages = null;
       availablePackages = allAvailablePackages;
-      expectedPackages = new[] { new PackageIdentity(Constants.nameBricksPluginTypes, new NuGetVersion(Constants.versionBricksPluginTypes)),
-                                 new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version030)) };
-      resolvedPackages = nuGetConnector.ResolveDependencies(requiredIds, availablePackages, default, out resolveSucceeded).ToArray();
+      expectedPackages = new[] { CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version031) };
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
       Assert.IsTrue(resolveSucceeded);
       CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
 
-      requiredIds = new[] { Constants.namePluginB };
+      additionalPackages = new[] { Constants.namePluginA, Constants.namePluginB };
+      existingPackages = null;
+      availablePackages = allAvailablePackages;
+      expectedPackages = new[] { CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version031) };
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
+      Assert.IsTrue(resolveSucceeded);
+      CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
+      #endregion
+
+      #region input existing packages
+      additionalPackages = null;
+      existingPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version010) };
+      availablePackages = allAvailablePackages;
+      expectedPackages = new[] { CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version010) };
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
+      Assert.IsTrue(resolveSucceeded);
+      CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
+
+      additionalPackages = null;
+      existingPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version010_alpha1) };
+      availablePackages = allAvailablePackages;
+      expectedPackages = new[] { CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version010_alpha1) };
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
+      Assert.IsTrue(resolveSucceeded);
+      CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
+
+      additionalPackages = null;
+      existingPackages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version010) };
+      availablePackages = allAvailablePackages;
+      expectedPackages = new[] { CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version010) };
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
+      Assert.IsTrue(resolveSucceeded);
+      CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
+
+      additionalPackages = null;
+      existingPackages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version010_alpha1) };
+      availablePackages = allAvailablePackages;
+      expectedPackages = new[] { CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version010_alpha1) };
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
+      Assert.IsTrue(resolveSucceeded);
+      CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
+
+      additionalPackages = null;
+      existingPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version010),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version020) };
+      availablePackages = allAvailablePackages;
+      expectedPackages = new[] { CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version020) };
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
+      Assert.IsTrue(resolveSucceeded);
+      CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
+
+      additionalPackages = null;
+      existingPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version020),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version020) };
+      availablePackages = allAvailablePackages;
+      expectedPackages = new[] { CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version020),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version020) };
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
+      Assert.IsTrue(resolveSucceeded);
+      CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
+      #endregion
+
+      #region input additional packages and existing packages
+      additionalPackages = new[] { Constants.namePluginB };
+      existingPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version010) };
+      availablePackages = allAvailablePackages;
+      expectedPackages = new[] { CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version031) };
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
+      Assert.IsTrue(resolveSucceeded);
+      CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
+
+      additionalPackages = new[] { Constants.namePluginB };
+      existingPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version030_beta1) };
+      availablePackages = allAvailablePackages;
+      expectedPackages = new[] { CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version031) };
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
+      Assert.IsTrue(resolveSucceeded);
+      CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
+
+      additionalPackages = new[] { Constants.namePluginA };
+      existingPackages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version020) };
+      availablePackages = allAvailablePackages;
+      expectedPackages = new[] { CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version020) };
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
+      Assert.IsTrue(resolveSucceeded);
+      CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
+      #endregion
+
+      #region dependency resolution fails
+      #region additional packages are missing in available packages
+      additionalPackages = new[] { Constants.namePluginA };
+      existingPackages = null;
       availablePackages = allAvailablePackagesPluginB;
       expectedPackages = Array.Empty<PackageIdentity>();
-      resolvedPackages = nuGetConnector.ResolveDependencies(requiredIds, availablePackages, default, out resolveSucceeded).ToArray();
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
       Assert.IsFalse(resolveSucceeded);
       CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
 
-      requiredIds = new[] { Constants.namePluginA };
+      additionalPackages = null;
+      existingPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version010) };
       availablePackages = allAvailablePackagesPluginB;
       expectedPackages = Array.Empty<PackageIdentity>();
-      resolvedPackages = nuGetConnector.ResolveDependencies(requiredIds, availablePackages, default, out resolveSucceeded).ToArray();
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
+      Assert.IsFalse(resolveSucceeded);
+      CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
+      #endregion
+
+      #region dependencies are missing in available packages
+      additionalPackages = new[] { Constants.namePluginB };
+      existingPackages = null;
+      availablePackages = allAvailablePackagesPluginB;
+      expectedPackages = Array.Empty<PackageIdentity>();
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
       Assert.IsFalse(resolveSucceeded);
       CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
 
-      requiredIds = null;
+      additionalPackages = null;
+      existingPackages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version010) };
+      availablePackages = allAvailablePackagesPluginB;
+      expectedPackages = Array.Empty<PackageIdentity>();
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
+      Assert.IsFalse(resolveSucceeded);
+      CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
+      #endregion
+      #endregion
+
+      #region invalid parameters
+      additionalPackages = null;
+      existingPackages = null;
       availablePackages = allAvailablePackages;
-      argumentNullException = Assert.ThrowsException<ArgumentNullException>(() => { return nuGetConnector.ResolveDependencies(requiredIds, availablePackages, default, out resolveSucceeded); });
+      argumentNullException = Assert.ThrowsException<ArgumentNullException>(() => { return nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
 
-      requiredIds = new[] { Constants.namePluginA, null };
+      additionalPackages = new[] { Constants.namePluginA, null };
+      existingPackages = null;
       availablePackages = allAvailablePackages;
-      argumentException = Assert.ThrowsException<ArgumentException>(() => { return nuGetConnector.ResolveDependencies(requiredIds, availablePackages, default, out resolveSucceeded); });
-      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
+      argumentException = Assert.ThrowsException<ArgumentException>(() => { return nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
-      requiredIds = new[] { Constants.namePluginA, "" };
+      additionalPackages = new[] { Constants.namePluginA, "" };
+      existingPackages = null;
       availablePackages = allAvailablePackages;
-      argumentException = Assert.ThrowsException<ArgumentException>(() => { return nuGetConnector.ResolveDependencies(requiredIds, availablePackages, default, out resolveSucceeded); });
-      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
+      argumentException = Assert.ThrowsException<ArgumentException>(() => { return nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
-      requiredIds = new[] { Constants.namePluginA };
+      additionalPackages = null;
+      existingPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version010), null };
+      availablePackages = allAvailablePackages;
+      argumentException = Assert.ThrowsException<ArgumentException>(() => { return nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      additionalPackages = null;
+      existingPackages = new[] { CreatePackageIdentity("", Constants.version010) };
+      availablePackages = allAvailablePackages;
+      argumentException = Assert.ThrowsException<ArgumentException>(() => { return nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      additionalPackages = null;
+      existingPackages = new[] { CreatePackageIdentity(Constants.namePluginA, null) };
+      availablePackages = allAvailablePackages;
+      argumentException = Assert.ThrowsException<ArgumentException>(() => { return nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      additionalPackages = null;
+      existingPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version010),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version020) };
+      availablePackages = allAvailablePackages;
+      argumentException = Assert.ThrowsException<ArgumentException>(() => { return nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      additionalPackages = new[] { Constants.namePluginA };
+      existingPackages = null;
       availablePackages = null;
-      argumentNullException = Assert.ThrowsException<ArgumentNullException>(() => { return nuGetConnector.ResolveDependencies(requiredIds, availablePackages, default, out resolveSucceeded); });
-      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+      argumentNullException = Assert.ThrowsException<ArgumentNullException>(() => { return nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
 
-      requiredIds = new[] { Constants.namePluginA };
+      additionalPackages = new[] { Constants.namePluginA };
+      existingPackages = null;
       availablePackages = allAvailablePackages.Append(null).ToArray();
-      argumentException = Assert.ThrowsException<ArgumentException>(() => { return nuGetConnector.ResolveDependencies(requiredIds, availablePackages, default, out resolveSucceeded); });
+      argumentException = Assert.ThrowsException<ArgumentException>(() => { return nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+      #endregion
 
       WriteLogToTestContextAndClear(nuGetConnector);
     }
@@ -659,43 +814,43 @@ namespace HEAL.Bricks.Tests {
       ArgumentNullException argumentNullException;
       ArgumentException argumentException;
 
-      package = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version010_alpha1));
+      package = CreatePackageIdentity(Constants.namePluginA, Constants.version010_alpha1);
       using (foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default)) {
         Assert.IsNotNull(foundPackageDownloader);
         Assert.AreEqual(package, await foundPackageDownloader.CoreReader.GetIdentityAsync(default));
         Assert.AreEqual(remoteOfficialRepository, foundPackageDownloader.Source);
       }
 
-      package = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version010));
+      package = CreatePackageIdentity(Constants.namePluginA, Constants.version010);
       using (foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default)) {
         Assert.IsNotNull(foundPackageDownloader);
         Assert.AreEqual(package, await foundPackageDownloader.CoreReader.GetIdentityAsync(default));
         Assert.AreEqual(remoteOfficialRepository, foundPackageDownloader.Source);
       }
 
-      package = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version030_beta1));
+      package = CreatePackageIdentity(Constants.namePluginA, Constants.version030_beta1);
       using (foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default)) {
         Assert.IsNotNull(foundPackageDownloader);
         Assert.AreEqual(package, await foundPackageDownloader.CoreReader.GetIdentityAsync(default));
         Assert.AreEqual(remoteDevRepository, foundPackageDownloader.Source);
       }
 
-      package = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version030));
+      package = CreatePackageIdentity(Constants.namePluginA, Constants.version030);
       using (foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default)) {
         Assert.IsNotNull(foundPackageDownloader);
         Assert.AreEqual(package, await foundPackageDownloader.CoreReader.GetIdentityAsync(default));
         Assert.AreEqual(remoteDevRepository, foundPackageDownloader.Source);
       }
 
-      package = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version000));
+      package = CreatePackageIdentity(Constants.namePluginA, Constants.version000);
       foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default);
       Assert.IsNull(foundPackageDownloader);
 
-      package = new PackageIdentity(Constants.nameInvalid, new NuGetVersion(Constants.version010));
+      package = CreatePackageIdentity(Constants.nameInvalid, Constants.version010);
       foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default);
       Assert.IsNull(foundPackageDownloader);
 
-      package = new PackageIdentity(Constants.nameInvalid, new NuGetVersion(Constants.version000));
+      package = CreatePackageIdentity(Constants.nameInvalid, Constants.version000);
       foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default);
       Assert.IsNull(foundPackageDownloader);
 
@@ -703,11 +858,11 @@ namespace HEAL.Bricks.Tests {
       argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.GetPackageDownloaderAsync(package, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
 
-      package = new PackageIdentity("", new NuGetVersion(Constants.version000));
+      package = CreatePackageIdentity("", Constants.version000);
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDownloaderAsync(package, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
-      package = new PackageIdentity(Constants.namePluginA, null);
+      package = CreatePackageIdentity(Constants.namePluginA, null);
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDownloaderAsync(package, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
@@ -724,22 +879,22 @@ namespace HEAL.Bricks.Tests {
       ArgumentNullException argumentNullException;
       ArgumentException argumentException;
 
-      identity = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version020));
+      identity = CreatePackageIdentity(Constants.namePluginA, Constants.version020);
       package = (await nuGetConnector.GetPackageDependenciesAsync(identity, false, default)).Single();
       await nuGetConnector.InstallPackageAsync(package, default);
       Assert.IsTrue(Directory.Exists(Path.Combine(nuGetConnector.Settings.PackagesPath, identity.ToString())));
 
-      identity = new PackageIdentity(Constants.namePluginA, new NuGetVersion(Constants.version020));
+      identity = CreatePackageIdentity(Constants.namePluginA, Constants.version020);
       package = (await nuGetConnector.GetPackageDependenciesAsync(identity, false, default)).Single();
       await nuGetConnector.InstallPackageAsync(package, default);
       Assert.IsTrue(Directory.Exists(Path.Combine(nuGetConnector.Settings.PackagesPath, identity.ToString())));
 
-      identity = new PackageIdentity(Constants.namePluginB, new NuGetVersion(Constants.version031));
+      identity = CreatePackageIdentity(Constants.namePluginB, Constants.version031);
       package = (await nuGetConnector.GetPackageDependenciesAsync(identity, false, default)).Single();
       await nuGetConnector.InstallPackageAsync(package, default);
       Assert.IsTrue(Directory.Exists(Path.Combine(nuGetConnector.Settings.PackagesPath, identity.ToString())));
 
-      identity = new PackageIdentity("SimSharp", new NuGetVersion("3.3.0"));
+      identity = CreatePackageIdentity("SimSharp", "3.3.0");
       package = (await nuGetConnector.GetPackageDependenciesAsync(identity, false, default)).Single();
       await nuGetConnector.InstallPackageAsync(package, default);
       Assert.IsTrue(Directory.Exists(Path.Combine(nuGetConnector.Settings.PackagesPath, identity.ToString())));

@@ -5,13 +5,8 @@
  */
 #endregion
 
-using NuGet.Packaging;
 using NuGet.Packaging.Core;
-using NuGet.Protocol.Core.Types;
-using NuGet.Versioning;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace HEAL.Bricks {
   public sealed class PackageInfoIdentityComparer : IEqualityComparer<PackageInfo>, IComparer<PackageInfo> {
@@ -20,13 +15,13 @@ namespace HEAL.Bricks {
     public static PackageInfoIdentityComparer Default => new PackageInfoIdentityComparer();
 
     public bool Equals(PackageInfo x, PackageInfo y) {
-      return nuGetPackageIdentityComparer.Equals(x.nuspecReader.GetIdentity(), y.nuspecReader.GetIdentity());
+      return nuGetPackageIdentityComparer.Equals(x.packageIdentity, y.packageIdentity);
     }
     public int GetHashCode(PackageInfo obj) {
-      return obj.nuspecReader.GetIdentity().GetHashCode();
+      return obj.packageIdentity.GetHashCode();
     }
     public int Compare(PackageInfo x, PackageInfo y) {
-      return nuGetPackageIdentityComparer.Compare(x.nuspecReader.GetIdentity(), y.nuspecReader.GetIdentity());
+      return nuGetPackageIdentityComparer.Compare(x.packageIdentity, y.packageIdentity);
     }
   }
 }

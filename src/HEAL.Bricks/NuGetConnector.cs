@@ -9,6 +9,7 @@ using NuGet.Common;
 using NuGet.Frameworks;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
+using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 using NuGet.Protocol.Core.Types;
 using NuGet.Resolver;
 using System;
@@ -129,6 +130,10 @@ namespace HEAL.Bricks {
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
 
         async Task ResolvePackageDependenciesAsync(PackageIdentity id) {
+          if (id == null) throw new ArgumentNullException(nameof(id));
+          if (string.IsNullOrEmpty(id.Id)) throw new ArgumentException($"{nameof(id)}.Id is null or empty.", nameof(id));
+          if (!id.HasVersion) throw new ArgumentException($"{nameof(id)} has no version.", nameof(id));
+
           if (resolvedDependencies.Contains(id)) return;
           foreach (SourceRepository sourceRepository in Repositories) {
             DependencyInfoResource dependencyInfoResource = await sourceRepository.GetResourceAsync<DependencyInfoResource>(cancellationToken);
@@ -136,13 +141,14 @@ namespace HEAL.Bricks {
             if (dependencies != null) {
               resolvedDependencies.Add(dependencies);
               if (resolveDependenciesRecursively) {
-                foreach (NuGet.Packaging.Core.PackageDependency dependency in dependencies.Dependencies) {
+                foreach (NuGetPackageDependency dependency in dependencies.Dependencies) {
                   await ResolvePackageDependenciesAsync(new PackageIdentity(dependency.Id, dependency.VersionRange.MinVersion));
                 }
               }
               return;
             }
           }
+          throw new InvalidOperationException($"Dependencies of package {id.ToString()} not found.");
         };
 
         foreach (PackageIdentity identity in identities) {
@@ -152,17 +158,23 @@ namespace HEAL.Bricks {
       return resolvedDependencies.ToArray();
     }
 
-    public IEnumerable<SourcePackageDependencyInfo> ResolveDependencies(IEnumerable<string> requiredIds, IEnumerable<SourcePackageDependencyInfo> availablePackages, CancellationToken cancellationToken, out bool resolveSucceeded) {
-      if (requiredIds == null) throw new ArgumentNullException(nameof(requiredIds));
-      if (requiredIds.Any(x => string.IsNullOrEmpty(x))) throw new ArgumentException($"{nameof(requiredIds)} contains elements which are null or empty.", nameof(requiredIds));
+    public IEnumerable<SourcePackageDependencyInfo> ResolveDependencies(IEnumerable<string> additionalPackages, IEnumerable<PackageIdentity> existingPackages, IEnumerable<SourcePackageDependencyInfo> availablePackages, CancellationToken cancellationToken, out bool resolveSucceeded) {
+      if ((additionalPackages == null) && (existingPackages == null)) throw new ArgumentNullException(nameof(additionalPackages) + ", " + nameof(existingPackages));
+      if (additionalPackages == null) additionalPackages = Enumerable.Empty<string>();
+      if (additionalPackages.Any(x => string.IsNullOrEmpty(x))) throw new ArgumentException($"{nameof(additionalPackages)} contains elements which are null or empty.", nameof(additionalPackages));
+      if (existingPackages == null) existingPackages = Enumerable.Empty<PackageIdentity>();
+      if (existingPackages.Any(x => x == null)) throw new ArgumentException($"{nameof(existingPackages)} contains elements which are null.", nameof(existingPackages));
+      if (existingPackages.Any(x => string.IsNullOrEmpty(x.Id))) throw new ArgumentException($"{nameof(existingPackages)} contains elements whose Id is null or empty.", nameof(existingPackages));
+      if (existingPackages.Any(x => !x.HasVersion)) throw new ArgumentException($"{nameof(existingPackages)} contains elements which have no version.", nameof(existingPackages));
+      if (existingPackages.GroupBy(x => x.Id).Any(x => x.Count() > 1)) throw new ArgumentException($"{nameof(existingPackages)} contains elements which have the same Id.", nameof(existingPackages));
       if (availablePackages == null) throw new ArgumentNullException(nameof(availablePackages));
       if (availablePackages.Any(x => x == null)) throw new ArgumentException($"{nameof(availablePackages)} contains elements which are null.", nameof(availablePackages));
 
       PackageResolverContext context = new PackageResolverContext(DependencyBehavior.Highest,
-                                                                  requiredIds,
-                                                                  Enumerable.Empty<string>(),
+                                                                  additionalPackages,
+                                                                  existingPackages.Select(x => x.Id),
                                                                   Enumerable.Empty<PackageReference>(),
-                                                                  Enumerable.Empty<PackageIdentity>(),
+                                                                  existingPackages,
                                                                   availablePackages,
                                                                   Repositories.Select(x => x.PackageSource),
                                                                   logger);
