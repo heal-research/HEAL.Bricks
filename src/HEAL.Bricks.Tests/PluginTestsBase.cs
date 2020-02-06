@@ -103,7 +103,7 @@ namespace HEAL.Bricks.Tests {
       return new PackageIdentity(id, version != null ? new NuGetVersion(version) : null);
     }
     private protected NuGetPackageDependency CreateNuGetPackageDependency(string id, string minVersion) {
-      return new NuGetPackageDependency(id, new VersionRange(new NuGetVersion(minVersion)));
+      return new NuGetPackageDependency(id, new VersionRange(minVersion != null ? new NuGetVersion(minVersion) : null));
     }
 
     private protected void WriteLogToTestContextAndClear(NuGetConnector nuGetConnector, string header = null) {

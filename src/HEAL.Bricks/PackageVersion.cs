@@ -23,6 +23,9 @@ namespace HEAL.Bricks {
     }
 
     public override string ToString() {
+      return nuGetVersion.ToString();
+    }
+    public string ToFullString() {
       return nuGetVersion.ToFullString();
     }
     public bool Equals(PackageVersion other) {

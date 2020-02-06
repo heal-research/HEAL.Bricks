@@ -58,6 +58,7 @@ namespace HEAL.Bricks {
         foreach (PackageFolderReader packageReader in packageReaders) packageReader.Dispose();
       }
     }
+
     public async Task<IEnumerable<RemotePackageInfo>> ResolveMissingDependenciesAsync(CancellationToken cancellationToken = default) {
       if (Status == PluginManagerStatus.Uninitialized) Initialize();
 
@@ -72,10 +73,33 @@ namespace HEAL.Bricks {
       IEnumerable<SourcePackageDependencyInfo> missingDependencies = resolvedDependencies.Where(x => !InstalledPackages.Any(y => x.Equals(y.nuspecReader.GetIdentity())));
       return missingDependencies.Select(x => new RemotePackageInfo(x));
     }
+    public async Task<IEnumerable<RemotePackageInfo>> InstallMissingDependenciesAsync(CancellationToken cancellationToken = default) {
+      if (Status == PluginManagerStatus.Uninitialized) Initialize();
+
+      IEnumerable<RemotePackageInfo> missingPackages = (await ResolveMissingDependenciesAsync(cancellationToken)).ToArray();
+      if (missingPackages.Count() > 0) {
+        foreach (RemotePackageInfo missingPackage in missingPackages) {
+          await nuGetConnector.InstallPackageAsync(missingPackage.sourcePackageDependencyInfo, cancellationToken);
+        }
+        Initialize();
+      }
+      return missingPackages;
+    }
+
     public async Task InstallRemotePackageAsync(RemotePackageInfo package, CancellationToken cancellationToken = default) {
       if (package == null) throw new ArgumentNullException(nameof(package));
 
       await nuGetConnector.InstallPackageAsync(package.sourcePackageDependencyInfo, cancellationToken);
+      Initialize();
+      await InstallMissingDependenciesAsync(cancellationToken);
+    }
+
+    public void RemoveInstalledPackage(LocalPackageInfo package) {
+      if (package == null) throw new ArgumentNullException(nameof(package));
+      if (string.IsNullOrEmpty(package.Path)) throw new ArgumentException($"{nameof(package)}.Path is null or empty.", nameof(package));
+
+      Directory.Delete(package.Path, true);
+      Initialize();
     }
 
     #region Helpers

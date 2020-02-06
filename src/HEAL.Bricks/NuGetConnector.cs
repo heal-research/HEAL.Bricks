@@ -49,6 +49,7 @@ namespace HEAL.Bricks {
       return (logger as NuGetLogger)?.GetLog() ?? Array.Empty<string>();
     }
 
+    #region GetPackageAsync, GetPackagesAsync, SearchPackagesAsync
     public async Task<IPackageSearchMetadata> GetPackageAsync(PackageIdentity identity, CancellationToken cancellationToken) {
       if (identity == null) throw new ArgumentNullException(nameof(identity));
       if (string.IsNullOrEmpty(identity.Id)) throw new ArgumentException($"{nameof(identity)}.Id is null or empty.", nameof(identity));
@@ -56,6 +57,7 @@ namespace HEAL.Bricks {
 
       return (await GetPackagesAsync(Enumerable.Repeat(identity, 1), cancellationToken)).SingleOrDefault();
     }
+
     public async Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(IEnumerable<PackageIdentity> identities, CancellationToken cancellationToken) {
       if (identities == null) throw new ArgumentNullException(nameof(identities));
       if (identities.Any(x => x == null)) throw new ArgumentException($"{nameof(identities)} contains null elements.", nameof(identities));
@@ -112,52 +114,86 @@ namespace HEAL.Bricks {
       }
       return packages.Distinct(PackageSearchMetadataComparer.Default).OrderBy(x => x, PackageSearchMetadataComparer.Default).ToArray();
     }
+    #endregion
 
-    public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(PackageIdentity identity, bool resolveDependenciesRecursively, CancellationToken cancellationToken) {
+    #region GetPackageDependenciesAsync
+    public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(PackageIdentity identity, bool getDependenciesRecursively, CancellationToken cancellationToken) {
       if (identity == null) throw new ArgumentNullException(nameof(identity));
       if (string.IsNullOrEmpty(identity.Id)) throw new ArgumentException($"{nameof(identity)}.Id is null or empty.", nameof(identity));
       if (!identity.HasVersion) throw new ArgumentException($"{nameof(identity)} has no version.", nameof(identity));
 
-      return await GetPackageDependenciesAsync(Enumerable.Repeat(identity, 1), resolveDependenciesRecursively, cancellationToken);
+      return await GetPackageDependenciesAsync(Enumerable.Repeat(identity, 1), getDependenciesRecursively, cancellationToken);
     }
-    public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(IEnumerable<PackageIdentity> identities, bool resolveDependenciesRecursively, CancellationToken cancellationToken) {
+    public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(IEnumerable<PackageIdentity> identities, bool getDependenciesRecursively, CancellationToken cancellationToken) {
       if (identities == null) throw new ArgumentNullException(nameof(identities));
       if (identities.Any(x => x == null)) throw new ArgumentException($"{nameof(identities)} contains null elements.", nameof(identities));
       if (identities.Any(x => string.IsNullOrEmpty(x.Id))) throw new ArgumentException($"{nameof(identities)} contains elements whose Id is null or empty.", nameof(identities));
       if (identities.Any(x => !x.HasVersion)) throw new ArgumentException($"{nameof(identities)} contains elements which have no version.", nameof(identities));
 
-      HashSet<SourcePackageDependencyInfo> resolvedDependencies = new HashSet<SourcePackageDependencyInfo>(PackageIdentityComparer.Default);
+      HashSet<SourcePackageDependencyInfo> foundDependencies = new HashSet<SourcePackageDependencyInfo>(PackageIdentityComparer.Default);
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
+        foreach (PackageIdentity identity in identities) {
+          if (foundDependencies.Contains(identity)) continue;
 
-        async Task ResolvePackageDependenciesAsync(PackageIdentity id) {
-          if (id == null) throw new ArgumentNullException(nameof(id));
-          if (string.IsNullOrEmpty(id.Id)) throw new ArgumentException($"{nameof(id)}.Id is null or empty.", nameof(id));
-          if (!id.HasVersion) throw new ArgumentException($"{nameof(id)} has no version.", nameof(id));
-
-          if (resolvedDependencies.Contains(id)) return;
+          bool found = false;
           foreach (SourceRepository sourceRepository in Repositories) {
             DependencyInfoResource dependencyInfoResource = await sourceRepository.GetResourceAsync<DependencyInfoResource>(cancellationToken);
-            SourcePackageDependencyInfo dependencies = await dependencyInfoResource.ResolvePackage(id, CurrentFramework, cacheContext, logger, cancellationToken);
-            if (dependencies != null) {
-              resolvedDependencies.Add(dependencies);
-              if (resolveDependenciesRecursively) {
-                foreach (NuGetPackageDependency dependency in dependencies.Dependencies) {
-                  await ResolvePackageDependenciesAsync(new PackageIdentity(dependency.Id, dependency.VersionRange.MinVersion));
-                }
-              }
-              return;
+            SourcePackageDependencyInfo dependency = await dependencyInfoResource.ResolvePackage(identity, CurrentFramework, cacheContext, logger, cancellationToken);
+            if (dependency != null) {
+              foundDependencies.Add(dependency);
+              if (getDependenciesRecursively)
+                await GetPackageDependenciesAsync(dependency.Dependencies, getDependenciesRecursively, foundDependencies, cacheContext, cancellationToken);
+              found = true;
+              break;
             }
           }
-          throw new InvalidOperationException($"Dependencies of package {id.ToString()} not found.");
-        };
-
-        foreach (PackageIdentity identity in identities) {
-          await ResolvePackageDependenciesAsync(identity);
+          if (!found) throw new InvalidOperationException($"Dependencies of package {identity.ToString()} not found.");
         }
       }
-      return resolvedDependencies.ToArray();
+      return foundDependencies.ToArray();
     }
+    public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(NuGetPackageDependency dependency, bool getDependenciesRecursively, CancellationToken cancellationToken) {
+      if (dependency == null) throw new ArgumentNullException(nameof(dependency));
 
+      return await GetPackageDependenciesAsync(Enumerable.Repeat(dependency, 1), getDependenciesRecursively, cancellationToken);
+    }
+    public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(IEnumerable<NuGetPackageDependency> dependencies, bool getDependenciesRecursively, CancellationToken cancellationToken) {
+      if (dependencies == null) throw new ArgumentNullException(nameof(dependencies));
+      if (dependencies.Any(x => x == null)) throw new ArgumentException($"{nameof(dependencies)} contains null elements.", nameof(dependencies));
+
+      HashSet<SourcePackageDependencyInfo> foundDependencies = new HashSet<SourcePackageDependencyInfo>(PackageIdentityComparer.Default);
+      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
+        await GetPackageDependenciesAsync(dependencies, getDependenciesRecursively, foundDependencies, cacheContext, cancellationToken);
+      }
+      return foundDependencies.ToArray();
+    }
+    private async Task GetPackageDependenciesAsync(IEnumerable<NuGetPackageDependency> dependencies, bool getDependenciesRecursively, HashSet<SourcePackageDependencyInfo> foundDependencies, SourceCacheContext cacheContext, CancellationToken cancellationToken) {
+      if (dependencies == null) throw new ArgumentNullException(nameof(dependencies));
+      if (dependencies.Any(x => x == null)) throw new ArgumentException($"{nameof(dependencies)} contains null elements.", nameof(dependencies));
+      if (foundDependencies == null) throw new ArgumentNullException(nameof(foundDependencies));
+      if (cacheContext == null) throw new ArgumentNullException(nameof(cacheContext));
+
+      foreach (NuGetPackageDependency dependency in dependencies) {
+        HashSet<SourcePackageDependencyInfo> satisfyingPackages = new HashSet<SourcePackageDependencyInfo>(PackageIdentityComparer.Default);
+        foreach (SourceRepository sourceRepository in Repositories) {
+          // find all satisfying packages
+          DependencyInfoResource dependencyInfoResource = await sourceRepository.GetResourceAsync<DependencyInfoResource>(cancellationToken);
+          satisfyingPackages.AddRange((await dependencyInfoResource.ResolvePackages(dependency.Id, CurrentFramework, cacheContext, logger, cancellationToken)).Where(x => dependency.VersionRange.Satisfies(x.Version)));
+        }
+        if (satisfyingPackages.Count() == 0) throw new InvalidOperationException($"No packages found which satisfy dependency {dependencies.ToString()}.");
+
+        foreach (SourcePackageDependencyInfo package in satisfyingPackages) {
+          if (!foundDependencies.Contains(package)) {
+            foundDependencies.Add(package);
+            if (getDependenciesRecursively)
+              await GetPackageDependenciesAsync(package.Dependencies, getDependenciesRecursively, foundDependencies, cacheContext, cancellationToken);
+          }
+        }
+      }
+    }
+    #endregion
+
+    #region ResolveDependencies
     public IEnumerable<SourcePackageDependencyInfo> ResolveDependencies(IEnumerable<string> additionalPackages, IEnumerable<PackageIdentity> existingPackages, IEnumerable<SourcePackageDependencyInfo> availablePackages, CancellationToken cancellationToken, out bool resolveSucceeded) {
       if ((additionalPackages == null) && (existingPackages == null)) throw new ArgumentNullException(nameof(additionalPackages) + ", " + nameof(existingPackages));
       if (additionalPackages == null) additionalPackages = Enumerable.Empty<string>();
@@ -191,7 +227,9 @@ namespace HEAL.Bricks {
       resolveSucceeded = true;
       return resolvedDependencies;
     }
+    #endregion
 
+    #region GetInstalledPackages, GetPackageDownloaderAsync, InstallPackageAsync
     public IEnumerable<PackageFolderReader> GetInstalledPackages() {
       return Directory.GetDirectories(Settings.PackagesPath).Select(x => new PackageFolderReader(x));
     }
@@ -229,6 +267,7 @@ namespace HEAL.Bricks {
         }
       }
     }
+    #endregion
 
     #region Helpers
     private static NuGetFramework GetCurrentFramework() {

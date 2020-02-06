@@ -11,6 +11,7 @@ using NuGet.Packaging.Core;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -73,7 +74,7 @@ namespace HEAL.Bricks.Tests {
       PackageIdentity[] expectedPackages;
       RemotePackageInfo[] missingPackages;
 
-      expectedPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version020) };
+      expectedPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version030) };
       missingPackages = (await pluginManager.ResolveMissingDependenciesAsync()).ToArray();
       CollectionAssert.AreEqual(expectedPackages, missingPackages, PackageInfoComparer.Default);
 
@@ -81,38 +82,37 @@ namespace HEAL.Bricks.Tests {
     }
     #endregion
 
-    #region TestDownloadMissingDependenciesAsync
-    /*[TestMethod]
-    [TestCategory("WIP")]
-    public async Task TestDownloadMissingDependenciesAsync() {
+    #region TestInstallMissingDependenciesAsync
+    [TestMethod]
+    public async Task TestInstallMissingDependenciesAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager("HEALBricksPlugin", nuGetConnector);
+      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PackageIdentity[] expectedPackages;
+      RemotePackageInfo[] installedPackages;
 
-      IEnumerable<RemotePackageInfo> missingDependencies = await pluginManager.ResolveMissingDependenciesAsync();
-
-      foreach (var missingDependency in missingDependencies) {
-        await pluginManager.InstallRemotePackageAsync(missingDependency);
-      }
+      expectedPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version030) };
+      installedPackages = (await pluginManager.InstallMissingDependenciesAsync()).ToArray();
+      CollectionAssert.AreEqual(expectedPackages, installedPackages, PackageInfoComparer.Default);
+      Assert.IsTrue(Directory.Exists(Path.Combine(pluginManager.Settings.PackagesPath, Constants.namePluginA + "." + Constants.version030)));
 
       WriteLogToTestContextAndClear(nuGetConnector);
-      Assert.Fail("This unit test is incomplete and is still work in progress.");
-    }*/
+    }
     #endregion
 
-    #region TestInstallPackagesAsync
-    /*[TestMethod]
-    [TestCategory("WIP")]
-    public async Task TestInstallPackagesAsync() {
+    #region TestRemoveInstalledPackage
+    [TestMethod]
+    public void TestRemoveInstalledPackage() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager("HEALBricksPlugin", nuGetConnector);
+      PluginManager pluginManager = new PluginManager(nuGetConnector);
 
-      await pluginManager.InitializeAsync();
-      await pluginManager.ResolveMissingDependenciesAsync();
-      await pluginManager.InstallPackagesAsync();
+      pluginManager.Initialize();
+      LocalPackageInfo package = pluginManager.InstalledPackages.First();
+      pluginManager.RemoveInstalledPackage(package);
+      Assert.IsFalse(pluginManager.InstalledPackages.Contains(package, PackageInfoIdentityComparer.Default));
+      Assert.IsFalse(Directory.Exists(Path.Combine(pluginManager.Settings.PackagesPath, package.Id + "." + package.Version.ToString())));
 
       WriteLogToTestContextAndClear(nuGetConnector);
-      Assert.Fail("This unit test is incomplete and is still work in progress.");
-    }*/
+    }
     #endregion
 
     #region Helpers

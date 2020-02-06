@@ -331,7 +331,9 @@ namespace HEAL.Bricks.Tests {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
       PackageIdentity package;
       PackageIdentity[] packages;
-      bool resolveDependenciesRecursively;
+      NuGetPackageDependency dependency;
+      NuGetPackageDependency[] dependencies;
+      bool getDependenciesRecursively;
       PackageIdentity[] expectedPackages;
       NuGetPackageDependency[][] expectedDependencies;
       SourcePackageDependencyInfo[] foundPackages;
@@ -344,19 +346,19 @@ namespace HEAL.Bricks.Tests {
       #region single package as input
       #region PluginB 0.3.1, non-recursive
       package = CreatePackageIdentity(Constants.namePluginB, Constants.version031);
-      resolveDependenciesRecursively = false;
+      getDependenciesRecursively = false;
       // expected dependencies: PluginB 0.3.1 -> PluginA [0.3.0, )
       expectedPackages = new[] { package };
       expectedDependencies = new[] { new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030) } };
       sw.Restart();
-      foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default)).ToArray();
+      foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, getDependenciesRecursively, default)).ToArray();
       sw.Stop();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
       for (int i = 0; i < foundPackages.Length; i++) {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
       }
-      TestContext.WriteLine($"{(resolveDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package.ToString()}");
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package.ToString()}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
       WriteLogToTestContextAndClear(nuGetConnector);
       TestContext.WriteLine("");
@@ -364,7 +366,7 @@ namespace HEAL.Bricks.Tests {
 
       #region PluginB 0.3.1, recursive
       package = CreatePackageIdentity(Constants.namePluginB, Constants.version031);
-      resolveDependenciesRecursively = true;
+      getDependenciesRecursively = true;
       // expected dependencies: PluginB 0.3.1 -> PluginA [0.3.0, )
       //                        PluginA 0.3.0 -> PluginTypes
       //                        PluginTypes   -> no dependencies
@@ -375,14 +377,14 @@ namespace HEAL.Bricks.Tests {
                                      new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
                                      Array.Empty<NuGetPackageDependency>() };
       sw.Restart();
-      foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default)).ToArray();
+      foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, getDependenciesRecursively, default)).ToArray();
       sw.Stop();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
       for (int i = 0; i < foundPackages.Length; i++) {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
       }
-      TestContext.WriteLine($"{(resolveDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package.ToString()}");
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package.ToString()}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
       WriteLogToTestContextAndClear(nuGetConnector);
       TestContext.WriteLine("");
@@ -390,21 +392,21 @@ namespace HEAL.Bricks.Tests {
 
       #region System.Collections 4.3.0, non-recursive
       package = CreatePackageIdentity(Constants.nameCollections, Constants.versionCollections);
-      resolveDependenciesRecursively = false;
+      getDependenciesRecursively = false;
       // expected dependencies: System.Collections 4.3.0 -> Microsoft.NETCore.Targets [1.1.0, ), System.Runtime [4.3.0, ), Microsoft.NETCore.Platforms [1.1.0, )
       expectedPackages = new[] { package };
       expectedDependencies = new[] { new[] { CreateNuGetPackageDependency("Microsoft.NETCore.Targets", "1.1.0"),
                                              CreateNuGetPackageDependency("System.Runtime", "4.3.0"),
                                              CreateNuGetPackageDependency("Microsoft.NETCore.Platforms", "1.1.0") } };
       sw.Restart();
-      foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default)).ToArray();
+      foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, getDependenciesRecursively, default)).ToArray();
       sw.Stop();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
       for (int i = 0; i < foundPackages.Length; i++) {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
       }
-      TestContext.WriteLine($"{(resolveDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package.ToString()}");
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package.ToString()}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
       WriteLogToTestContextAndClear(nuGetConnector);
       TestContext.WriteLine("");
@@ -412,53 +414,37 @@ namespace HEAL.Bricks.Tests {
 
       #region System.Collections 4.3.0, recursive
       package = CreatePackageIdentity(Constants.nameCollections, Constants.versionCollections);
-      resolveDependenciesRecursively = true;
-      // expected dependencies: System.Collections 4.3.0          -> Microsoft.NETCore.Targets [1.1.0, ), System.Runtime [4.3.0, ), Microsoft.NETCore.Platforms [1.1.0, )
-      //                        Microsoft.NETCore.Targets 1.1.0   -> no dependencies
-      //                        System.Runtime 4.3.0              -> Microsoft.NETCore.Targets [1.1.0, ), Microsoft.NETCore.Platforms [1.1.0, )
-      //                        Microsoft.NETCore.Platforms 1.1.0 -> no dependencies
-      expectedPackages = new[] { package,
-                                 CreatePackageIdentity("Microsoft.NETCore.Targets", "1.1.0"),
-                                 CreatePackageIdentity("System.Runtime", "4.3.0"),
-                                 CreatePackageIdentity("Microsoft.NETCore.Platforms", "1.1.0") };
-      expectedDependencies = new[] { new[] { CreateNuGetPackageDependency("Microsoft.NETCore.Targets", "1.1.0"),
-                                             CreateNuGetPackageDependency("System.Runtime", "4.3.0"),
-                                             CreateNuGetPackageDependency("Microsoft.NETCore.Platforms", "1.1.0") },
-                                     Array.Empty<NuGetPackageDependency>(),
-                                     new[] { CreateNuGetPackageDependency("Microsoft.NETCore.Targets", "1.1.0"),
-                                             CreateNuGetPackageDependency("Microsoft.NETCore.Platforms", "1.1.0") },
-                                     Array.Empty<NuGetPackageDependency>() };
+      getDependenciesRecursively = true;
+      // dependencies: System.Collections 4.3.0          -> Microsoft.NETCore.Targets [1.1.0, ), System.Runtime [4.3.0, ), Microsoft.NETCore.Platforms [1.1.0, )
+      //               Microsoft.NETCore.Targets 1.1.0   -> no dependencies
+      //               System.Runtime 4.3.0              -> Microsoft.NETCore.Targets [1.1.0, ), Microsoft.NETCore.Platforms [1.1.0, )
+      //               Microsoft.NETCore.Platforms 1.1.0 -> no dependencies
       sw.Restart();
-      foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default)).ToArray();
+      foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, getDependenciesRecursively, default)).ToArray();
       sw.Stop();
-      CollectionAssert.AreEqual(expectedPackages, foundPackages);
-      for (int i = 0; i < foundPackages.Length; i++) {
-        foundDependencies = foundPackages[i].Dependencies.ToArray();
-        CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
-      }
-      TestContext.WriteLine($"{(resolveDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package.ToString()}");
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package.ToString()}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
       WriteLogToTestContextAndClear(nuGetConnector);
       TestContext.WriteLine("");
       #endregion
 
       package = CreatePackageIdentity(Constants.nameInvalid, Constants.version000);
-      resolveDependenciesRecursively = true;
-      await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => { return nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default); });
+      getDependenciesRecursively = true;
+      await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => { return nuGetConnector.GetPackageDependenciesAsync(package, getDependenciesRecursively, default); });
 
       package = null;
-      resolveDependenciesRecursively = false;
-      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default); });
+      getDependenciesRecursively = false;
+      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.GetPackageDependenciesAsync(package, getDependenciesRecursively, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
 
       package = CreatePackageIdentity("", Constants.version000);
-      resolveDependenciesRecursively = false;
-      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default); });
+      getDependenciesRecursively = false;
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDependenciesAsync(package, getDependenciesRecursively, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
       package = CreatePackageIdentity(Constants.namePluginA, null);
-      resolveDependenciesRecursively = false;
-      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDependenciesAsync(package, resolveDependenciesRecursively, default); });
+      getDependenciesRecursively = false;
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDependenciesAsync(package, getDependenciesRecursively, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
       #endregion
 
@@ -466,57 +452,288 @@ namespace HEAL.Bricks.Tests {
       #region PluginB 0.3.1 and PluginB 0.2.0, recursive
       packages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version031),
                          CreatePackageIdentity(Constants.namePluginB, Constants.version020) };
-      resolveDependenciesRecursively = true;
-      // expected dependencies: PluginB 0.3.1 -> PluginA [0.3.0, )
-      //                        PluginA 0.3.0 -> PluginTypes
-      //                        PluginTypes   -> no dependencies
-      //                        PluginB 0.2.0 -> PluginA [0.2.0, )
-      //                        PluginA 0.2.0 -> PluginTypes
+      getDependenciesRecursively = true;
+      // expected dependencies: PluginB 0.3.1         -> PluginA [0.3.0, )
+      //                        PluginA 0.3.0         -> PluginTypes
+      //                        PluginTypes           -> no dependencies
+      //                        PluginB 0.2.0         -> PluginA [0.2.0, )
+      //                        PluginA 0.2.0         -> PluginTypes
+      //                        PluginA 0.2.1         -> PluginTypes
+      //                        PluginA 0.3.0-alpha.1 -> PluginTypes
+      //                        PluginA 0.3.0-beta.1  -> PluginTypes
       expectedPackages = new[] { packages[0],
                                  CreatePackageIdentity(Constants.namePluginA, Constants.version030),
                                  CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
                                  packages[1],
-                                 CreatePackageIdentity(Constants.namePluginA, Constants.version020) };
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version020),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version021),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030_alpha1),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030_beta1) };
       expectedDependencies = new[] { new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030) },
                                      new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
                                      Array.Empty<NuGetPackageDependency>(),
                                      new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version020) },
+                                     new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
+                                     new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
+                                     new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
                                      new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) } };
       sw.Restart();
-      foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(packages, resolveDependenciesRecursively, default)).ToArray();
+      foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(packages, getDependenciesRecursively, default)).ToArray();
       sw.Stop();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
       for (int i = 0; i < foundPackages.Length; i++) {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
       }
-      TestContext.WriteLine($"{(resolveDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {packages[0].ToString()} and {packages[1].ToString()}");
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {packages[0].ToString()} and {packages[1].ToString()}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
       WriteLogToTestContextAndClear(nuGetConnector);
       TestContext.WriteLine("");
       #endregion
 
       packages = null;
-      resolveDependenciesRecursively = false;
-      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.GetPackageDependenciesAsync(packages, resolveDependenciesRecursively, default); });
+      getDependenciesRecursively = false;
+      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.GetPackageDependenciesAsync(packages, getDependenciesRecursively, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
 
       packages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version031),
                          null };
-      resolveDependenciesRecursively = false;
-      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDependenciesAsync(packages, resolveDependenciesRecursively, default); });
+      getDependenciesRecursively = false;
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDependenciesAsync(packages, getDependenciesRecursively, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
       packages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version031),
                          CreatePackageIdentity("", Constants.version000) };
-      resolveDependenciesRecursively = false;
-      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDependenciesAsync(packages, resolveDependenciesRecursively, default); });
+      getDependenciesRecursively = false;
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDependenciesAsync(packages, getDependenciesRecursively, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
       packages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version031),
                          CreatePackageIdentity(Constants.namePluginA, null) };
-      resolveDependenciesRecursively = false;
-      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDependenciesAsync(packages, resolveDependenciesRecursively, default); });
+      getDependenciesRecursively = false;
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDependenciesAsync(packages, getDependenciesRecursively, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+      #endregion
+
+      #region single dependency as input
+      #region PluginB [0.3.0-alpha.2, ), non-recursive
+      dependency = CreateNuGetPackageDependency(Constants.namePluginB, Constants.version030_alpha2);
+      getDependenciesRecursively = false;
+      // expected dependencies: PluginB 0.3.0-alpha.2 -> PluginA [0.3.0-beta.1, )
+      //                        PluginB 0.3.0         -> PluginA [0.3.0, )
+      //                        PluginB 0.3.1         -> PluginA [0.3.0, )
+      expectedPackages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version030_alpha2),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version031) };
+      expectedDependencies = new[] { new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030_beta1) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030) } };
+      sw.Restart();
+      foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(dependency, getDependenciesRecursively, default)).ToArray();
+      sw.Stop();
+      CollectionAssert.AreEqual(expectedPackages, foundPackages);
+      for (int i = 0; i < foundPackages.Length; i++) {
+        foundDependencies = foundPackages[i].Dependencies.ToArray();
+        CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
+      }
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {dependency.ToString()}");
+      TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
+      WriteLogToTestContextAndClear(nuGetConnector);
+      TestContext.WriteLine("");
+      #endregion
+
+      #region PluginB (all versions), non-recursive
+      dependency = CreateNuGetPackageDependency(Constants.namePluginB, null);
+      getDependenciesRecursively = false;
+      // expected dependencies: PluginB 0.1.0-alpha.1 -> PluginA [0.1.0, )
+      //                        PluginB 0.1.0-alpha.2 -> PluginA [0.1.0, )
+      //                        PluginB 0.1.0         -> PluginA [0.1.0, )
+      //                        PluginB 0.2.0-alpha.1 -> PluginA [0.1.0, )
+      //                        PluginB 0.2.0         -> PluginA [0.2.0, )
+      //                        PluginB 0.3.0-alpha.1 -> PluginA [0.2.1, )
+      //                        PluginB 0.3.0-alpha.2 -> PluginA [0.3.0-beta.1, )
+      //                        PluginB 0.3.0         -> PluginA [0.3.0, )
+      //                        PluginB 0.3.1         -> PluginA [0.3.0, )
+      expectedPackages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version010_alpha1),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version010_alpha2),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version010),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version020_alpha1),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version020),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version030_alpha1),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version030_alpha2),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version031) };
+      expectedDependencies = new[] { new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version010) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version010) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version010) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version010) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version020) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version021) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030_beta1) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030) } };
+      sw.Restart();
+      foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(dependency, getDependenciesRecursively, default)).ToArray();
+      sw.Stop();
+      CollectionAssert.AreEqual(expectedPackages, foundPackages);
+      for (int i = 0; i < foundPackages.Length; i++) {
+        foundDependencies = foundPackages[i].Dependencies.ToArray();
+        CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
+      }
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {dependency.ToString()}");
+      TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
+      WriteLogToTestContextAndClear(nuGetConnector);
+      TestContext.WriteLine("");
+      #endregion
+
+      #region PluginB 0.2.0, recursive
+      dependency = CreateNuGetPackageDependency(Constants.namePluginB, Constants.version020);
+      getDependenciesRecursively = true;
+      // expected dependencies: PluginB 0.2.0         -> PluginA [0.2.0, )
+      //                        PluginA 0.2.0         -> PluginTypes
+      //                        PluginTypes           -> no dependencies
+      //                        PluginA 0.2.1         -> PluginTypes
+      //                        PluginA 0.3.0-alpha.1 -> PluginTypes
+      //                        PluginA 0.3.0-beta.1  -> PluginTypes
+      //                        PluginA 0.3.0         -> PluginTypes
+      //                        PluginB 0.3.0-alpha.1 -> PluginA [0.2.1, )
+      //                        PluginB 0.3.0-alpha.2 -> PluginA [0.3.0-beta.1, )
+      //                        PluginB 0.3.0         -> PluginA [0.3.0, )
+      //                        PluginB 0.3.1         -> PluginA [0.3.0, )
+      expectedPackages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version020),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version020),
+                                 CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version021),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030_alpha1),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030_beta1),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version030_alpha1),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version030_alpha2),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version031) };
+      expectedDependencies = new[] { new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version020) },
+                                     new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
+                                     Array.Empty<NuGetPackageDependency>(),
+                                     new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
+                                     new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
+                                     new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
+                                     new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version021) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030_beta1) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030) } };
+      sw.Restart();
+      foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(dependency, getDependenciesRecursively, default)).ToArray();
+      sw.Stop();
+      CollectionAssert.AreEqual(expectedPackages, foundPackages);
+      for (int i = 0; i < foundPackages.Length; i++) {
+        foundDependencies = foundPackages[i].Dependencies.ToArray();
+        CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
+      }
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {dependency.ToString()}");
+      TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
+      WriteLogToTestContextAndClear(nuGetConnector);
+      TestContext.WriteLine("");
+      #endregion
+
+      dependency = CreateNuGetPackageDependency(Constants.nameInvalid, Constants.version000);
+      getDependenciesRecursively = true;
+      await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => { return nuGetConnector.GetPackageDependenciesAsync(dependency, getDependenciesRecursively, default); });
+
+      dependency = null;
+      getDependenciesRecursively = false;
+      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.GetPackageDependenciesAsync(dependency, getDependenciesRecursively, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
+      #endregion
+
+      #region multiple dependencies as input
+      #region PluginA [0.3.0-alpha.1, ) and PluginB [0.3.0, ), non-recursive
+      dependencies = new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030_alpha1),
+                             CreateNuGetPackageDependency(Constants.namePluginB, Constants.version030) };
+      getDependenciesRecursively = false;
+      // expected dependencies: PluginA 0.3.0-alpha.1 -> PluginTypes
+      //                        PluginA 0.3.0-beta.1  -> PluginTypes
+      //                        PluginA 0.3.0         -> PluginTypes
+      //                        PluginB 0.3.0         -> PluginA [0.3.0, )
+      //                        PluginB 0.3.1         -> PluginA [0.3.0, )
+      expectedPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version030_alpha1),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030_beta1),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version031) };
+      expectedDependencies = new[] { new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
+                                     new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
+                                     new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030) } };
+      sw.Restart();
+      foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(dependencies, getDependenciesRecursively, default)).ToArray();
+      sw.Stop();
+      CollectionAssert.AreEqual(expectedPackages, foundPackages);
+      for (int i = 0; i < foundPackages.Length; i++) {
+        foundDependencies = foundPackages[i].Dependencies.ToArray();
+        CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
+      }
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {dependencies[0].ToString()} and {dependencies[1].ToString()}");
+      TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
+      WriteLogToTestContextAndClear(nuGetConnector);
+      TestContext.WriteLine("");
+      #endregion
+
+      #region PluginA [0.3.0-alpha.1, ) and PluginB [0.3.0.alpha.1, ), recursive
+      dependencies = new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030_alpha1),
+                             CreateNuGetPackageDependency(Constants.namePluginB, Constants.version030_alpha1) };
+      getDependenciesRecursively = true;
+      // expected dependencies: PluginA 0.3.0-alpha.1 -> PluginTypes
+      //                        PluginTypes           -> no dependencies
+      //                        PluginA 0.3.0-beta.1  -> PluginTypes
+      //                        PluginA 0.3.0         -> PluginTypes
+      //                        PluginB 0.3.0-alpha.1 -> PluginA [0.2.1, )
+      //                        PluginA 0.2.1         -> PluginTypes
+      //                        PluginB 0.3.0-alpha.2 -> PluginA [0.3.0-beta.1, )
+      //                        PluginB 0.3.0         -> PluginA [0.3.0, )
+      //                        PluginB 0.3.1         -> PluginA [0.3.0, )
+      expectedPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version030_alpha1),
+                                 CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030_beta1),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version030_alpha1),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version021),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version030_alpha2),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginB, Constants.version031) };
+      expectedDependencies = new[] { new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
+                                     Array.Empty<NuGetPackageDependency>(),
+                                     new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
+                                     new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version021) },
+                                     new[] { CreateNuGetPackageDependency(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030_beta1) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030) },
+                                     new[] { CreateNuGetPackageDependency(Constants.namePluginA, Constants.version030) } };
+      sw.Restart();
+      foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(dependencies, getDependenciesRecursively, default)).ToArray();
+      sw.Stop();
+      CollectionAssert.AreEqual(expectedPackages, foundPackages);
+      for (int i = 0; i < foundPackages.Length; i++) {
+        foundDependencies = foundPackages[i].Dependencies.ToArray();
+        CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
+      }
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {dependencies[0].ToString()} and {dependencies[1].ToString()}");
+      TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
+      WriteLogToTestContextAndClear(nuGetConnector);
+      TestContext.WriteLine("");
+      #endregion
+
+      dependencies = null;
+      getDependenciesRecursively = false;
+      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.GetPackageDependenciesAsync(dependencies, getDependenciesRecursively, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
+
+      dependencies = new[] { CreateNuGetPackageDependency(Constants.namePluginB, Constants.version031),
+                             null };
+      getDependenciesRecursively = false;
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetPackageDependenciesAsync(dependencies, getDependenciesRecursively, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
       #endregion
     }
@@ -539,11 +756,10 @@ namespace HEAL.Bricks.Tests {
       ArgumentException argumentException;
 
       #region Create different sets of available packages
-      PackageIdentity[] packages;
-      packages = nuGetConnector.GetPackagesAsync(new[] { Constants.namePluginA, Constants.namePluginB }, true, default).Result.Select(x => x.Identity).ToArray();
-      allAvailablePackages = nuGetConnector.GetPackageDependenciesAsync(packages, true, default).Result.ToArray();
-      packages = nuGetConnector.GetPackagesAsync(new[] { Constants.namePluginB }, true, default).Result.Select(x => x.Identity).ToArray();
-      allAvailablePackagesPluginB = nuGetConnector.GetPackageDependenciesAsync(packages, false, default).Result.ToArray();
+      NuGetPackageDependency pluginA = CreateNuGetPackageDependency(Constants.namePluginA, null);
+      NuGetPackageDependency pluginB = CreateNuGetPackageDependency(Constants.namePluginB, null);
+      allAvailablePackages = nuGetConnector.GetPackageDependenciesAsync(new[] { pluginA, pluginB }, true, default).Result.ToArray();
+      allAvailablePackagesPluginB = nuGetConnector.GetPackageDependenciesAsync(pluginB, false, default).Result.ToArray();
       #endregion
 
       #region input additional packages
