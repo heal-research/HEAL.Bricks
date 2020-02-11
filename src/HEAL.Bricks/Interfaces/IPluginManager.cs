@@ -17,7 +17,12 @@ namespace HEAL.Bricks {
     PluginManagerStatus Status { get; }
 
     void Initialize();
-    Task<IEnumerable<RemotePackageInfo>> ResolveMissingDependenciesAsync(CancellationToken cancellationToken = default);
-    Task InstallRemotePackageAsync(RemotePackageInfo package, CancellationToken cancellationToken = default);
+    Task<IEnumerable<RemotePackageInfo>> GetMissingDependenciesAsync(CancellationToken cancellationToken = default);
+    Task InstallMissingDependenciesAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<(string Repository, RemotePackageInfo Package)>> SearchRemotePackagesAsync(string searchString, bool includePreReleases, int skip, int take, CancellationToken cancellationToken = default);
+    Task<RemotePackageInfo> GetRemotePackageAsync(string packageId, string version, CancellationToken cancellationToken = default);
+    Task<IEnumerable<RemotePackageInfo>> GetRemotePackagesAsync(string packageId, bool includePreReleases, CancellationToken cancellationToken = default);
+    Task InstallRemotePackageAsync(RemotePackageInfo package, bool installMissingDependencies, CancellationToken cancellationToken = default);
+    void RemoveInstalledPackage(LocalPackageInfo package);
   }
 }

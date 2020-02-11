@@ -8,6 +8,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
+using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 using System;
@@ -17,7 +18,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 
 namespace HEAL.Bricks.Tests {
   [TestClass]
@@ -282,44 +282,81 @@ namespace HEAL.Bricks.Tests {
     #region TestSearchPackagesAsync
     [TestMethod]
     public async Task TestSearchPackagesAsync() {
-      NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
+      NuGetConnector nuGetConnector;
       string searchString;
       string[] expectedPackages;
       string[] foundPackages;
       bool includePreReleases;
       ArgumentNullException argumentNullException;
 
+      #region exclude public packages
+      nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: false);
+
+      searchString = Constants.namePluginA;
+      includePreReleases = false;
+      expectedPackages = new[] { Constants.namePluginA + "." + Constants.version021,
+                                 Constants.namePluginA + "." + Constants.version030 };
+      foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, 0, int.MaxValue, default)).Select(x => x.Package.Identity.ToString()).ToArray();
+      CollectionAssert.AreEqual(expectedPackages, foundPackages);
+
+      searchString = Constants.namePluginB;
+      includePreReleases = false;
+      expectedPackages = new[] { Constants.namePluginB + "." + Constants.version020,
+                                 Constants.namePluginB + "." + Constants.version031 };
+      foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, 0, int.MaxValue, default)).Select(x => x.Package.Identity.ToString()).ToArray();
+      CollectionAssert.AreEqual(expectedPackages, foundPackages);
+
+      searchString = Constants.nameInvalid;
+      includePreReleases = false;
+      foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, 0, int.MaxValue, default)).Select(x => x.Package.Identity.ToString()).ToArray();
+      Assert.AreEqual(0, foundPackages.Length, "Number of found packages is incorrect.");
+
+      searchString = null;
+      includePreReleases = false;
+      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, 0, int.MaxValue, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
+
+      searchString = null;
+      includePreReleases = true;
+      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, 0, int.MaxValue, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
+      #endregion
+
+      #region include public packages
+      nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
+
       searchString = "PackageId:NuGet.Protocol";
       includePreReleases = false;
       expectedPackages = new[] { "NuGet.Protocol.5.4.0" };
-      foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, default)).Select(x => x.Identity.ToString()).ToArray();
+      foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, 0, int.MaxValue, default)).Select(x => x.Package.Identity.ToString()).ToArray();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
 
       searchString = "PackageId:NuGet.Protocol";
       includePreReleases = true;
       expectedPackages = new[] { "NuGet.Protocol.5.5.0-preview.2.6382" };
-      foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, default)).Select(x => x.Identity.ToString()).ToArray();
+      foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, 0, int.MaxValue, default)).Select(x => x.Package.Identity.ToString()).ToArray();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
 
       searchString = "PackageId:HEAL.Attic version:1.0.0";
       includePreReleases = false;
-      foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, default)).Select(x => x.Identity.ToString()).ToArray();
+      foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, 0, int.MaxValue, default)).Select(x => x.Package.Identity.ToString()).ToArray();
       Assert.AreEqual(0, foundPackages.Length, "Number of found packages is incorrect.");
 
       searchString = "PackageId:HEAL.Attic version:1.0.0";
       includePreReleases = true;
-      foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, default)).Select(x => x.Identity.ToString()).ToArray();
+      foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, 0, int.MaxValue, default)).Select(x => x.Package.Identity.ToString()).ToArray();
       Assert.AreEqual(0, foundPackages.Length, "Number of found packages is incorrect.");
 
-      searchString = null;
-      includePreReleases = false;
-      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, default); });
-      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
-
-      searchString = null;
+      searchString = "";
       includePreReleases = true;
-      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, default); });
-      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
+      foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, 0, 10, default)).Where(x => x.Repository == Constants.publicNuGetRepository).Select(x => x.Package.Identity.ToString()).ToArray();
+      Assert.AreEqual(10, foundPackages.Length, "Number of found packages is incorrect.");
+
+      searchString = "";
+      includePreReleases = true;
+      foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, 10, 10, default)).Where(x => x.Repository == Constants.publicNuGetRepository).Select(x => x.Package.Identity.ToString()).ToArray();
+      Assert.AreEqual(10, foundPackages.Length, "Number of found packages is incorrect.");
+      #endregion
 
       WriteLogToTestContextAndClear(nuGetConnector);
     }

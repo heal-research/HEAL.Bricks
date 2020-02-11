@@ -101,18 +101,19 @@ namespace HEAL.Bricks {
       return packages.Distinct(PackageSearchMetadataComparer.Default).OrderBy(x => x, PackageSearchMetadataComparer.Default).ToArray();
     }
 
-    public async Task<IEnumerable<IPackageSearchMetadata>> SearchPackagesAsync(string searchString, bool includePreReleases, CancellationToken cancellationToken) {
+    public async Task<IEnumerable<(string Repository, IPackageSearchMetadata Package)>> SearchPackagesAsync(string searchString, bool includePreReleases, int skip, int take, CancellationToken cancellationToken) {
       if (searchString == null) throw new ArgumentNullException(nameof(searchString));
 
-      List<IPackageSearchMetadata> packages = new List<IPackageSearchMetadata>();
+      List<(string Repository, IPackageSearchMetadata Package)> packages = new List<(string Repository, IPackageSearchMetadata Package)>();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (SourceRepository sourceRepository in Repositories) {
           PackageSearchResource packageSearchResource = await sourceRepository.GetResourceAsync<PackageSearchResource>(cancellationToken);
           SearchFilter filter = new SearchFilter(includePreReleases);
-          packages.AddRange(await packageSearchResource.SearchAsync(searchString, filter, 0, int.MaxValue, logger, cancellationToken));
+          IEnumerable<IPackageSearchMetadata> searchResult = await packageSearchResource.SearchAsync(searchString, filter, skip, take, logger, cancellationToken);
+          packages.AddRange(searchResult.Select(x => (Repository: sourceRepository.PackageSource.Source, Package: x)));
         }
       }
-      return packages.Distinct(PackageSearchMetadataComparer.Default).OrderBy(x => x, PackageSearchMetadataComparer.Default).ToArray();
+      return packages.OrderBy(x => x.Package, PackageSearchMetadataComparer.Default).ToArray();
     }
     #endregion
 

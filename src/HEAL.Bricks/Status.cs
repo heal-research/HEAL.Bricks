@@ -8,6 +8,7 @@
 namespace HEAL.Bricks {
   public enum PackageStatus {
     OK,
+    Outdated,
     DependenciesMissing,
     IndirectDependenciesMissing,
     IncompatibleFramework,

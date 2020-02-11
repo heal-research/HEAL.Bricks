@@ -5,9 +5,6 @@
  */
 #endregion
 
-using NuGet.Common;
-using NuGet.Configuration;
-using NuGet.Frameworks;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.Protocol.Core.Types;
@@ -16,9 +13,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -59,7 +53,7 @@ namespace HEAL.Bricks {
       }
     }
 
-    public async Task<IEnumerable<RemotePackageInfo>> ResolveMissingDependenciesAsync(CancellationToken cancellationToken = default) {
+    public async Task<IEnumerable<RemotePackageInfo>> GetMissingDependenciesAsync(CancellationToken cancellationToken = default) {
       if (Status == PluginManagerStatus.Uninitialized) Initialize();
 
       IEnumerable<PackageIdentity> installedPackages = InstalledPackages.Select(x => x.nuspecReader.GetIdentity());
@@ -71,27 +65,58 @@ namespace HEAL.Bricks {
       if (!resolveSucceeded) throw new InvalidOperationException("Dependency resolution failed.");
 
       IEnumerable<SourcePackageDependencyInfo> missingDependencies = resolvedDependencies.Where(x => !InstalledPackages.Any(y => x.Equals(y.nuspecReader.GetIdentity())));
-      return missingDependencies.Select(x => new RemotePackageInfo(x));
+      IEnumerable<IPackageSearchMetadata> packageMetadata = await nuGetConnector.GetPackagesAsync(missingDependencies, cancellationToken);
+      return packageMetadata.Zip(missingDependencies, (x, y) => new RemotePackageInfo(x, y));
     }
-    public async Task<IEnumerable<RemotePackageInfo>> InstallMissingDependenciesAsync(CancellationToken cancellationToken = default) {
+    public async Task InstallMissingDependenciesAsync(CancellationToken cancellationToken = default) {
       if (Status == PluginManagerStatus.Uninitialized) Initialize();
 
-      IEnumerable<RemotePackageInfo> missingPackages = (await ResolveMissingDependenciesAsync(cancellationToken)).ToArray();
+      IEnumerable<RemotePackageInfo> missingPackages = (await GetMissingDependenciesAsync(cancellationToken)).ToArray();
       if (missingPackages.Count() > 0) {
         foreach (RemotePackageInfo missingPackage in missingPackages) {
           await nuGetConnector.InstallPackageAsync(missingPackage.sourcePackageDependencyInfo, cancellationToken);
         }
         Initialize();
       }
-      return missingPackages;
     }
 
-    public async Task InstallRemotePackageAsync(RemotePackageInfo package, CancellationToken cancellationToken = default) {
+    public async Task<IEnumerable<(string Repository, RemotePackageInfo Package)>> SearchRemotePackagesAsync(string searchString, bool includePreReleases, int skip, int take, CancellationToken cancellationToken = default) {
+      if (searchString == null) throw new ArgumentNullException(nameof(searchString));
+
+      IEnumerable<(string Repository, IPackageSearchMetadata Package)> packages = await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, skip, take, cancellationToken);
+      IEnumerable<SourcePackageDependencyInfo> dependencyInfos = await nuGetConnector.GetPackageDependenciesAsync(packages.Select(x => x.Package.Identity), false, cancellationToken);
+      return packages.Zip(dependencyInfos, (x, y) => (x.Repository, Package: new RemotePackageInfo(x.Package, y)));
+    }
+
+    public async Task<RemotePackageInfo> GetRemotePackageAsync(string packageId, string version, CancellationToken cancellationToken = default) {
+      if (packageId == null) throw new ArgumentNullException(nameof(packageId));
+      if (packageId == "") throw new ArgumentException($"{nameof(packageId)} is empty.", nameof(packageId));
+      if (version == null) throw new ArgumentNullException(nameof(version));
+      if (version == "") throw new ArgumentException($"{nameof(version)} is empty.", nameof(version));
+      if (!NuGetVersion.TryParse(version, out NuGetVersion nuGetVersion)) throw new ArgumentException($"{nameof(version)} is invalid.", nameof(version));
+
+      PackageIdentity identity = new PackageIdentity(packageId, nuGetVersion);
+      IPackageSearchMetadata package = await nuGetConnector.GetPackageAsync(identity, cancellationToken);
+      if (package == null) return null;
+
+      SourcePackageDependencyInfo dependencyInfo = (await nuGetConnector.GetPackageDependenciesAsync(package.Identity, false, cancellationToken)).Single();
+      return new RemotePackageInfo(package, dependencyInfo);
+    }
+    public async Task<IEnumerable<RemotePackageInfo>> GetRemotePackagesAsync(string packageId, bool includePreReleases, CancellationToken cancellationToken = default) {
+      if (packageId == null) throw new ArgumentNullException(nameof(packageId));
+      if (packageId == "") throw new ArgumentException($"{nameof(packageId)} is empty.", nameof(packageId));
+
+      IEnumerable<IPackageSearchMetadata> packages = await nuGetConnector.GetPackagesAsync(packageId, includePreReleases, cancellationToken);
+      IEnumerable<SourcePackageDependencyInfo> dependencyInfos = await nuGetConnector.GetPackageDependenciesAsync(packages.Select(x => x.Identity), false, cancellationToken);
+      return packages.Zip(dependencyInfos, (x, y) => new RemotePackageInfo(x, y));
+    }
+
+    public async Task InstallRemotePackageAsync(RemotePackageInfo package, bool installMissingDependencies, CancellationToken cancellationToken = default) {
       if (package == null) throw new ArgumentNullException(nameof(package));
 
       await nuGetConnector.InstallPackageAsync(package.sourcePackageDependencyInfo, cancellationToken);
       Initialize();
-      await InstallMissingDependenciesAsync(cancellationToken);
+      if (installMissingDependencies) await InstallMissingDependenciesAsync(cancellationToken);
     }
 
     public void RemoveInstalledPackage(LocalPackageInfo package) {
@@ -104,6 +129,11 @@ namespace HEAL.Bricks {
 
     #region Helpers
     private static void UpdatePackageAndDependencyStatus(IEnumerable<LocalPackageInfo> packages) {
+      foreach (var group in packages.GroupBy(x => x.Id)) {
+        foreach (LocalPackageInfo package in group.OrderByDescending(x => x.Version).Skip(1)) {
+          package.Status = PackageStatus.Outdated;
+        }
+      }
       foreach (LocalPackageInfo package in packages) {
         foreach (PackageDependency dependency in package.Dependencies) {
           dependency.Status = packages.Any(x => (x.Id == dependency.Id) && dependency.VersionRange.Satiesfies(x.Version)) ? PackageDependencyStatus.OK : PackageDependencyStatus.Missing;
@@ -114,7 +144,7 @@ namespace HEAL.Bricks {
           } else if (package.Dependencies.Any(x => x.Status == PackageDependencyStatus.Missing)) {
             package.Status = PackageStatus.DependenciesMissing;
           } else {
-            // in this case we do not know, if dependencies of dependencies might be missing; so status is still unknown
+            // in this case we do not know, if dependencies of dependencies might be missing; so status remains unknown
             package.Status = PackageStatus.Unknown;
           }
         }

@@ -9,9 +9,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NuGet.Common;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
+using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 using NuGet.Versioning;
 using System.IO;
-using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 
 namespace HEAL.Bricks.Tests {
   [TestClass]

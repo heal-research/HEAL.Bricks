@@ -54,6 +54,7 @@ namespace HEAL.Bricks.Tests {
     public const string namePluginB = "HEAL.Bricks.Tests.PluginB";
 
     // versions of test plugins
+    public const string versionInvalid    = "abcdefg";
     public const string version000        = "0.0.0";
     public const string version010_alpha1 = "0.1.0-alpha.1";
     public const string version010_alpha2 = "0.1.0-alpha.2";

@@ -11,14 +11,17 @@ using System.Linq;
 
 namespace HEAL.Bricks {
   public sealed class RemotePackageInfo : PackageInfo {
+    internal readonly IPackageSearchMetadata packageSearchMetadata;
     internal readonly SourcePackageDependencyInfo sourcePackageDependencyInfo;
 
     public string Source => sourcePackageDependencyInfo.Source.PackageSource.Source;
 
-    internal RemotePackageInfo(SourcePackageDependencyInfo sourcePackageDependencyInfo) : base(sourcePackageDependencyInfo) {
+    internal RemotePackageInfo(IPackageSearchMetadata packageSearchMetadata, SourcePackageDependencyInfo sourcePackageDependencyInfo) : base(sourcePackageDependencyInfo) {
+      if (packageSearchMetadata == null) throw new ArgumentNullException(nameof(packageSearchMetadata));
       if (sourcePackageDependencyInfo == null) throw new ArgumentNullException(nameof(sourcePackageDependencyInfo));
       if (sourcePackageDependencyInfo.Dependencies == null) throw new ArgumentException($"{nameof(sourcePackageDependencyInfo)}.Dependencies is null.", nameof(sourcePackageDependencyInfo));
 
+      this.packageSearchMetadata = packageSearchMetadata;
       this.sourcePackageDependencyInfo = sourcePackageDependencyInfo;
       Dependencies = sourcePackageDependencyInfo.Dependencies.Select(x => new PackageDependency(x)).ToArray();
     }
