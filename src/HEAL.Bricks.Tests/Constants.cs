@@ -28,6 +28,13 @@ namespace HEAL.Bricks.Tests {
     public const string versionCollections = "4.3.0";
     public const string nameVersionCollections = nameCollections + "." + versionCollections;
 
+    // NuGet.Versioning package
+    public const string nameNuGetVersioning = "NuGet.Versioning";
+    public const string versionNuGetVersioning = "5.4.0";
+    public const string nameVersionNuGetVersioning = nameNuGetVersioning + "." + versionNuGetVersioning;
+    public const string versionPreReleaseNuGetVersioning = "5.5.0-preview.2.6382";
+    public const string nameVersionPreReleaseNuGetVersioning = nameNuGetVersioning + "." + versionPreReleaseNuGetVersioning;
+
     // nupkg-files of test plugins
     public const string pathPluginA_010_alpha1 = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.1.0-alpha.1.nupkg";
     public const string pathPluginA_010_alpha2 = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.1.0-alpha.2.nupkg";

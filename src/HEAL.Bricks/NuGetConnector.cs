@@ -9,9 +9,9 @@ using NuGet.Common;
 using NuGet.Frameworks;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
-using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 using NuGet.Protocol.Core.Types;
 using NuGet.Resolver;
+using NuGet.Versioning;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,6 +20,7 @@ using System.Reflection;
 using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
+using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 
 namespace HEAL.Bricks {
   internal class NuGetConnector {
@@ -267,6 +268,31 @@ namespace HEAL.Bricks {
           await PackageExtractor.ExtractPackageAsync(downloadResult.PackageSource, downloadResult.PackageStream, packagePathResolver, packageExtractionContext, cancellationToken);
         }
       }
+    }
+    #endregion
+
+    #region GetLatestVersionAsync, GetLatestVersionsAsync
+    public async Task<NuGetVersion> GetLatestVersionAsync(string packageId, bool includePreReleases, CancellationToken cancellationToken) {
+      if (packageId == null) throw new ArgumentNullException(nameof(packageId));
+      if (packageId == "") throw new ArgumentException($"{nameof(packageId)} is empty.", nameof(packageId));
+
+      return (await GetLatestVersionsAsync(Enumerable.Repeat(packageId, 1), includePreReleases, cancellationToken)).SingleOrDefault().Version;
+    }
+    public async Task<IEnumerable<(string PackageId, NuGetVersion Version)>> GetLatestVersionsAsync(IEnumerable<string> packageIds, bool includePreReleases, CancellationToken cancellationToken) {
+      if (packageIds == null) throw new ArgumentNullException(nameof(packageIds));
+      if (packageIds.Any(x => string.IsNullOrEmpty(x))) throw new ArgumentException($"{nameof(packageIds)} contains elements which are null or empty.", nameof(packageIds));
+
+      List<KeyValuePair<string, NuGetVersion>> versions = new List<KeyValuePair<string, NuGetVersion>>();
+      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
+        foreach (SourceRepository sourceRepository in Repositories) {
+          MetadataResource metadataResource = await sourceRepository.GetResourceAsync<MetadataResource>(cancellationToken);
+          versions.AddRange(await metadataResource.GetLatestVersions(packageIds, includePreReleases, false, cacheContext, logger, cancellationToken));
+        }
+      }
+      return versions.Where(x => x.Value != null)
+                     .GroupBy(x => x.Key)
+                     .OrderBy(x => x.Key)
+                     .Select(x => (PackageId: x.Key, Version: x.OrderByDescending(y => y.Value, VersionComparer.Default).First().Value));
     }
     #endregion
 

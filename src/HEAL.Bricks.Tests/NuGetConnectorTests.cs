@@ -1176,6 +1176,137 @@ namespace HEAL.Bricks.Tests {
     }
     #endregion
 
+    #region TestGetLatestVersionAsync
+    [TestMethod]
+    public async Task TestGetLatestVersionAsync() {
+      NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
+      string packageId;
+      bool includePreReleases;
+      NuGetVersion expectedVersion;
+      NuGetVersion foundVersion;
+      ArgumentNullException argumentNullException;
+      ArgumentException argumentException;
+
+      packageId = Constants.namePluginA;
+      includePreReleases = false;
+      expectedVersion = new NuGetVersion(Constants.version030);
+      foundVersion = await nuGetConnector.GetLatestVersionAsync(packageId, includePreReleases, default);
+      Assert.AreEqual(expectedVersion, foundVersion);
+
+      packageId = Constants.namePluginB;
+      includePreReleases = false;
+      expectedVersion = new NuGetVersion(Constants.version031);
+      foundVersion = await nuGetConnector.GetLatestVersionAsync(packageId, includePreReleases, default);
+      Assert.AreEqual(expectedVersion, foundVersion);
+
+      packageId = Constants.nameNuGetVersioning;
+      includePreReleases = false;
+      expectedVersion = new NuGetVersion(Constants.versionNuGetVersioning);
+      foundVersion = await nuGetConnector.GetLatestVersionAsync(packageId, includePreReleases, default);
+      Assert.AreEqual(expectedVersion, foundVersion);
+
+      packageId = Constants.nameNuGetVersioning;
+      includePreReleases = true;
+      expectedVersion = new NuGetVersion(Constants.versionPreReleaseNuGetVersioning);
+      foundVersion = await nuGetConnector.GetLatestVersionAsync(packageId, includePreReleases, default);
+      Assert.AreEqual(expectedVersion, foundVersion);
+
+      packageId = Constants.nameInvalid;
+      includePreReleases = false;
+      foundVersion = await nuGetConnector.GetLatestVersionAsync(packageId, includePreReleases, default);
+      Assert.IsNull(foundVersion);
+
+      packageId = Constants.nameInvalid;
+      includePreReleases = true;
+      foundVersion = await nuGetConnector.GetLatestVersionAsync(packageId, includePreReleases, default);
+      Assert.IsNull(foundVersion);
+
+      packageId = null;
+      includePreReleases = false;
+      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.GetLatestVersionAsync(packageId, includePreReleases, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
+
+      packageId = null;
+      includePreReleases = true;
+      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.GetLatestVersionAsync(packageId, includePreReleases, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
+
+      packageId = "";
+      includePreReleases = false;
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetLatestVersionAsync(packageId, includePreReleases, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      packageId = "";
+      includePreReleases = true;
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetLatestVersionAsync(packageId, includePreReleases, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      WriteLogToTestContextAndClear(nuGetConnector);
+    }
+    #endregion
+
+    #region TestGetLatestVersionsAsync
+    [TestMethod]
+    public async Task TestGetLatestVersionsAsync() {
+      NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
+      string[] packageIds;
+      bool includePreReleases;
+      string[] expectedPackages;
+      NuGetVersion[] expectedVersions;
+      IEnumerable<(string PackageId, NuGetVersion Version)> foundVersions;
+      ArgumentNullException argumentNullException;
+      ArgumentException argumentException;
+
+      packageIds = new[] { Constants.namePluginA, Constants.namePluginB };
+      includePreReleases = false;
+      expectedPackages = packageIds;
+      expectedVersions = new[] { new NuGetVersion(Constants.version030), new NuGetVersion(Constants.version031) };
+      foundVersions = await nuGetConnector.GetLatestVersionsAsync(packageIds, includePreReleases, default);
+      CollectionAssert.AreEqual(expectedPackages, foundVersions.Select(x => x.PackageId).ToArray());
+      CollectionAssert.AreEqual(expectedVersions, foundVersions.Select(x => x.Version).ToArray());
+
+      packageIds = new[] { Constants.namePluginA, Constants.namePluginA, Constants.nameInvalid };
+      includePreReleases = false;
+      expectedPackages = new[] { Constants.namePluginA };
+      expectedVersions = new[] { new NuGetVersion(Constants.version030) };
+      foundVersions = await nuGetConnector.GetLatestVersionsAsync(packageIds, includePreReleases, default);
+      CollectionAssert.AreEqual(expectedPackages, foundVersions.Select(x => x.PackageId).ToArray());
+      CollectionAssert.AreEqual(expectedVersions, foundVersions.Select(x => x.Version).ToArray());
+
+      packageIds = null;
+      includePreReleases = false;
+      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.GetLatestVersionsAsync(packageIds, includePreReleases, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
+
+      packageIds = null;
+      includePreReleases = true;
+      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.GetLatestVersionsAsync(packageIds, includePreReleases, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
+
+      packageIds = new[] { Constants.namePluginA, null };
+      includePreReleases = false;
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetLatestVersionsAsync(packageIds, includePreReleases, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      packageIds = new[] { Constants.namePluginA, null };
+      includePreReleases = true;
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetLatestVersionsAsync(packageIds, includePreReleases, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      packageIds = new[] { Constants.namePluginA, "" };
+      includePreReleases = false;
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetLatestVersionsAsync(packageIds, includePreReleases, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      packageIds = new[] { Constants.namePluginA, "" };
+      includePreReleases = true;
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.GetLatestVersionsAsync(packageIds, includePreReleases, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      WriteLogToTestContextAndClear(nuGetConnector);
+    }
+    #endregion
+
     #region Helpers
     private class NuGetPackageDependencyComparer : IComparer {
       public static NuGetPackageDependencyComparer Default => new NuGetPackageDependencyComparer();
