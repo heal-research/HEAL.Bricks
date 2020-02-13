@@ -127,6 +127,49 @@ namespace HEAL.Bricks {
       Initialize();
     }
 
+    public async Task<RemotePackageInfo> GetPackageUpdateAsync(LocalPackageInfo package, bool includePreReleases = false, CancellationToken cancellationToken = default) {
+      if (package == null) throw new ArgumentNullException(nameof(package));
+
+      if (Status == PluginManagerStatus.Uninitialized) Initialize();
+
+      NuGetVersion latestVersion = await nuGetConnector.GetLatestVersionAsync(package.Id, includePreReleases, cancellationToken);
+      if ((latestVersion != null) && (latestVersion.CompareTo(package.Version.nuGetVersion) > 0)) {
+        IPackageSearchMetadata latestPackage = await nuGetConnector.GetPackageAsync(new PackageIdentity(package.Id, latestVersion), cancellationToken);
+        SourcePackageDependencyInfo dependencyInfo = (await nuGetConnector.GetPackageDependenciesAsync(latestPackage.Identity, false, cancellationToken)).Single();
+        return new RemotePackageInfo(latestPackage, dependencyInfo);
+      }
+      return null;
+    }
+    public async Task<IEnumerable<RemotePackageInfo>> GetPackageUpdatesAsync(bool includePreReleases = false, CancellationToken cancellationToken = default) {
+      if (Status == PluginManagerStatus.Uninitialized) Initialize();
+
+      List<PackageIdentity> updates = new List<PackageIdentity>();
+      IEnumerable<PackageIdentity> installedPackages = InstalledPackages.Select(x => x.nuspecReader.GetIdentity());
+      IEnumerable<(string PackageId, NuGetVersion Version)> latestVersions = await nuGetConnector.GetLatestVersionsAsync(installedPackages.Select(x => x.Id), includePreReleases, cancellationToken);
+      foreach (PackageIdentity installedPackage in installedPackages) {
+        (string PackageId, NuGetVersion Version) latestVersion = latestVersions.Where(x => (x.PackageId == installedPackage.Id) && (x.Version.CompareTo(installedPackage.Version) > 0)).SingleOrDefault();
+        if (latestVersion.Version != null) {
+          updates.Add(new PackageIdentity(latestVersion.PackageId, new NuGetVersion(latestVersion.Version)));
+        }
+      }
+
+      IEnumerable<IPackageSearchMetadata> packages = await nuGetConnector.GetPackagesAsync(updates, cancellationToken);
+      IEnumerable<SourcePackageDependencyInfo> dependencyInfos = await nuGetConnector.GetPackageDependenciesAsync(packages.Select(x => x.Identity), false, cancellationToken);
+      return packages.Zip(dependencyInfos, (x, y) => new RemotePackageInfo(x, y));
+    }
+
+    public async Task InstallPackageUpdatesAsync(bool includePreReleases = false, CancellationToken cancellationToken = default) {
+      if (Status == PluginManagerStatus.Uninitialized) Initialize();
+
+      IEnumerable<RemotePackageInfo> packageUpdates = (await GetPackageUpdatesAsync(includePreReleases, cancellationToken)).ToArray();
+      if (packageUpdates.Count() > 0) {
+        foreach (RemotePackageInfo packageUpdate in packageUpdates) {
+          await nuGetConnector.InstallPackageAsync(packageUpdate.sourcePackageDependencyInfo, cancellationToken);
+        }
+        await InstallMissingDependenciesAsync();
+      }
+    }
+
     #region Helpers
     private static void UpdatePackageAndDependencyStatus(IEnumerable<LocalPackageInfo> packages) {
       foreach (var group in packages.GroupBy(x => x.Id)) {

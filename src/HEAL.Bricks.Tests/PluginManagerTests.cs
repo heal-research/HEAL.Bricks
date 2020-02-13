@@ -204,7 +204,7 @@ namespace HEAL.Bricks.Tests {
     }
     #endregion
 
-    #region TestGetRemotePackageAsync
+    #region TestGetRemotePackagesAsync
     [TestMethod]
     public async Task TestGetRemotePackagesAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
@@ -319,6 +319,64 @@ namespace HEAL.Bricks.Tests {
       pluginManager.RemoveInstalledPackage(package);
       Assert.IsFalse(pluginManager.InstalledPackages.Contains(package, PackageInfoIdentityComparer.Default));
       Assert.IsFalse(Directory.Exists(Path.Combine(pluginManager.Settings.PackagesPath, package.Id + "." + package.Version.ToString())));
+
+      WriteLogToTestContextAndClear(nuGetConnector);
+    }
+    #endregion
+
+    #region TestGetPackageUpdateAsync
+    [TestMethod]
+    public async Task TestGetPackageUpdateAsync() {
+      NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
+      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      LocalPackageInfo package;
+      PackageIdentity expectedPackage;
+      RemotePackageInfo foundPackage;
+      ArgumentNullException argumentNullException;
+
+      pluginManager.Initialize();
+      package = pluginManager.InstalledPackages.Where(x => x.Id == Constants.namePluginB).First();
+      expectedPackage = CreatePackageIdentity(Constants.namePluginB, Constants.version031);
+      foundPackage = await pluginManager.GetPackageUpdateAsync(package);
+      Assert.AreEqual(expectedPackage, foundPackage.packageIdentity);
+
+      package = null;
+      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return pluginManager.GetPackageUpdateAsync(package); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
+
+      WriteLogToTestContextAndClear(nuGetConnector);
+    }
+    #endregion
+
+    #region TestGetPackageUpdatesAsync
+    [TestMethod]
+    public async Task TestGetPackageUpdatesAsync() {
+      NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
+      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PackageIdentity[] expectedPackages;
+      PackageIdentity[] foundPackages;
+
+      pluginManager.Initialize();
+      expectedPackages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version031) };
+      foundPackages = (await pluginManager.GetPackageUpdatesAsync()).Select(x => x.packageIdentity).ToArray();
+      CollectionAssert.AreEqual(expectedPackages, foundPackages);
+
+      WriteLogToTestContextAndClear(nuGetConnector);
+    }
+    #endregion
+
+    #region TestInstallPackageUpdatesAsync
+    [TestMethod]
+    public async Task TestInstallPackageUpdatesAsync() {
+      NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
+      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PackageIdentity[] expectedPackages;
+
+      pluginManager.Initialize();
+      expectedPackages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version031) };
+      await pluginManager.InstallPackageUpdatesAsync();
+      Assert.IsTrue(expectedPackages.All(x => pluginManager.InstalledPackages.Select(y => y.nuspecReader.GetIdentity()).Contains(x, PackageIdentityComparer.Default)));
+      Assert.IsTrue(expectedPackages.All(x => Directory.Exists(Path.Combine(pluginManager.Settings.PackagesPath, x.Id + "." + x.Version.ToString()))));
 
       WriteLogToTestContextAndClear(nuGetConnector);
     }
