@@ -227,11 +227,11 @@ namespace HEAL.Bricks {
       }
       IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = resolvedIdentities.Select(i => availablePackages.Single(x => PackageIdentityComparer.Default.Equals(i, x)));
       resolveSucceeded = true;
-      return resolvedDependencies;
+      return resolvedDependencies.ToArray();
     }
     #endregion
 
-    #region GetInstalledPackages, GetPackageDownloaderAsync, InstallPackageAsync
+    #region GetInstalledPackages, GetPackageDownloaderAsync, InstallPackageAsync, InstallPackagesAsync
     public IEnumerable<PackageFolderReader> GetInstalledPackages() {
       return Directory.GetDirectories(Settings.PackagesPath).Select(x => new PackageFolderReader(x));
     }
@@ -257,15 +257,26 @@ namespace HEAL.Bricks {
       if (!package.HasVersion) throw new ArgumentException($"{nameof(package)} has no version.", nameof(package));
       if (package.Source == null) throw new ArgumentException($"{nameof(package)}.Source is null.", nameof(package));
 
-      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
-        DownloadResource downloadResource = await package.Source.GetResourceAsync<DownloadResource>(cancellationToken);
-        PackageDownloadContext downloadContext = new PackageDownloadContext(cacheContext, Settings.PackagesCachePath, cacheContext.DirectDownload);
-        using (DownloadResourceResult downloadResult = await downloadResource.GetDownloadResourceResultAsync(package, downloadContext, Settings.PackagesCachePath, logger, cancellationToken)) {
-          if (downloadResult.Status == DownloadResourceResultStatus.NotFound) throw new ArgumentException($"{nameof(package)} at {nameof(package)}.Source not found.", nameof(package));
+      await InstallPackagesAsync(Enumerable.Repeat(package, 1), cancellationToken);
+    }
+    public async Task InstallPackagesAsync(IEnumerable<SourcePackageDependencyInfo> packages, CancellationToken cancellationToken) {
+      if (packages == null) throw new ArgumentNullException(nameof(packages));
+      if (packages.Any(x => x == null)) throw new ArgumentException($"{nameof(packages)} contains null elements.", nameof(packages));
+      if (packages.Any(x => string.IsNullOrEmpty(x.Id))) throw new ArgumentException($"{nameof(packages)} contains elements whose Id is null or empty.", nameof(packages));
+      if (packages.Any(x => !x.HasVersion)) throw new ArgumentException($"{nameof(packages)} contains elements which have no version.", nameof(packages));
+      if (packages.Any(x => x.Source == null)) throw new ArgumentException($"{nameof(packages)} contains elements whose Source is null.", nameof(packages));
 
-          PackagePathResolver packagePathResolver = new PackagePathResolver(Settings.PackagesPath);
-          PackageExtractionContext packageExtractionContext = new PackageExtractionContext(PackageSaveMode.Defaultv3, XmlDocFileSaveMode.Skip, null, logger);
-          await PackageExtractor.ExtractPackageAsync(downloadResult.PackageSource, downloadResult.PackageStream, packagePathResolver, packageExtractionContext, cancellationToken);
+      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
+        foreach (SourcePackageDependencyInfo package in packages) {
+          DownloadResource downloadResource = await package.Source.GetResourceAsync<DownloadResource>(cancellationToken);
+          PackageDownloadContext downloadContext = new PackageDownloadContext(cacheContext, Settings.PackagesCachePath, cacheContext.DirectDownload);
+          using (DownloadResourceResult downloadResult = await downloadResource.GetDownloadResourceResultAsync(package, downloadContext, Settings.PackagesCachePath, logger, cancellationToken)) {
+            if (downloadResult.Status == DownloadResourceResultStatus.NotFound) throw new InvalidOperationException($"{package.ToString()} at package source {package.Source.PackageSource} not found.");
+
+            PackagePathResolver packagePathResolver = new PackagePathResolver(Settings.PackagesPath);
+            PackageExtractionContext packageExtractionContext = new PackageExtractionContext(PackageSaveMode.Defaultv3, XmlDocFileSaveMode.Skip, null, logger);
+            await PackageExtractor.ExtractPackageAsync(downloadResult.PackageSource, downloadResult.PackageStream, packagePathResolver, packageExtractionContext, cancellationToken);
+          }
         }
       }
     }
@@ -292,7 +303,8 @@ namespace HEAL.Bricks {
       return versions.Where(x => x.Value != null)
                      .GroupBy(x => x.Key)
                      .OrderBy(x => x.Key)
-                     .Select(x => (PackageId: x.Key, Version: x.OrderByDescending(y => y.Value, VersionComparer.Default).First().Value));
+                     .Select(x => (PackageId: x.Key, Version: x.OrderByDescending(y => y.Value, VersionComparer.Default).First().Value))
+                     .ToArray();
     }
     #endregion
 

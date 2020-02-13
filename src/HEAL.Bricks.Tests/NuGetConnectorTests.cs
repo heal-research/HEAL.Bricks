@@ -1153,8 +1153,7 @@ namespace HEAL.Bricks.Tests {
       Assert.IsTrue(Directory.Exists(Path.Combine(nuGetConnector.Settings.PackagesPath, identity.ToString())));
 
       package = new SourcePackageDependencyInfo(Constants.namePluginA, new NuGetVersion(Constants.version000), Enumerable.Empty<NuGetPackageDependency>(), true, nuGetConnector.Repositories.First());
-      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.InstallPackageAsync(package, default); });
-      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+      await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => { return nuGetConnector.InstallPackageAsync(package, default); });
 
       package = null;
       argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.InstallPackageAsync(package, default); });
@@ -1170,6 +1169,59 @@ namespace HEAL.Bricks.Tests {
 
       package = new SourcePackageDependencyInfo(Constants.namePluginA, new NuGetVersion(Constants.version030), Enumerable.Empty<NuGetPackageDependency>(), true, null);
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.InstallPackageAsync(package, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      WriteLogToTestContextAndClear(nuGetConnector);
+    }
+    #endregion
+
+    #region TestInstallPackagesAsync
+    [TestMethod]
+    public async Task TestInstallPackagesAsync() {
+      NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
+      PackageIdentity[] identities;
+      SourcePackageDependencyInfo[] packages;
+      ArgumentNullException argumentNullException;
+      ArgumentException argumentException;
+      InvalidOperationException invalidOperationException;
+
+      identities = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version020),
+                           CreatePackageIdentity(Constants.namePluginB, Constants.version031),
+                           CreatePackageIdentity("SimSharp", "3.3.0") };
+      packages = (await nuGetConnector.GetPackageDependenciesAsync(identities, false, default)).ToArray();
+      await nuGetConnector.InstallPackagesAsync(packages, default);
+      Assert.IsTrue(identities.All(x => Directory.Exists(Path.Combine(nuGetConnector.Settings.PackagesPath, x.ToString()))));
+
+      identities = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version030),
+                           CreatePackageIdentity(Constants.namePluginB, Constants.version030) };
+      packages = (await nuGetConnector.GetPackageDependenciesAsync(identities, false, default)).ToArray();
+      await nuGetConnector.InstallPackagesAsync(packages, default);
+      Assert.IsTrue(identities.All(x => Directory.Exists(Path.Combine(nuGetConnector.Settings.PackagesPath, x.ToString()))));
+
+      packages = Array.Empty<SourcePackageDependencyInfo>();
+      await nuGetConnector.InstallPackagesAsync(packages, default);
+
+      packages = new[] { new SourcePackageDependencyInfo(Constants.namePluginA, new NuGetVersion(Constants.version000), Enumerable.Empty<NuGetPackageDependency>(), true, nuGetConnector.Repositories.First()) };
+      await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => { return nuGetConnector.InstallPackagesAsync(packages, default); });
+
+      packages = null;
+      argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return nuGetConnector.InstallPackagesAsync(packages, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
+
+      packages = new SourcePackageDependencyInfo[] { null };
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.InstallPackagesAsync(packages, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      packages = new[] { new SourcePackageDependencyInfo("", new NuGetVersion(Constants.version030), Enumerable.Empty<NuGetPackageDependency>(), true, nuGetConnector.Repositories.First()) };
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.InstallPackagesAsync(packages, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      packages = new[] { new SourcePackageDependencyInfo(Constants.namePluginA, null, Enumerable.Empty<NuGetPackageDependency>(), true, nuGetConnector.Repositories.First()) };
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.InstallPackagesAsync(packages, default); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
+
+      packages = new[] { new SourcePackageDependencyInfo(Constants.namePluginA, new NuGetVersion(Constants.version030), Enumerable.Empty<NuGetPackageDependency>(), true, null) };
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return nuGetConnector.InstallPackagesAsync(packages, default); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
       WriteLogToTestContextAndClear(nuGetConnector);
