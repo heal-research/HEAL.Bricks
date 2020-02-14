@@ -208,6 +208,15 @@ namespace HEAL.Bricks {
       if (availablePackages == null) throw new ArgumentNullException(nameof(availablePackages));
       if (availablePackages.Any(x => x == null)) throw new ArgumentException($"{nameof(availablePackages)} contains elements which are null.", nameof(availablePackages));
 
+      if ((additionalPackages.Count() == 0) && (existingPackages.Count() == 0)) {
+        resolveSucceeded = true;
+        return Enumerable.Empty<SourcePackageDependencyInfo>();
+      }
+      if (availablePackages.Count() == 0) {
+        resolveSucceeded = false;
+        return Enumerable.Empty<SourcePackageDependencyInfo>();
+      }
+
       PackageResolverContext context = new PackageResolverContext(DependencyBehavior.Highest,
                                                                   additionalPackages,
                                                                   existingPackages.Select(x => x.Id),

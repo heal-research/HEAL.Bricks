@@ -800,6 +800,14 @@ namespace HEAL.Bricks.Tests {
       #endregion
 
       #region input additional packages
+      additionalPackages = Array.Empty<string>();
+      existingPackages = null;
+      availablePackages = allAvailablePackages;
+      expectedPackages = Array.Empty<PackageIdentity>();
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
+      Assert.IsTrue(resolveSucceeded);
+      CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
+
       additionalPackages = new[] { Constants.namePluginA };
       existingPackages = null;
       availablePackages = allAvailablePackages;
@@ -840,6 +848,14 @@ namespace HEAL.Bricks.Tests {
       #endregion
 
       #region input existing packages
+      additionalPackages = null;
+      existingPackages = Array.Empty<PackageIdentity>();
+      availablePackages = allAvailablePackages;
+      expectedPackages = Array.Empty<PackageIdentity>();
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
+      Assert.IsTrue(resolveSucceeded);
+      CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
+
       additionalPackages = null;
       existingPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version010) };
       availablePackages = allAvailablePackages;
@@ -934,6 +950,16 @@ namespace HEAL.Bricks.Tests {
       #endregion
 
       #region dependency resolution fails
+      #region no available packages given
+      additionalPackages = new[] { Constants.namePluginA };
+      existingPackages = null;
+      availablePackages = Array.Empty<SourcePackageDependencyInfo>();
+      expectedPackages = Array.Empty<PackageIdentity>();
+      resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
+      Assert.IsFalse(resolveSucceeded);
+      CollectionAssert.AreEqual(expectedPackages, resolvedPackages);
+      #endregion
+
       #region additional packages are missing in available packages
       additionalPackages = new[] { Constants.namePluginA };
       existingPackages = null;

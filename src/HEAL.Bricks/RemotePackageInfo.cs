@@ -20,7 +20,7 @@ namespace HEAL.Bricks {
       if (packageSearchMetadata == null) throw new ArgumentNullException(nameof(packageSearchMetadata));
       if (sourcePackageDependencyInfo == null) throw new ArgumentNullException(nameof(sourcePackageDependencyInfo));
       if (sourcePackageDependencyInfo.Dependencies == null) throw new ArgumentException($"{nameof(sourcePackageDependencyInfo)}.Dependencies is null.", nameof(sourcePackageDependencyInfo));
-      if (!packageSearchMetadata.Identity.Id.Equals(sourcePackageDependencyInfo.Id)) throw new ArgumentException($"Id of {nameof(packageSearchMetadata)} and {nameof(sourcePackageDependencyInfo)} do not match.", nameof(packageSearchMetadata) + ", " + nameof(sourcePackageDependencyInfo));
+      if (!packageSearchMetadata.Identity.Id.Equals(sourcePackageDependencyInfo.Id, StringComparison.OrdinalIgnoreCase)) throw new ArgumentException($"Id of {nameof(packageSearchMetadata)} and {nameof(sourcePackageDependencyInfo)} do not match.", nameof(packageSearchMetadata) + ", " + nameof(sourcePackageDependencyInfo));
       if (!packageSearchMetadata.Identity.Version.Equals(sourcePackageDependencyInfo.Version)) throw new ArgumentException($"Version of {nameof(packageSearchMetadata)} and {nameof(sourcePackageDependencyInfo)} do not match.", nameof(packageSearchMetadata) + ", " + nameof(sourcePackageDependencyInfo));
 
       this.packageSearchMetadata = packageSearchMetadata;
