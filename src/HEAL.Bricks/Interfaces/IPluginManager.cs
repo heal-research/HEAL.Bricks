@@ -36,5 +36,8 @@ namespace HEAL.Bricks {
     Task<IEnumerable<RemotePackageInfo>> GetPackageUpdatesAsync(bool includePreReleases = false, CancellationToken cancellationToken = default);
     
     Task InstallPackageUpdatesAsync(bool installMissingDependencies = true, bool includePreReleases = false, CancellationToken cancellationToken = default);
+
+    void LoadPackageAssemblies(LocalPackageInfo package);
+    void LoadPackageAssemblies();
   }
 }

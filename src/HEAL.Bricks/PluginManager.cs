@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -120,19 +121,19 @@ namespace HEAL.Bricks {
 
     public void RemoveInstalledPackage(LocalPackageInfo package) {
       if (package == null) throw new ArgumentNullException(nameof(package));
-      if (string.IsNullOrEmpty(package.Path)) throw new ArgumentException($"{nameof(package)}.Path is null or empty.", nameof(package));
+      if (string.IsNullOrEmpty(package.PackagePath)) throw new ArgumentException($"{nameof(package)}.{nameof(package.PackagePath)} is null or empty.", nameof(package));
 
       RemoveInstalledPackages(Enumerable.Repeat(package, 1));
     }
     public void RemoveInstalledPackages(IEnumerable<LocalPackageInfo> packages) {
       if (packages == null) throw new ArgumentNullException(nameof(packages));
       if (packages.Any(x => x == null)) throw new ArgumentException($"{nameof(packages)} contains null elements.", nameof(packages));
-      if (packages.Any(x => string.IsNullOrEmpty(x.Path))) throw new ArgumentException($"{nameof(packages)} contains elements whose Path is null or empty.", nameof(packages));
+      if (packages.Any(x => string.IsNullOrEmpty(x.PackagePath))) throw new ArgumentException($"{nameof(packages)} contains elements whose PackagePath is null or empty.", nameof(packages));
 
       if (packages.Count() > 0) {
         foreach (LocalPackageInfo package in packages) {
           try {
-            Directory.Delete(package.Path, true);
+            Directory.Delete(package.PackagePath, true);
           }
           catch (DirectoryNotFoundException) { }
         }
@@ -170,6 +171,25 @@ namespace HEAL.Bricks {
 
     public async Task InstallPackageUpdatesAsync(bool installMissingDependencies = true, bool includePreReleases = false, CancellationToken cancellationToken = default) {
       await InstallRemotePackagesAsync(await GetPackageUpdatesAsync(includePreReleases, cancellationToken), installMissingDependencies, cancellationToken);
+    }
+
+    public void LoadPackageAssemblies(LocalPackageInfo package) {
+      if (package.Status == PackageStatus.Unknown) throw new InvalidOperationException($"Cannot load assemblies of {package.ToString()}. Package status is unknown.");
+      if (package.Status == PackageStatus.DependenciesMissing) throw new InvalidOperationException($"Cannot load assemblies of {package.ToString()}. Dependencies are missing.");
+      if (package.Status == PackageStatus.IndirectDependenciesMissing) throw new InvalidOperationException($"Cannot load assemblies of {package.ToString()}. Dependencies of dependencies are missing.");
+      if (package.Status == PackageStatus.IncompatibleFramework) throw new InvalidOperationException($"Cannot load assemblies of {package.ToString()}. Package is not compatible to the current .NET framework.");
+
+      if (package.Status != PackageStatus.Loaded) {
+        foreach (string assemblyPath in package.ReferenceItems) {
+          AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyPath);
+        }
+        package.Status = PackageStatus.Loaded;
+      }
+    }
+    public void LoadPackageAssemblies() {
+      foreach (LocalPackageInfo package in InstalledPackages.Where(x => x.Status == PackageStatus.OK)) {
+        LoadPackageAssemblies(package);
+      }
     }
 
     #region Helpers

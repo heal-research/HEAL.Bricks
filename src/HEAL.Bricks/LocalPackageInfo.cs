@@ -8,6 +8,8 @@
 using NuGet.Frameworks;
 using NuGet.Packaging;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace HEAL.Bricks {
@@ -16,7 +18,8 @@ namespace HEAL.Bricks {
 
     public string Description => nuspecReader.GetDescription();
     public bool IsPlugin { get; }
-    public string Path { get; }
+    public string PackagePath { get; }
+    public IEnumerable<string> ReferenceItems { get; }
     public PackageStatus Status { get; internal set; }
 
     internal LocalPackageInfo(PackageFolderReader packageReader, NuGetFramework currentFramework, string pluginTag = "") : base(packageReader?.GetIdentity()) {
@@ -27,7 +30,8 @@ namespace HEAL.Bricks {
       nuspecReader = packageReader.NuspecReader;
       Dependencies = NuGetFrameworkUtility.GetNearest(nuspecReader.GetDependencyGroups(), currentFramework).Packages.Select(x => new PackageDependency(x)).ToArray();
       IsPlugin = !string.IsNullOrEmpty(pluginTag) && nuspecReader.GetTags().Contains(pluginTag);
-      Path = System.IO.Path.GetDirectoryName(packageReader.GetNuspecFile());
+      PackagePath = System.IO.Path.GetDirectoryName(packageReader.GetNuspecFile());
+      ReferenceItems = NuGetFrameworkUtility.GetNearest(packageReader.GetReferenceItems(), currentFramework).Items.Select(x => Path.Combine(PackagePath, x)).ToArray();
       bool frameworkNotSupported = new FrameworkReducer().GetNearest(currentFramework, packageReader.GetSupportedFrameworks()) == null;
       Status = frameworkNotSupported ? PackageStatus.IncompatibleFramework : PackageStatus.Unknown;
     }

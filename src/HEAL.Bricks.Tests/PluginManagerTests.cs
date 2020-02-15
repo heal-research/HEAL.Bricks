@@ -510,6 +510,26 @@ namespace HEAL.Bricks.Tests {
     }
     #endregion
 
+    #region TestLoadPackageAssemblies
+    [TestMethod]
+    public void TestLoadPackageAssemblies() {
+      NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
+      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      LocalPackageInfo package;
+
+      pluginManager.Initialize();
+      package = pluginManager.InstalledPackages.Where(x => x.Id == Constants.nameBricksPluginTypes).Single();
+      pluginManager.LoadPackageAssemblies(package);
+      Assert.IsTrue(package.Status == PackageStatus.Loaded);
+
+      pluginManager.InstallMissingDependenciesAsync().Wait();
+      pluginManager.LoadPackageAssemblies();
+      Assert.IsTrue(pluginManager.InstalledPackages.All(x => (x.Status == PackageStatus.Loaded) || (x.Status == PackageStatus.Outdated)));
+
+      WriteLogToTestContextAndClear(nuGetConnector);
+    }
+    #endregion
+
     #region Helpers
     private class PackageInfoComparer : IComparer {
       public static PackageInfoComparer Default => new PackageInfoComparer();
