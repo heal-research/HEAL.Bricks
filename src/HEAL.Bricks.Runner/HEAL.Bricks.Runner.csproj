@@ -1,30 +1,30 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" InitialTargets="SetVersion">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace>HEAL.Bricks</RootNamespace>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>HEAL.snk</AssemblyOriginatorKeyFile>
     <Authors>Heuristic and Evolutionary Algorithms Laboratory (HEAL) and Contributors</Authors>
     <Company>University of Applied Sciences Upper Austria</Company>
     <Product>HEAL.Bricks</Product>
     <Copyright>(c) Heuristic and Evolutionary Algorithms Laboratory (HEAL)</Copyright>
-    <Description>HEAL.Bricks is a plug-in framework for .NET. It discovers, loads, and executes plug-ins and supports execution isolation in separate processes or Docker containers.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/HeuristicLab/HEAL.Bricks</PackageProjectUrl>
     <RepositoryUrl>https://github.com/HeuristicLab/HEAL.Bricks.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>HEAL.snk</AssemblyOriginatorKeyFile>
+    <Description>HEAL.Bricks is a plug-in framework for .NET. It discovers, loads, and executes plug-ins and supports execution isolation in separate processes or Docker containers.</Description>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <PropertyGroup>
     <!-- <GitSkipCache>false</GitSkipCache> -->
     <GitThisAssembly>true</GitThisAssembly>
     <!-- <GitThisAssemblyMetadata>false</GitThisAssemblyMetadata> -->
-    <ThisAssemblyNamespace>HEAL.Bricks.PluginTypes</ThisAssemblyNamespace>
+    <ThisAssemblyNamespace>HEAL.Bricks.Runner</ThisAssemblyNamespace>
     <GitDefaultBranch>master</GitDefaultBranch>
     <!-- <GitVersionFile>GitInfo.txt</GitVersionFile> -->
     <GitInfoReportImportance>high</GitInfoReportImportance>
@@ -41,6 +41,10 @@
 
   <ItemGroup>
     <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HEAL.Bricks\HEAL.Bricks.csproj" />
   </ItemGroup>
 
   <Target Name="SetVersion" DependsOnTargets="GitVersion" Condition="'$(GitInfoImported)' == 'true' And '$(ExcludeRestorePackageImports)' != 'true'">

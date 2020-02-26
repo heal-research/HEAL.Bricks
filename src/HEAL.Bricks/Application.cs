@@ -5,10 +5,10 @@
  */
 #endregion
 
-using HEAL.Attic;
+using System;
 
 namespace HEAL.Bricks {
-  [StorableType("FB13839C-2EEC-4C6F-BEF3-A1CAE4467362")]
+  [Serializable]
   public abstract class Application : IApplication {
     protected Application() { }
 

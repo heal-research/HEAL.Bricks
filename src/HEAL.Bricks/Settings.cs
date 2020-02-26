@@ -5,17 +5,13 @@
  */
 #endregion
 
-using NuGet.Packaging;
-using NuGet.Packaging.Core;
-using NuGet.Protocol.Core.Types;
-using NuGet.Versioning;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 
 namespace HEAL.Bricks {
+  [Serializable]
   public class Settings : ISettings {
     public static ISettings Default => new Settings();
     public static string PublicNuGetRepository => "https://api.nuget.org/v3/index.json";

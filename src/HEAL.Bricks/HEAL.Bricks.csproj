@@ -36,7 +36,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="HEAL.Attic" Version="1.4.0" />
     <PackageReference Include="HEAL.Bricks.PluginTypes" Version="0.1.0-alpha.10" />
     <PackageReference Include="NuGet.Resolver" Version="5.4.0" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />

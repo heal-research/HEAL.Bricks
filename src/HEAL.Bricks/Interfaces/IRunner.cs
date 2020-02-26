@@ -6,14 +6,15 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public interface IRunner {
-    IEnumerable<AssemblyInfo> AssembliesToLoad { get; set; }
+    RunnerStatus Status { get; }
 
     void Run();
-    void Pause();
-    void Resume();
-    void Cancel();
+    Task RunAsync(CancellationToken cancellationToken = default);
+    void Execute();
   }
 }

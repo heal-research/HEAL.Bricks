@@ -5,12 +5,13 @@
  */
 #endregion
 
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public interface IRunnerHost {
-    RunnerState State { get; }
+    RunnerStatus State { get; }
 
     bool QuietMode { get; set; }
 
@@ -18,5 +19,6 @@ namespace HEAL.Bricks {
     Task RunAsync(IRunner runner, CancellationToken? token = null);
 
     void Send(RunnerMessage runnerMessage);
+    RunnerMessage Receive();
   }
 }

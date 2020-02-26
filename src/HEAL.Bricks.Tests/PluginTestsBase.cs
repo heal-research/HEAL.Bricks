@@ -82,7 +82,7 @@ namespace HEAL.Bricks.Tests {
       TestContext.WriteLine($"Deployed TestPackageSources to {targetPath}.");
     }
 
-    private protected NuGetConnector CreateNuGetConnector(bool includePublicNuGetRepository = false) {
+    private protected ISettings CreateSettings(bool includePublicNuGetRepository = false) {
       Settings settings = new Settings();
       settings.SetAppPath(TestExecutionPath);
       settings.PluginTag = "HEALBricksPlugin";
@@ -93,7 +93,10 @@ namespace HEAL.Bricks.Tests {
       settings.Repositories.Add(Path.Combine(settings.AppPath, Constants.remoteDevRepositoryRelativePath));
       if (includePublicNuGetRepository)
         settings.Repositories.Add(Constants.publicNuGetRepository);
-
+      return settings;
+    }
+    private protected NuGetConnector CreateNuGetConnector(bool includePublicNuGetRepository = false) {
+      ISettings settings = CreateSettings(includePublicNuGetRepository);
       NuGetConnector nuGetConnector = new NuGetConnector(settings);
       nuGetConnector.EnableLogging(LogLevel.Debug);
       nuGetConnector.SetFrameworkForUnitTests(".NETCoreApp,Version=v3.1");

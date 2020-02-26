@@ -26,4 +26,11 @@ namespace HEAL.Bricks {
     InvalidPlugins,
     Unknown
   }
+  public enum RunnerStatus {
+    Created,
+    Cancelled,
+    Starting,
+    Running,
+    Stopped
+  }
 }

@@ -11,14 +11,14 @@ namespace HEAL.Bricks {
   /// <summary>
   /// IRunner for isolation with a native process.
   /// </summary>
-  public class NativeRunnerHost : RunnerHost {
-    #region Constructors
-    public NativeRunnerHost() : this(null, null, null) {
-    }
+  //public class NativeRunnerHost : RunnerHost {
+  //  #region Constructors
+  //  public NativeRunnerHost() : this(null, null, null) {
+  //  }
 
-    public NativeRunnerHost(string userName, string password, string domain)
-      : base($"{Directory.GetCurrentDirectory()}{Path.DirectorySeparatorChar}HeuristicLab-3.3.exe", "", userName, password, domain) {
-    }
-    #endregion
-  }
+  //  public NativeRunnerHost(string userName, string password, string domain)
+  //    : base($"{Directory.GetCurrentDirectory()}{Path.DirectorySeparatorChar}HEAL.Bricks.Runner.exe", "", userName, password, domain) {
+  //  }
+  //  #endregion
+  //}
 }
