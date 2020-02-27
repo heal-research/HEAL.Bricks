@@ -15,6 +15,10 @@ namespace HEAL.Bricks {
     IEnumerable<Type> GetTypes(IEnumerable<Type> types, bool onlyInstantiable = true, bool excludeGenericTypeDefinitions = true, bool assignableToAllTypes = true);
     IEnumerable<Type> GetTypes(Type type, Assembly assembly, bool onlyInstantiable = true, bool excludeGenericTypeDefinitions = true);
     IEnumerable<Type> GetTypes(IEnumerable<Type> types, Assembly assembly, bool onlyInstantiable = true, bool excludeGenericTypeDefinitions = true, bool assignableToAllTypes = true);
+
     IEnumerable<T> GetInstances<T>() where T : class;
+    IEnumerable<T> GetInstances<T>(params object[] args) where T : class;
+    IEnumerable<object> GetInstances(Type type);
+    IEnumerable<object> GetInstances(Type type, params object[] args);
   }
 }

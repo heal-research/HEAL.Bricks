@@ -45,11 +45,15 @@ namespace HEAL.Bricks {
       return types.Select(t => GetTypes(t, assembly, onlyInstantiable, excludeGenericTypeDefinitions))
                   .Aggregate((a, b) => assignableToAllTypes ? a.Intersect(b) : a.Union(b));
     }
-    public IEnumerable<T> GetInstances<T>() where T : class {
-      foreach (Type t in GetTypes(typeof(T))) {
-        T instance = default;
+
+    public IEnumerable<T> GetInstances<T>() where T : class => GetInstances<T>(null);
+    public IEnumerable<T> GetInstances<T>(params object[] args) where T : class => GetInstances(typeof(T), args).Cast<T>();
+    public IEnumerable<object> GetInstances(Type type) => GetInstances(type, null);
+    public IEnumerable<object> GetInstances(Type type, params object[] args) {
+      foreach (Type t in GetTypes(type)) {
+        object instance = null;
         try {
-          instance = Activator.CreateInstance(t) as T;
+          instance = Activator.CreateInstance(t, args);
         }
         catch { }
         if (instance != null) yield return instance;

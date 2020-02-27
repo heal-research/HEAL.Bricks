@@ -65,6 +65,9 @@ namespace HEAL.Bricks.Tests {
     public void TestGetInstances() {
       ITypeDiscoverer td = TypeDiscoverer.Create();
       CollectionAssert.AreEquivalent(new[] { typeof(A), typeof(B), typeof(E) }, td.GetInstances<I1>().Select(x => x.GetType()).ToArray());
+      CollectionAssert.AreEquivalent(new[] { typeof(A), typeof(B), typeof(E) }, td.GetInstances<I1>(null).Select(x => x.GetType()).ToArray());
+      CollectionAssert.AreEquivalent(new[] { typeof(A), typeof(B), typeof(E) }, td.GetInstances(typeof(I1)).Select(x => x.GetType()).ToArray());
+      CollectionAssert.AreEquivalent(new[] { typeof(A), typeof(B), typeof(E) }, td.GetInstances(typeof(I1), null).Select(x => x.GetType()).ToArray());
     }
     #endregion
   }
