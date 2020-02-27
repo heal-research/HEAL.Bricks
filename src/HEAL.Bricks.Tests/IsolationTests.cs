@@ -34,7 +34,7 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     [TestCategory("WIP")]
     public async Task TestProcessRunner() {
-      EchoRunner runner = new EchoRunner("HEAL.Bricks.Runner.exe");
+      EchoRunner runner = new EchoRunner();
       
       CancellationTokenSource cts = new CancellationTokenSource();
       cts.CancelAfter(10000);
@@ -51,6 +51,32 @@ namespace HEAL.Bricks.Tests {
         Trace.WriteLine(message.Data);
         Trace.WriteLine("... done");
       }
+
+      await t;
+    }
+
+    [TestMethod]
+    [TestCategory("WIP")]
+    public async Task TestEchoApplication() {
+      NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
+      PluginManager pluginManager = new PluginManager(nuGetConnector);
+
+      await pluginManager.InstallMissingDependenciesAsync();
+
+      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pluginManager.Settings);
+      var t = discoverApplicationsRunner.RunAsync();
+      var app = discoverApplicationsRunner.ReceiveMessage<DiscoveredApplicationsMessage>().Data[0];
+      await t;
+
+      ApplicationRunner applicationRunner = new ApplicationRunner(pluginManager.Settings, app);
+      t = applicationRunner.RunAsync();
+      applicationRunner.WriteToApplicationConsole("Hello World");
+      applicationRunner.WriteToApplicationConsole("");
+
+      Trace.WriteLine(applicationRunner.ReadFromApplicationConsole());
+      Trace.WriteLine(applicationRunner.ReadFromApplicationConsole());
+      Trace.WriteLine(applicationRunner.ReadFromApplicationConsole());
+      Trace.WriteLine(applicationRunner.ReadFromApplicationConsole());
 
       await t;
     }

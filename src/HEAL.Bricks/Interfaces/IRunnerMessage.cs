@@ -8,7 +8,5 @@
 using System;
 
 namespace HEAL.Bricks {
-  public interface IRunnerMessage {
-    DateTime SendTime { get; set; }
-  }
+  public interface IRunnerMessage { }
 }

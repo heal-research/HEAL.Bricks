@@ -92,6 +92,9 @@
     <None Update="TestPlugins\HEAL.Bricks.Tests.PluginB.0.3.1.nupkg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestPlugins\HEAL.Bricks.Tests.EchoApplication.1.0.0.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

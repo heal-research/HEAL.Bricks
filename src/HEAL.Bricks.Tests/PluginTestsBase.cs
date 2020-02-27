@@ -19,6 +19,7 @@ namespace HEAL.Bricks.Tests {
   [DeploymentItem(Constants.pathBricksPluginTypes, Constants.localPackagesRelativePath)]
   [DeploymentItem(Constants.pathPluginB_010_alpha1, Constants.localPackagesRelativePath)]
   [DeploymentItem(Constants.pathPluginB_020, Constants.localPackagesRelativePath)]
+  [DeploymentItem(Constants.pathEchoApp_100, Constants.localPackagesRelativePath)]
   // released plugins
   [DeploymentItem(Constants.pathBricksPluginTypes, Constants.remoteOfficialRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginA_010_alpha1, Constants.remoteOfficialRepositoryRelativePath)]
@@ -32,6 +33,7 @@ namespace HEAL.Bricks.Tests {
   [DeploymentItem(Constants.pathPluginB_010, Constants.remoteOfficialRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginB_020_alpha1, Constants.remoteOfficialRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginB_020, Constants.remoteOfficialRepositoryRelativePath)]
+  [DeploymentItem(Constants.pathEchoApp_100, Constants.remoteOfficialRepositoryRelativePath)]
   // plugins in development
   [DeploymentItem(Constants.pathBricksPluginTypes, Constants.remoteDevRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginA_020_alpha1, Constants.remoteDevRepositoryRelativePath)]

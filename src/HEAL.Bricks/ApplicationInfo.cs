@@ -1,4 +1,4 @@
-#region License Information
+﻿#region License Information
 /*
  * This file is part of HEAL.Bricks which is licensed under the MIT license.
  * See the LICENSE file in the project root for more information.
@@ -9,13 +9,15 @@ using System;
 
 namespace HEAL.Bricks {
   [Serializable]
-  public class PluginFile : IPluginFile {
+  public class ApplicationInfo {
     public string Name { get; }
-    public PluginFileType Type { get; }
+    public string Description { get; }
+    public string TypeName { get; }
 
-    public PluginFile(string name, PluginFileType type) {
-      Name = name;
-      Type = type;
+    internal ApplicationInfo(IApplication application) {
+      Name = application.Name;
+      Description = application.Description;
+      TypeName = application.GetType().FullName;
     }
 
     public override string ToString() {

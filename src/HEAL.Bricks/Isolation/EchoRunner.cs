@@ -6,33 +6,20 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Reflection;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   [Serializable]
-  public class EchoRunner : ProcessRunner {
-    public EchoRunner(string program, string arguments = null, string userName = null, string userDomain = null, string password = null) : base(program, arguments, userName, userDomain, password) {
-    }
+  public sealed class EchoRunner : MessageRunner {
+    public EchoRunner(ProcessRunnerStartInfo startInfo = null) : base(startInfo ?? new ProcessRunnerStartInfo()) { }
 
-    public override void Execute() {
-      base.Execute();
-
-      while (true) {
-        IRunnerMessage message = ReceiveMessage();
-        switch (message) {
-          case CancelRunnerMessage _:
-            return;
-          case RunnerTextMessage trm:
-            SendMessage(new RunnerTextMessage("ECHO: " + trm.Data));
-            break;
-        }
+    protected override void ProcessRunnerMessage(IRunnerMessage message) {
+      switch (message) {
+        case RunnerTextMessage textMessage:
+          SendMessage(new RunnerTextMessage("ECHO: " + textMessage.Data));
+          break;
+        default:
+          SendException(new InvalidOperationException($"Cannot process message {message.GetType().Name}."));
+          break;
       }
     }
   }

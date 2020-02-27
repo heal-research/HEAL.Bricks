@@ -54,11 +54,13 @@ namespace HEAL.Bricks.Tests {
     public const string pathPluginB_030_alpha2 = @"TestPlugins\HEAL.Bricks.Tests.PluginB.0.3.0-alpha.2.nupkg";
     public const string pathPluginB_030        = @"TestPlugins\HEAL.Bricks.Tests.PluginB.0.3.0.nupkg";
     public const string pathPluginB_031        = @"TestPlugins\HEAL.Bricks.Tests.PluginB.0.3.1.nupkg";
+    public const string pathEchoApp_100        = @"TestPlugins\HEAL.Bricks.Tests.EchoApplication.1.0.0.nupkg";
 
     // names of test plugins
     public const string nameInvalid = "HEAL.Bricks.Tests.InvalidPluginName";
     public const string namePluginA = "HEAL.Bricks.Tests.PluginA";
     public const string namePluginB = "HEAL.Bricks.Tests.PluginB";
+    public const string nameEchoApp = "HEAL.Bricks.Tests.EchoApplication";
 
     // versions of test plugins
     public const string versionInvalid    = "abcdefg";
@@ -74,5 +76,6 @@ namespace HEAL.Bricks.Tests {
     public const string version030_beta1  = "0.3.0-beta.1";
     public const string version030        = "0.3.0";
     public const string version031        = "0.3.1";
+    public const string version100        = "1.0.0";
   }
 }

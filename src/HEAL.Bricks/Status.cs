@@ -28,9 +28,9 @@ namespace HEAL.Bricks {
   }
   public enum RunnerStatus {
     Created,
-    Cancelled,
     Starting,
     Running,
-    Stopped
+    Stopped,
+    Cancelled
   }
 }

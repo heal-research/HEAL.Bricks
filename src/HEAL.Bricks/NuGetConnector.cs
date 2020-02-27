@@ -31,9 +31,7 @@ namespace HEAL.Bricks {
     public IEnumerable<SourceRepository> Repositories { get; }
 
     public NuGetConnector(ISettings settings) {
-      if (settings == null) throw new ArgumentNullException(nameof(settings));
-
-      Settings = settings;
+      Settings = settings ?? throw new ArgumentNullException(nameof(settings));
       Repositories = settings.Repositories.Select(x => CreateSourceRepository(x)).ToArray();
     }
 
@@ -182,7 +180,7 @@ namespace HEAL.Bricks {
           DependencyInfoResource dependencyInfoResource = await sourceRepository.GetResourceAsync<DependencyInfoResource>(cancellationToken);
           satisfyingPackages.AddRange((await dependencyInfoResource.ResolvePackages(dependency.Id, CurrentFramework, cacheContext, logger, cancellationToken)).Where(x => dependency.VersionRange.Satisfies(x.Version)));
         }
-        if (satisfyingPackages.Count() == 0) throw new InvalidOperationException($"No packages found which satisfy dependency {dependencies.ToString()}.");
+        if (satisfyingPackages.Count() == 0) throw new InvalidOperationException($"No packages found which satisfy dependency {dependency.ToString()}.");
 
         foreach (SourcePackageDependencyInfo package in satisfyingPackages) {
           if (!foundDependencies.Contains(package)) {

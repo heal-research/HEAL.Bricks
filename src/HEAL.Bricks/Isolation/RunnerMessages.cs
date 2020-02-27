@@ -22,12 +22,9 @@ namespace HEAL.Bricks {
       return ReadFromStream<IRunnerMessage>(stream);
     }
     public static void WriteToStream(IRunnerMessage message, Stream stream) {
-      message.SendTime = DateTime.Now;
       serializer.Serialize(stream, message);
       stream.Flush();
     }
-
-    public DateTime SendTime { get; set; }
   }
 
   [Serializable]
@@ -60,12 +57,12 @@ namespace HEAL.Bricks {
   }
 
   [Serializable]
-  public class DiscoveredPluginsRunnerMessage : RunnerDataMessage<string[]> {
-    public DiscoveredPluginsRunnerMessage(string[] plugins) : base(plugins) { }
+  public class RunnerTextMessage : RunnerDataMessage<string> {
+    public RunnerTextMessage(string text) : base(text) { }
   }
 
   [Serializable]
-  public class RunnerTextMessage : RunnerDataMessage<string> {
-    public RunnerTextMessage(string text) : base(text) { }
+  public class DiscoveredApplicationsMessage : RunnerDataMessage<ApplicationInfo[]> {
+    public DiscoveredApplicationsMessage(ApplicationInfo[] applicationInfos) : base(applicationInfos) { }
   }
 }

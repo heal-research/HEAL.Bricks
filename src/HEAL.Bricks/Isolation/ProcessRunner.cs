@@ -16,33 +16,28 @@ namespace HEAL.Bricks {
   [Serializable]
   public abstract class ProcessRunner : IRunner {
     [NonSerialized]
-    private ProcessStartInfo processStartInfo;
+    protected ProcessStartInfo processStartInfo = new ProcessStartInfo();
+    [NonSerialized]
+    protected Process process;
     [NonSerialized]
     protected Stream inputStream, outputStream;
 
     public RunnerStatus Status { get; private set; } = RunnerStatus.Created;
 
-    public ProcessRunner(string program, string arguments = null, string userName = null, string userDomain = null, string password = null) {
-      string programPath = program ?? throw new ArgumentNullException(nameof(program));
-      if (program == "") throw new ArgumentException($"{nameof(program)} is empty", nameof(program));
-
-      if (!Path.IsPathRooted(programPath)) {
-        string appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-        programPath = Path.Combine(appDir, programPath);
-      }
+    protected ProcessRunner(ProcessRunnerStartInfo processRunnerStartInfo) {
+      if (processRunnerStartInfo == null) throw new ArgumentNullException(nameof(processRunnerStartInfo));
 
       processStartInfo = new ProcessStartInfo {
-        FileName = programPath,
-        Arguments = arguments ?? "",
+        FileName = processRunnerStartInfo.ProgramPath,
+        Arguments = processRunnerStartInfo.Arguments ?? "",
         UseShellExecute = false,
         RedirectStandardOutput = true,
         RedirectStandardInput = true,
-        RedirectStandardError = true,
         CreateNoWindow = false,
-        UserName = userName ?? "", // to use Local accounts (LocalService, LocalSystem, ...) the process has to run already as Service
-        Domain = userDomain ?? "",
-        PasswordInClearText = password ?? "",
-        WorkingDirectory = Path.GetDirectoryName(programPath)
+        UserName = processRunnerStartInfo.UserName ?? "", // to use built-in Windows system accounts (e.g., LocalService, LocalSystem, ...) the process has to be run as service
+        Domain = processRunnerStartInfo.UserDomain ?? "",
+        PasswordInClearText = processRunnerStartInfo.UserPassword ?? "",
+        WorkingDirectory = Path.GetDirectoryName(processRunnerStartInfo.ProgramPath)
       };
     }
 
@@ -51,7 +46,7 @@ namespace HEAL.Bricks {
       if (Status != RunnerStatus.Created) throw new InvalidOperationException($"Runner status is not \"{nameof(RunnerStatus.Created)}\".");
 
       Status = RunnerStatus.Starting;
-      Process process = new Process {
+      process = new Process {
         StartInfo = processStartInfo,
         EnableRaisingEvents = true
       };
@@ -59,7 +54,7 @@ namespace HEAL.Bricks {
       outputStream = process.StandardInput.BaseStream;
       inputStream = process.StandardOutput.BaseStream;
 
-      // registers a task for cancellation, prevents the use of polling (while-loop)
+      // registers a task for cancellation (prevents polling in a loop)
       Task<bool> task = RegisterCancellation(process, cancellationToken);
 
       RunnerMessage.WriteToStream(new StartRunnerMessage(this), outputStream);
@@ -70,35 +65,47 @@ namespace HEAL.Bricks {
       else Status = RunnerStatus.Stopped;
     }
 
-    public virtual void Execute() {
-      if (Status != RunnerStatus.Starting) throw new InvalidOperationException($"Runner status is not \"{nameof(RunnerStatus.Starting)}\".");
+    public void Execute() {
+      try {
+        if (Status != RunnerStatus.Starting) throw new InvalidOperationException($"Runner status is not \"{nameof(RunnerStatus.Starting)}\".");
 
-      inputStream = Console.OpenStandardInput();
-      outputStream = Console.OpenStandardOutput();
+        inputStream = Console.OpenStandardInput();
+        outputStream = Console.OpenStandardOutput();
 
-      Status = RunnerStatus.Running;
-      SendMessage(new RunnerStartedMessage());
+        Status = RunnerStatus.Running;
+        SendMessage(new RunnerStartedMessage());
+
+        Process();
+      }
+      catch (Exception ex) {
+        SendException(ex);
+      }
     }
+
+    protected abstract void Process();
 
     public void SendMessage(IRunnerMessage message) {
       if (Status != RunnerStatus.Running) throw new InvalidOperationException($"Runner status is not \"{nameof(RunnerStatus.Running)}\".");
       RunnerMessage.WriteToStream(message, outputStream);
     }
+    public void SendException(Exception exception) {
+      SendMessage(new RunnerExceptionMessage(exception));
+    }
     public T ReceiveMessage<T>() where T : IRunnerMessage {
-      if (Status != RunnerStatus.Running) throw new InvalidOperationException($"Runner status is not \"{nameof(RunnerStatus.Running)}\".");
+//      if (Status != RunnerStatus.Running) throw new InvalidOperationException($"Runner status is not \"{nameof(RunnerStatus.Running)}\".");
       return RunnerMessage.ReadFromStream<T>(inputStream);
     }
     public IRunnerMessage ReceiveMessage() {
       return ReceiveMessage<IRunnerMessage>();
     }
 
-    /// <summary>
-    /// Creates a new LinkedTokenSource and a TaskCompletionSource. 
-    /// When the specified token gets cancelled, a cancel requests gets send to the childprocess. 
-    /// Afterwards the main process waits for the exit of the child process and sets a result of the TaskCompletionSource.
-    /// When the child process gets finished without requested cancellation, the linked token gets cancelled and a result set. 
-    /// </summary>
     private Task<bool> RegisterCancellation(Process process, CancellationToken cancellationToken) {
+      // Create a new LinkedTokenSource and a TaskCompletionSource. 
+      // When the specified token is cancelled, a cancel requests is sent to the started process. 
+      // Then the main process waits for the started process to exit and sets a result of the TaskCompletionSource.
+      // When the started process is finished normally (i.e., no cancellation), the linked token is cancelled and
+      // the result is set (true if started process was cancelled, otherwise false). 
+
       var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
       var tcs = new TaskCompletionSource<bool>();
 
@@ -113,4 +120,41 @@ namespace HEAL.Bricks {
       return tcs.Task;
     }
   }
+
+  #region ProcessRunnerStartInfo
+  public class ProcessRunnerStartInfo {
+    private string programPath;
+    public string ProgramPath { get => programPath; set => SetProgramPath(value); }
+    public string Program { get => Path.GetFileName(programPath); }
+    public string Arguments { get; set; }
+    public string UserName { get; set; }
+    public string UserDomain { get; set; }
+    public string UserPassword { get; set; }
+
+    public ProcessRunnerStartInfo() {
+      ProgramPath = "HEAL.Bricks.Runner.exe";
+      Arguments = "";
+    }
+    public ProcessRunnerStartInfo(string program, string arguments = null) {
+      ProgramPath = program;
+      Arguments = arguments;
+    }
+    public ProcessRunnerStartInfo(string program, string arguments = null, string userName = null, string userDomain = null, string userPassword = null) : this(program, arguments) {
+      UserName = userName;
+      UserDomain = userDomain;
+      UserPassword = userPassword;
+    }
+
+    private void SetProgramPath(string path) {
+      if (path == null) throw new ArgumentNullException(nameof(ProgramPath));
+      if (path == "") throw new ArgumentException($"{nameof(ProgramPath)} is empty", nameof(ProgramPath));
+
+      programPath = path;
+      if (!Path.IsPathRooted(programPath)) {
+        string appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+        programPath = Path.Combine(appDir, programPath);
+      }
+    }
+  }
+  #endregion
 }

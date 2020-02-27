@@ -6,53 +6,51 @@
 #endregion
 
 using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
-//  [Serializable]
-//  public class ApplicationRunner : Runner {
-//    /// <summary>
-//    /// Arguments for the StartApplication.
-//    /// </summary>
-//    public ICommandLineArgument[] Args { get; set; }
+  [Serializable]
+  public class ApplicationRunner : ProcessRunner {
+    public ISettings Settings { get; }
+    public ApplicationInfo ApplicationInfo { get; }
+    public ICommandLineArgument[] Arguments { get; }
 
-//    /// <summary>
-//    /// The application which should run in child process.
-//    /// </summary>
-//    public IApplication StartApplication {
-//      get {
-//        lock (locker) {
-//          if (application == null) {
-////            application = (IApplication)new ProtoBufSerializer().Deserialize(serializedStartApplication);
-//          }
-//          return application;
-//        }
-//      }
-//      set {
-//        lock (locker) {
-////          serializedStartApplication = new ProtoBufSerializer().Serialize(value);
-//          application = value;
-//        }
-//      }
-//    }
-//    // Encapsulated application is necessary, because it is not possible to 
-//    // instantly deserialize the application, before all assemblies are loaded.
-//    private byte[] serializedStartApplication = new byte[0];
+    public ApplicationRunner(ISettings settings, ApplicationInfo applicationInfo, ICommandLineArgument[] arguments = null, ProcessRunnerStartInfo startInfo = null) : base(startInfo ?? new ProcessRunnerStartInfo()) {
+      Settings = settings;
+      ApplicationInfo = applicationInfo;
+      Arguments = arguments;
+    }
 
-//    // cache application to prevent new instances every get call of StartApplication
-//    private IApplication application;
-//    private object locker = new object();
+    protected override void Process() {
+      IPluginManager pluginManager = PluginManager.Create(Settings);
+      pluginManager.Initialize();
 
-//    protected override void Execute() {
-//      StartApplication.Run(Args);
-//    }
+      if (pluginManager.Status != PluginManagerStatus.OK) {
+        SendException(new InvalidOperationException($"{nameof(PluginManager)}.{nameof(pluginManager.Status)} is not {nameof(PluginManagerStatus.OK)}."));
+      }
 
-//    protected override void OnRunnerMessage(RunnerMessage message) {
-//      if (message is PauseRunnerMessage)
-//        StartApplication.OnPause();
-//      else if (message is ResumeRunnerMessage)
-//        StartApplication.OnResume();
-//      else if (message is CancelRunnerMessage)
-//        StartApplication.OnCancel();
-//    }
-//  }
+      pluginManager.LoadPackageAssemblies();
+
+      ITypeDiscoverer typeDiscoverer = TypeDiscoverer.Create();
+      Type applicationType = typeDiscoverer.GetTypes(typeof(IApplication)).Where(x => x.FullName == ApplicationInfo.TypeName).SingleOrDefault();
+      
+      if (applicationType == null) {
+        SendException(new InvalidOperationException($"Cannot find application {ApplicationInfo.Name}."));
+      }
+
+      IApplication application = Activator.CreateInstance(applicationType) as IApplication;
+      application.Run(Arguments);
+    }
+
+    public void WriteToApplicationConsole(string value) {
+      process.StandardInput.WriteLine(value);
+    }
+    public string ReadFromApplicationConsole() {
+      return process.StandardOutput.ReadLine();
+    }
+    public async Task<string> ReadFromApplicationConsoleAsync() {
+      return await process.StandardOutput.ReadLineAsync();
+    }
+  }
 }

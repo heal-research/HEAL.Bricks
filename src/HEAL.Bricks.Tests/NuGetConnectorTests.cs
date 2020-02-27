@@ -1209,7 +1209,6 @@ namespace HEAL.Bricks.Tests {
       SourcePackageDependencyInfo[] packages;
       ArgumentNullException argumentNullException;
       ArgumentException argumentException;
-      InvalidOperationException invalidOperationException;
 
       identities = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version020),
                            CreatePackageIdentity(Constants.namePluginB, Constants.version031),
