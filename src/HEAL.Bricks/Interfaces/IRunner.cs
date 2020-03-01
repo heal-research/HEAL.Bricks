@@ -5,6 +5,7 @@
  */
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,5 +17,10 @@ namespace HEAL.Bricks {
     void Run();
     Task RunAsync(CancellationToken cancellationToken = default);
     void Execute();
+
+    void SendMessage(IRunnerMessage message);
+    void SendException(Exception exception);
+    T ReceiveMessage<T>() where T : IRunnerMessage;
+    IRunnerMessage ReceiveMessage();
   }
 }

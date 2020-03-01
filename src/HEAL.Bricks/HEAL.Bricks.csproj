@@ -45,27 +45,6 @@
     <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="HEAL.Bricks.Runner\HEAL.Bricks.Runner.deps.json" Pack="true">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HEAL.Bricks.Runner\HEAL.Bricks.Runner.dll" Pack="true">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HEAL.Bricks.Runner\HEAL.Bricks.Runner.exe" Pack="true">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HEAL.Bricks.Runner\HEAL.Bricks.Runner.pdb" Pack="true">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HEAL.Bricks.Runner\HEAL.Bricks.Runner.runtimeconfig.dev.json" Pack="true">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HEAL.Bricks.Runner\HEAL.Bricks.Runner.runtimeconfig.json" Pack="true">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
   <Target Name="SetVersion" DependsOnTargets="GitVersion" Condition="'$(GitInfoImported)' == 'true' And '$(ExcludeRestorePackageImports)' != 'true'">
     <PropertyGroup>
       <Version Condition="'$(GitSemVerLabel)' != ''">$(GitBaseVersionMajor).$(GitBaseVersionMinor).$(GitBaseVersionPatch)$(GitSemVerDashLabel).$(GitCommits)+$(GitCommit)</Version>

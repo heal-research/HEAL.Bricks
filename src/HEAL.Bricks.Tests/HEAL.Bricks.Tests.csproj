@@ -21,7 +21,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HEAL.Bricks.PluginTypes\HEAL.Bricks.PluginTypes.csproj" />
-    <ProjectReference Include="..\HEAL.Bricks.Runner\HEAL.Bricks.Runner.csproj" />
     <ProjectReference Include="..\HEAL.Bricks\HEAL.Bricks.csproj" />
   </ItemGroup>
 

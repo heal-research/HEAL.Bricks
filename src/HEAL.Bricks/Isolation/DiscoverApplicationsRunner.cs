@@ -14,7 +14,7 @@ namespace HEAL.Bricks {
   public class DiscoverApplicationsRunner : ProcessRunner {
     public ISettings Settings { get; }
 
-    public DiscoverApplicationsRunner(ISettings settings, ProcessRunnerStartInfo startInfo = null) : base(startInfo ?? new ProcessRunnerStartInfo()) {
+    public DiscoverApplicationsRunner(ISettings settings, IProcessRunnerStartInfo startInfo = null) : base(startInfo ?? new NetCoreEntryAssemblyStartInfo()) {
       Settings = settings;
     }
 

@@ -10,7 +10,7 @@ using System;
 namespace HEAL.Bricks {
   [Serializable]
   public abstract class MessageRunner : ProcessRunner {
-    protected MessageRunner(ProcessRunnerStartInfo processRunnerStartInfo) : base(processRunnerStartInfo) { }
+    protected MessageRunner(IProcessRunnerStartInfo processRunnerStartInfo) : base(processRunnerStartInfo) { }
 
     protected sealed override void Process() {
       while (true) {

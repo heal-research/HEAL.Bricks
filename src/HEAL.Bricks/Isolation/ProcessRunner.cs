@@ -8,23 +8,18 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   [Serializable]
-  public abstract class ProcessRunner : IRunner {
+  public abstract class ProcessRunner : Runner {
     [NonSerialized]
     protected ProcessStartInfo processStartInfo = new ProcessStartInfo();
     [NonSerialized]
     protected Process process;
-    [NonSerialized]
-    protected Stream inputStream, outputStream;
 
-    public RunnerStatus Status { get; private set; } = RunnerStatus.Created;
-
-    protected ProcessRunner(ProcessRunnerStartInfo processRunnerStartInfo) {
+    protected ProcessRunner(IProcessRunnerStartInfo processRunnerStartInfo) {
       if (processRunnerStartInfo == null) throw new ArgumentNullException(nameof(processRunnerStartInfo));
 
       processStartInfo = new ProcessStartInfo {
@@ -41,11 +36,7 @@ namespace HEAL.Bricks {
       };
     }
 
-    public void Run() => RunAsync().Wait();
-    public async Task RunAsync(CancellationToken cancellationToken = default) {
-      if (Status != RunnerStatus.Created) throw new InvalidOperationException($"Runner status is not \"{nameof(RunnerStatus.Created)}\".");
-
-      Status = RunnerStatus.Starting;
+    protected sealed override void InitializeHostStreams() {
       process = new Process {
         StartInfo = processStartInfo,
         EnableRaisingEvents = true
@@ -53,53 +44,12 @@ namespace HEAL.Bricks {
       process.Start();
       outputStream = process.StandardInput.BaseStream;
       inputStream = process.StandardOutput.BaseStream;
-
-      // registers a task for cancellation (prevents polling in a loop)
-      Task<bool> task = RegisterCancellation(process, cancellationToken);
-
-      RunnerMessage.WriteToStream(new StartRunnerMessage(this), outputStream);
-      RunnerMessage.ReadFromStream<RunnerStartedMessage>(inputStream);
-      Status = RunnerStatus.Running;
-
-      if (await task) Status = RunnerStatus.Cancelled;
-      else Status = RunnerStatus.Stopped;
     }
-
-    public void Execute() {
-      try {
-        if (Status != RunnerStatus.Starting) throw new InvalidOperationException($"Runner status is not \"{nameof(RunnerStatus.Starting)}\".");
-
-        inputStream = Console.OpenStandardInput();
-        outputStream = Console.OpenStandardOutput();
-
-        Status = RunnerStatus.Running;
-        SendMessage(new RunnerStartedMessage());
-
-        Process();
-      }
-      catch (Exception ex) {
-        SendException(ex);
-      }
+    protected sealed override void InitializeClientStreams() {
+      inputStream = Console.OpenStandardInput();
+      outputStream = Console.OpenStandardOutput();
     }
-
-    protected abstract void Process();
-
-    public void SendMessage(IRunnerMessage message) {
-      if (Status != RunnerStatus.Running) throw new InvalidOperationException($"Runner status is not \"{nameof(RunnerStatus.Running)}\".");
-      RunnerMessage.WriteToStream(message, outputStream);
-    }
-    public void SendException(Exception exception) {
-      SendMessage(new RunnerExceptionMessage(exception));
-    }
-    public T ReceiveMessage<T>() where T : IRunnerMessage {
-//      if (Status != RunnerStatus.Running) throw new InvalidOperationException($"Runner status is not \"{nameof(RunnerStatus.Running)}\".");
-      return RunnerMessage.ReadFromStream<T>(inputStream);
-    }
-    public IRunnerMessage ReceiveMessage() {
-      return ReceiveMessage<IRunnerMessage>();
-    }
-
-    private Task<bool> RegisterCancellation(Process process, CancellationToken cancellationToken) {
+    protected sealed override Task<bool> RegisterCancellation(CancellationToken cancellationToken) {
       // Create a new LinkedTokenSource and a TaskCompletionSource. 
       // When the specified token is cancelled, a cancel requests is sent to the started process. 
       // Then the main process waits for the started process to exit and sets a result of the TaskCompletionSource.
@@ -120,41 +70,4 @@ namespace HEAL.Bricks {
       return tcs.Task;
     }
   }
-
-  #region ProcessRunnerStartInfo
-  public class ProcessRunnerStartInfo {
-    private string programPath;
-    public string ProgramPath { get => programPath; set => SetProgramPath(value); }
-    public string Program { get => Path.GetFileName(programPath); }
-    public string Arguments { get; set; }
-    public string UserName { get; set; }
-    public string UserDomain { get; set; }
-    public string UserPassword { get; set; }
-
-    public ProcessRunnerStartInfo() {
-      ProgramPath = "HEAL.Bricks.Runner.exe";
-      Arguments = "";
-    }
-    public ProcessRunnerStartInfo(string program, string arguments = null) {
-      ProgramPath = program;
-      Arguments = arguments;
-    }
-    public ProcessRunnerStartInfo(string program, string arguments = null, string userName = null, string userDomain = null, string userPassword = null) : this(program, arguments) {
-      UserName = userName;
-      UserDomain = userDomain;
-      UserPassword = userPassword;
-    }
-
-    private void SetProgramPath(string path) {
-      if (path == null) throw new ArgumentNullException(nameof(ProgramPath));
-      if (path == "") throw new ArgumentException($"{nameof(ProgramPath)} is empty", nameof(ProgramPath));
-
-      programPath = path;
-      if (!Path.IsPathRooted(programPath)) {
-        string appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-        programPath = Path.Combine(appDir, programPath);
-      }
-    }
-  }
-  #endregion
 }

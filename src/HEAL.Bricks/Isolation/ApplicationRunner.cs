@@ -16,7 +16,7 @@ namespace HEAL.Bricks {
     public ApplicationInfo ApplicationInfo { get; }
     public ICommandLineArgument[] Arguments { get; }
 
-    public ApplicationRunner(ISettings settings, ApplicationInfo applicationInfo, ICommandLineArgument[] arguments = null, ProcessRunnerStartInfo startInfo = null) : base(startInfo ?? new ProcessRunnerStartInfo()) {
+    public ApplicationRunner(ISettings settings, ApplicationInfo applicationInfo, ICommandLineArgument[] arguments = null, IProcessRunnerStartInfo startInfo = null) : base(startInfo ?? new NetCoreEntryAssemblyStartInfo()) {
       Settings = settings;
       ApplicationInfo = applicationInfo;
       Arguments = arguments;

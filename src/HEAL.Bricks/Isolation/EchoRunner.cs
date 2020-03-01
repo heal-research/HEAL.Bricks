@@ -10,7 +10,7 @@ using System;
 namespace HEAL.Bricks {
   [Serializable]
   public sealed class EchoRunner : MessageRunner {
-    public EchoRunner(ProcessRunnerStartInfo startInfo = null) : base(startInfo ?? new ProcessRunnerStartInfo()) { }
+    public EchoRunner(IProcessRunnerStartInfo startInfo = null) : base(startInfo ?? new NetCoreEntryAssemblyStartInfo()) { }
 
     protected override void ProcessRunnerMessage(IRunnerMessage message) {
       switch (message) {
