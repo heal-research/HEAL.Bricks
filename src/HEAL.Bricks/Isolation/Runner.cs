@@ -18,11 +18,10 @@ namespace HEAL.Bricks {
   [Serializable]
   public abstract class Runner {
     public static string StartRunnerArgument => "--StartRunner";
-    public static void ReceiveAndExecuteRunner(Stream stream) {
-      IFormatter serializer = new BinaryFormatter();
-      Runner runner = (serializer.Deserialize(stream) as StartRunnerMessage)?.Data;
+    public static async Task ReceiveAndExecuteRunnerAsync(Stream stream, CancellationToken cancellationToken = default) {
+      Runner runner = (await ReceiveMessageAsync(stream) as StartRunnerMessage)?.Data;
       if (runner == null) throw new InvalidOperationException("Cannot deserialize runner from stream.");
-      runner.Execute();
+      await runner.ExecuteAsync(cancellationToken);
     }
 
     [NonSerialized]
@@ -41,8 +40,8 @@ namespace HEAL.Bricks {
       // registers a task for cancellation (prevents polling in a loop)
       Task<bool> task = RegisterCancellation(cancellationToken);
 
-      SendMessage(new StartRunnerMessage(this));
-      ReceiveMessage<RunnerStartedMessage>();
+      await SendMessageAsync(new StartRunnerMessage(this));
+      await ReceiveMessageAsync<RunnerStartedMessage>();
       Status = RunnerStatus.Running;
 
       await ExecuteOnHostAsync(cancellationToken);
@@ -51,7 +50,7 @@ namespace HEAL.Bricks {
       else Status = RunnerStatus.Stopped;
     }
 
-    private void Execute() {
+    private async Task ExecuteAsync(CancellationToken cancellationToken) {
       try {
         if (Status != RunnerStatus.Starting) throw new InvalidOperationException($"Runner status is not \"{nameof(RunnerStatus.Starting)}\".");
 
@@ -59,38 +58,48 @@ namespace HEAL.Bricks {
         InitializeClientStreams();
 
         Status = RunnerStatus.Running;
-        SendMessage(new RunnerStartedMessage());
-        ExecuteOnClient();
+        await SendMessageAsync(new RunnerStartedMessage(), cancellationToken);
+        await ExecuteOnClientAsync(cancellationToken);
         Status = RunnerStatus.Stopped;
       }
       catch (Exception ex) {
-        SendException(ex);
+        await SendExceptionAsync(ex, cancellationToken);
       }
     }
     protected abstract void InitializeHostStreams();
     protected abstract void InitializeClientStreams();
     protected abstract Task<bool> RegisterCancellation(CancellationToken cancellationToken);
     protected abstract Task ExecuteOnHostAsync(CancellationToken cancellationToken);
-    protected abstract void ExecuteOnClient();
+    protected abstract Task ExecuteOnClientAsync(CancellationToken cancellationToken);
 
-    protected void SendMessage(IRunnerMessage message) {
-      IFormatter serializer = new BinaryFormatter();
-      serializer.Serialize(outputStream, message);
-      outputStream.Flush();
+    protected async Task SendMessageAsync(IRunnerMessage message, CancellationToken cancellationToken = default) {
+      await SendMessageAsync(message, outputStream, cancellationToken);
     }
-    protected void SendException(Exception exception) {
-      SendMessage(new RunnerExceptionMessage(exception));
+    protected async Task SendExceptionAsync(Exception exception, CancellationToken cancellationToken = default) {
+      await SendMessageAsync(new RunnerExceptionMessage(exception), cancellationToken);
     }
-    protected T ReceiveMessage<T>() where T : IRunnerMessage {
-      IFormatter serializer = new BinaryFormatter();
-      return (T)serializer.Deserialize(inputStream);
+    protected async Task<T> ReceiveMessageAsync<T>(CancellationToken cancellationToken = default) where T : IRunnerMessage {
+      return await ReceiveMessageAsync<T>(inputStream, cancellationToken);
     }
-    protected Task<T> ReceiveMessageAsync<T>() where T : IRunnerMessage {
-      IFormatter serializer = new BinaryFormatter();
-      return Task.FromResult((T)serializer.Deserialize(inputStream));
+    protected async Task<IRunnerMessage> ReceiveMessageAsync(CancellationToken cancellationToken = default) {
+      return await ReceiveMessageAsync<IRunnerMessage>(cancellationToken);
     }
-    protected IRunnerMessage ReceiveMessage() {
-      return ReceiveMessage<IRunnerMessage>();
+
+    private static async Task SendMessageAsync(IRunnerMessage message, Stream stream, CancellationToken cancellationToken = default) {
+      await Task.Run(() => {
+        IFormatter serializer = new BinaryFormatter();
+        serializer.Serialize(stream, message);
+        stream.Flush();
+      }, cancellationToken).ConfigureAwait(false);
+    }
+    private static async Task<T> ReceiveMessageAsync<T>(Stream stream, CancellationToken cancellationToken = default) where T : IRunnerMessage {
+      return await Task.Run<T>(() => {
+        IFormatter serializer = new BinaryFormatter();
+        return (T)serializer.Deserialize(stream);
+      }, cancellationToken).ConfigureAwait(false);
+    }
+    private static async Task<IRunnerMessage> ReceiveMessageAsync(Stream stream, CancellationToken cancellationToken = default) {
+      return await ReceiveMessageAsync<IRunnerMessage>(stream, cancellationToken);
     }
   }
 }

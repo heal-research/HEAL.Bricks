@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
@@ -19,16 +20,16 @@ namespace HEAL.Bricks {
       Settings = settings;
     }
 
-    protected sealed override void ExecuteOnClient() {
+    protected sealed override async Task ExecuteOnClientAsync(CancellationToken cancellationToken) {
       IPluginManager pluginManager = PluginManager.Create(Settings);
       pluginManager.Initialize();
 
       if (pluginManager.Status != PluginManagerStatus.OK) {
-        SendException(new InvalidOperationException($"{nameof(PluginManager)}.{nameof(pluginManager.Status)} is not {nameof(PluginManagerStatus.OK)}."));
+        await SendExceptionAsync(new InvalidOperationException($"{nameof(PluginManager)}.{nameof(pluginManager.Status)} is not {nameof(PluginManagerStatus.OK)}."));
       }
 
-      ExecuteOnClient(pluginManager);
+      await ExecuteOnClientAsync(pluginManager, cancellationToken);
     }
-    protected abstract void ExecuteOnClient(IPluginManager pluginManager);
+    protected abstract Task ExecuteOnClientAsync(IPluginManager pluginManager, CancellationToken cancellationToken);
   }
 }

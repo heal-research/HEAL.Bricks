@@ -43,11 +43,11 @@ namespace HEAL.Bricks.Tests {
 
       while (!cts.Token.IsCancellationRequested) {
         Trace.Write("Send Hello ... ");
-        runner.Send("Hello");
+        await runner.SendAsync("Hello");
         Trace.WriteLine("done");
 
         Trace.WriteLine("Receive Echo ... ");
-        var message = runner.Receive();
+        var message = await runner.ReceiveAsync();
         Trace.WriteLine(message);
         Trace.WriteLine("... done");
       }
@@ -64,7 +64,7 @@ namespace HEAL.Bricks.Tests {
       await pluginManager.InstallMissingDependenciesAsync();
 
       DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pluginManager.Settings);
-      ApplicationInfo app = discoverApplicationsRunner.GetApplications()[0];
+      ApplicationInfo app = (await discoverApplicationsRunner.GetApplicationsAsync())[0];
 
       ConsoleApplicationRunner applicationRunner = new ConsoleApplicationRunner(pluginManager.Settings, app);
       await applicationRunner.RunAsync();

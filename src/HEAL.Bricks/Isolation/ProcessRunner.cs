@@ -62,7 +62,7 @@ namespace HEAL.Bricks {
       process.Exited += (s, e) => cts.Cancel();
       cts.Token.Register(() => {
         if (!process.HasExited) {
-          SendMessage(new CancelRunnerMessage());
+          SendMessageAsync(new CancelRunnerMessage()).Wait();
           process.WaitForExit();
         }
         tcs.SetResult(cancellationToken.IsCancellationRequested);

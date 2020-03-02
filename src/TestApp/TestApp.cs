@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using HEAL.Bricks;
 
 namespace TestApp {
@@ -11,6 +13,12 @@ namespace TestApp {
       Console.Write("input > ");
       string input = Console.ReadLine();
       Console.WriteLine("input: " + input);
+    }
+
+    public async Task RunAsync(ICommandLineArgument[] args, CancellationToken cancellationToken = default) {
+      await Task.Run(() => {
+        Run(args);
+      }, cancellationToken);
     }
 
     public void OnCancel() {

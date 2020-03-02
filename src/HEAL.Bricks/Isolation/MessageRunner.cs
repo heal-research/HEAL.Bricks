@@ -14,28 +14,27 @@ namespace HEAL.Bricks {
   public abstract class MessageRunner : ProcessRunner {
     protected MessageRunner(IProcessRunnerStartInfo processRunnerStartInfo) : base(processRunnerStartInfo) { }
 
-    protected sealed override void ExecuteOnClient() {
+    protected sealed override async Task ExecuteOnClientAsync(CancellationToken cancellationToken) {
       while (true) {
-        IRunnerMessage message = ReceiveMessage();
+        IRunnerMessage message = await ReceiveMessageAsync(cancellationToken);
         switch (message) {
           case CancelRunnerMessage _:
             return;
           default:
-            ProcessRunnerMessageOnClient(message);
+            await ProcessRunnerMessageOnClientAsync(message, cancellationToken);
             break;
         }
       }
     }
 
-    protected sealed override Task ExecuteOnHostAsync(CancellationToken cancellationToken) {
+    protected sealed override async Task ExecuteOnHostAsync(CancellationToken cancellationToken) {
       while (!cancellationToken.IsCancellationRequested) {
-        IRunnerMessage message = ReceiveMessage();
-        ProcessRunnerMessageOnHost(message);
+        IRunnerMessage message = await ReceiveMessageAsync();
+        await ProcessRunnerMessageOnHostAsync(message, cancellationToken);
       }
-      return Task.CompletedTask;
     }
 
-    protected abstract void ProcessRunnerMessageOnClient(IRunnerMessage message);
-    protected abstract void ProcessRunnerMessageOnHost(IRunnerMessage message);
+    protected abstract Task ProcessRunnerMessageOnClientAsync(IRunnerMessage message, CancellationToken cancellationToken);
+    protected abstract Task ProcessRunnerMessageOnHostAsync(IRunnerMessage message, CancellationToken cancellationToken);
   }
 }

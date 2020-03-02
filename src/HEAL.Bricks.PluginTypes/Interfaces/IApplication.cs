@@ -5,11 +5,16 @@
  */
 #endregion
 
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace HEAL.Bricks {
   public interface IApplication {
     string Name { get; }
     string Description { get; }
+
     void Run(ICommandLineArgument[] args);
+    Task RunAsync(ICommandLineArgument[] args, CancellationToken cancellationToken = default);
 
     void OnCancel();
     void OnPause();

@@ -19,23 +19,22 @@ namespace HEAL.Bricks {
 
     public DiscoverApplicationsRunner(ISettings settings, IProcessRunnerStartInfo startInfo = null) : base(settings, startInfo ?? new NetCoreEntryAssemblyStartInfo()) { }
 
-    public ApplicationInfo[] GetApplications() {
-      if (Status == RunnerStatus.Created) Run();
+    public async Task<ApplicationInfo[]> GetApplicationsAsync(CancellationToken cancellationToken = default) {
+      if (Status == RunnerStatus.Created) await RunAsync(cancellationToken);
       return applicationInfos;
     }
 
-    protected override void ExecuteOnClient(IPluginManager pluginManager) {
+    protected override async Task ExecuteOnClientAsync(IPluginManager pluginManager, CancellationToken cancellationToken) {
       pluginManager.LoadPackageAssemblies();
 
       ITypeDiscoverer typeDiscoverer = TypeDiscoverer.Create();
       IEnumerable<IApplication> applications = typeDiscoverer.GetInstances<IApplication>();
       ApplicationInfo[] applicationInfos = applications.Select(x => new ApplicationInfo(x)).OrderBy(x => x.Name).ToArray();
-      SendMessage(new DiscoveredApplicationsMessage(applicationInfos));
+      await SendMessageAsync(new DiscoveredApplicationsMessage(applicationInfos), cancellationToken);
     }
 
-    protected override Task ExecuteOnHostAsync(CancellationToken cancellationToken) {
-      applicationInfos = ReceiveMessage<DiscoveredApplicationsMessage>().Data;
-      return Task.CompletedTask;
+    protected override async Task ExecuteOnHostAsync(CancellationToken cancellationToken) {
+      applicationInfos = (await ReceiveMessageAsync<DiscoveredApplicationsMessage>(cancellationToken)).Data;
     }
   }
 }

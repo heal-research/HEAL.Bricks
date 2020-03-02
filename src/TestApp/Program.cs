@@ -7,7 +7,7 @@ namespace TestApp {
   class Program {
     static async Task Main(string[] args) {
       if ((args.Length == 1) && (args[0] == Runner.StartRunnerArgument)) {
-        Runner.ReceiveAndExecuteRunner(Console.OpenStandardInput());
+        await Runner.ReceiveAndExecuteRunnerAsync(Console.OpenStandardInput());
         return;
       }
 
@@ -20,9 +20,9 @@ namespace TestApp {
       pluginManager.Initialize();
 
       DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pluginManager.Settings);
-      ApplicationInfo[] applications = discoverApplicationsRunner.GetApplications();
+      ApplicationInfo[] applications = await discoverApplicationsRunner.GetApplicationsAsync();
 
-      ConsoleApplicationRunner applicationRunner = new ConsoleApplicationRunner(pluginManager.Settings, applications[1]);
+      ConsoleApplicationRunner applicationRunner = new ConsoleApplicationRunner(pluginManager.Settings, applications[0]);
       await applicationRunner.RunAsync();
     }
   }

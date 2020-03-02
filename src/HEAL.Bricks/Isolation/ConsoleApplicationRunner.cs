@@ -22,18 +22,18 @@ namespace HEAL.Bricks {
       Arguments = arguments;
     }
 
-    protected override void ExecuteOnClient(IPluginManager pluginManager) {
+    protected override async Task ExecuteOnClientAsync(IPluginManager pluginManager, CancellationToken cancellationToken) {
       pluginManager.LoadPackageAssemblies();
 
       ITypeDiscoverer typeDiscoverer = TypeDiscoverer.Create();
       Type applicationType = typeDiscoverer.GetTypes(typeof(IApplication)).Where(x => x.FullName == ApplicationInfo.TypeName).SingleOrDefault();
       
       if (applicationType == null) {
-        SendException(new InvalidOperationException($"Cannot find application {ApplicationInfo.Name}."));
+        await SendExceptionAsync(new InvalidOperationException($"Cannot find application {ApplicationInfo.Name}."), cancellationToken);
       }
 
       IApplication application = Activator.CreateInstance(applicationType) as IApplication;
-      application.Run(Arguments);
+      await application.RunAsync(Arguments, cancellationToken);
     }
 
     protected override async Task ExecuteOnHostAsync(CancellationToken cancellationToken) {
@@ -68,14 +68,14 @@ namespace HEAL.Bricks {
         }
       }, cancellationToken);
 
-      await reader;
+      await reader.ConfigureAwait(false);
 
       // not needed if writer polls
       TextReader stdIn = Console.In;
       Console.SetIn(new StringReader(""));
       Console.WriteLine($"Application {ApplicationInfo.Name} terminated. Press ENTER to continue.");
 
-      await writer;
+      await writer.ConfigureAwait(false);
 
       // not needed if writer polls
       Console.SetIn(stdIn);
