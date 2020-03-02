@@ -9,14 +9,18 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   [Serializable]
-  public abstract class Runner : IRunner {
+  public abstract class Runner {
+    public static string StartRunnerArgument => "--StartRunner";
     public static void ReceiveAndExecuteRunner(Stream stream) {
-      IRunner runner = (RunnerMessage.ReadFromStream(stream) as StartRunnerMessage)?.Data;
+      IFormatter serializer = new BinaryFormatter();
+      Runner runner = (serializer.Deserialize(stream) as StartRunnerMessage)?.Data;
       if (runner == null) throw new InvalidOperationException("Cannot deserialize runner from stream.");
       runner.Execute();
     }
@@ -37,15 +41,17 @@ namespace HEAL.Bricks {
       // registers a task for cancellation (prevents polling in a loop)
       Task<bool> task = RegisterCancellation(cancellationToken);
 
-      RunnerMessage.WriteToStream(new StartRunnerMessage(this), outputStream);
-      RunnerMessage.ReadFromStream<RunnerStartedMessage>(inputStream);
+      SendMessage(new StartRunnerMessage(this));
+      ReceiveMessage<RunnerStartedMessage>();
       Status = RunnerStatus.Running;
+
+      await ExecuteOnHostAsync(cancellationToken);
 
       if (await task) Status = RunnerStatus.Cancelled;
       else Status = RunnerStatus.Stopped;
     }
 
-    public void Execute() {
+    private void Execute() {
       try {
         if (Status != RunnerStatus.Starting) throw new InvalidOperationException($"Runner status is not \"{nameof(RunnerStatus.Starting)}\".");
 
@@ -54,8 +60,8 @@ namespace HEAL.Bricks {
 
         Status = RunnerStatus.Running;
         SendMessage(new RunnerStartedMessage());
-
-        Process();
+        ExecuteOnClient();
+        Status = RunnerStatus.Stopped;
       }
       catch (Exception ex) {
         SendException(ex);
@@ -64,20 +70,26 @@ namespace HEAL.Bricks {
     protected abstract void InitializeHostStreams();
     protected abstract void InitializeClientStreams();
     protected abstract Task<bool> RegisterCancellation(CancellationToken cancellationToken);
-    protected abstract void Process();
+    protected abstract Task ExecuteOnHostAsync(CancellationToken cancellationToken);
+    protected abstract void ExecuteOnClient();
 
-    public void SendMessage(IRunnerMessage message) {
-      if (Status != RunnerStatus.Running) throw new InvalidOperationException($"Runner status is not \"{nameof(RunnerStatus.Running)}\".");
-      RunnerMessage.WriteToStream(message, outputStream);
+    protected void SendMessage(IRunnerMessage message) {
+      IFormatter serializer = new BinaryFormatter();
+      serializer.Serialize(outputStream, message);
+      outputStream.Flush();
     }
-    public void SendException(Exception exception) {
+    protected void SendException(Exception exception) {
       SendMessage(new RunnerExceptionMessage(exception));
     }
-    public T ReceiveMessage<T>() where T : IRunnerMessage {
-//      if (Status != RunnerStatus.Running) throw new InvalidOperationException($"Runner status is not \"{nameof(RunnerStatus.Running)}\".");
-      return RunnerMessage.ReadFromStream<T>(inputStream);
+    protected T ReceiveMessage<T>() where T : IRunnerMessage {
+      IFormatter serializer = new BinaryFormatter();
+      return (T)serializer.Deserialize(inputStream);
     }
-    public IRunnerMessage ReceiveMessage() {
+    protected Task<T> ReceiveMessageAsync<T>() where T : IRunnerMessage {
+      IFormatter serializer = new BinaryFormatter();
+      return Task.FromResult((T)serializer.Deserialize(inputStream));
+    }
+    protected IRunnerMessage ReceiveMessage() {
       return ReceiveMessage<IRunnerMessage>();
     }
   }

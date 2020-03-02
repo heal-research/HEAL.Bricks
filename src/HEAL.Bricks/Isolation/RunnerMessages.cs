@@ -12,20 +12,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 namespace HEAL.Bricks {
   [Serializable]
-  public class RunnerMessage : IRunnerMessage {
-    private static readonly IFormatter serializer = new BinaryFormatter();
-
-    public static T ReadFromStream<T>(Stream stream) where T : IRunnerMessage {
-      return (T)serializer.Deserialize(stream);
-    }
-    public static IRunnerMessage ReadFromStream(Stream stream) {
-      return ReadFromStream<IRunnerMessage>(stream);
-    }
-    public static void WriteToStream(IRunnerMessage message, Stream stream) {
-      serializer.Serialize(stream, message);
-      stream.Flush();
-    }
-  }
+  public class RunnerMessage : IRunnerMessage { }
 
   [Serializable]
   public class RunnerDataMessage<T> : RunnerMessage {
@@ -35,8 +22,8 @@ namespace HEAL.Bricks {
   }
 
   [Serializable]
-  public class StartRunnerMessage : RunnerDataMessage<IRunner> {
-    public StartRunnerMessage(IRunner runner) : base(runner) { }
+  public class StartRunnerMessage : RunnerDataMessage<Runner> {
+    public StartRunnerMessage(Runner runner) : base(runner) { }
   }
 
   [Serializable]

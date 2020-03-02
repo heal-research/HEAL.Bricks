@@ -43,12 +43,12 @@ namespace HEAL.Bricks.Tests {
 
       while (!cts.Token.IsCancellationRequested) {
         Trace.Write("Send Hello ... ");
-        runner.SendMessage(new RunnerTextMessage("Hello"));
+        runner.Send("Hello");
         Trace.WriteLine("done");
 
         Trace.WriteLine("Receive Echo ... ");
-        var message = runner.ReceiveMessage() as RunnerTextMessage;
-        Trace.WriteLine(message.Data);
+        var message = runner.Receive();
+        Trace.WriteLine(message);
         Trace.WriteLine("... done");
       }
 
@@ -64,21 +64,10 @@ namespace HEAL.Bricks.Tests {
       await pluginManager.InstallMissingDependenciesAsync();
 
       DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pluginManager.Settings);
-      var t = discoverApplicationsRunner.RunAsync();
-      var app = discoverApplicationsRunner.ReceiveMessage<DiscoveredApplicationsMessage>().Data[0];
-      await t;
+      ApplicationInfo app = discoverApplicationsRunner.GetApplications()[0];
 
-      ApplicationRunner applicationRunner = new ApplicationRunner(pluginManager.Settings, app);
-      t = applicationRunner.RunAsync();
-      applicationRunner.WriteToApplicationConsole("Hello World");
-      applicationRunner.WriteToApplicationConsole("");
-
-      Trace.WriteLine(applicationRunner.ReadFromApplicationConsole());
-      Trace.WriteLine(applicationRunner.ReadFromApplicationConsole());
-      Trace.WriteLine(applicationRunner.ReadFromApplicationConsole());
-      Trace.WriteLine(applicationRunner.ReadFromApplicationConsole());
-
-      await t;
+      ConsoleApplicationRunner applicationRunner = new ConsoleApplicationRunner(pluginManager.Settings, app);
+      await applicationRunner.RunAsync();
     }
   }
 }

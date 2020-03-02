@@ -6,25 +6,36 @@
 #endregion
 
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   [Serializable]
   public abstract class MessageRunner : ProcessRunner {
     protected MessageRunner(IProcessRunnerStartInfo processRunnerStartInfo) : base(processRunnerStartInfo) { }
 
-    protected sealed override void Process() {
+    protected sealed override void ExecuteOnClient() {
       while (true) {
         IRunnerMessage message = ReceiveMessage();
         switch (message) {
           case CancelRunnerMessage _:
             return;
           default:
-            ProcessRunnerMessage(message);
+            ProcessRunnerMessageOnClient(message);
             break;
         }
       }
     }
 
-    protected abstract void ProcessRunnerMessage(IRunnerMessage message);
+    protected sealed override Task ExecuteOnHostAsync(CancellationToken cancellationToken) {
+      while (!cancellationToken.IsCancellationRequested) {
+        IRunnerMessage message = ReceiveMessage();
+        ProcessRunnerMessageOnHost(message);
+      }
+      return Task.CompletedTask;
+    }
+
+    protected abstract void ProcessRunnerMessageOnClient(IRunnerMessage message);
+    protected abstract void ProcessRunnerMessageOnHost(IRunnerMessage message);
   }
 }

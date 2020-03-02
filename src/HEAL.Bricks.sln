@@ -20,6 +20,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HEAL.Bricks.PluginTypes", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HEAL.Bricks.Tests.EchoApplication", "HEAL.Bricks.Tests.EchoApplication\HEAL.Bricks.Tests.EchoApplication.csproj", "{0F98663B-2E05-49B7-82D2-DD697DC46B21}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "TestApp\TestApp.csproj", "{713D4349-57BB-4C35-9789-49E1DB213CB7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -50,6 +52,10 @@ Global
 		{0F98663B-2E05-49B7-82D2-DD697DC46B21}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0F98663B-2E05-49B7-82D2-DD697DC46B21}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0F98663B-2E05-49B7-82D2-DD697DC46B21}.Release|Any CPU.Build.0 = Release|Any CPU
+		{713D4349-57BB-4C35-9789-49E1DB213CB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{713D4349-57BB-4C35-9789-49E1DB213CB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{713D4349-57BB-4C35-9789-49E1DB213CB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{713D4349-57BB-4C35-9789-49E1DB213CB7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

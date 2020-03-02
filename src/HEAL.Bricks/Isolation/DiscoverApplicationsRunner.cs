@@ -8,30 +8,34 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   [Serializable]
-  public class DiscoverApplicationsRunner : ProcessRunner {
-    public ISettings Settings { get; }
+  public sealed class DiscoverApplicationsRunner : PluginManagerProcessRunner {
+    [NonSerialized]
+    private ApplicationInfo[] applicationInfos;
 
-    public DiscoverApplicationsRunner(ISettings settings, IProcessRunnerStartInfo startInfo = null) : base(startInfo ?? new NetCoreEntryAssemblyStartInfo()) {
-      Settings = settings;
+    public DiscoverApplicationsRunner(ISettings settings, IProcessRunnerStartInfo startInfo = null) : base(settings, startInfo ?? new NetCoreEntryAssemblyStartInfo()) { }
+
+    public ApplicationInfo[] GetApplications() {
+      if (Status == RunnerStatus.Created) Run();
+      return applicationInfos;
     }
 
-    protected override void Process() {
-      IPluginManager pluginManager = PluginManager.Create(Settings);
-      pluginManager.Initialize();
-
-      if (pluginManager.Status != PluginManagerStatus.OK) {
-        SendException(new InvalidOperationException($"{nameof(PluginManager)}.{nameof(pluginManager.Status)} is not {nameof(PluginManagerStatus.OK)}."));
-      }
-
+    protected override void ExecuteOnClient(IPluginManager pluginManager) {
       pluginManager.LoadPackageAssemblies();
 
       ITypeDiscoverer typeDiscoverer = TypeDiscoverer.Create();
       IEnumerable<IApplication> applications = typeDiscoverer.GetInstances<IApplication>();
       ApplicationInfo[] applicationInfos = applications.Select(x => new ApplicationInfo(x)).OrderBy(x => x.Name).ToArray();
       SendMessage(new DiscoveredApplicationsMessage(applicationInfos));
+    }
+
+    protected override Task ExecuteOnHostAsync(CancellationToken cancellationToken) {
+      applicationInfos = ReceiveMessage<DiscoveredApplicationsMessage>().Data;
+      return Task.CompletedTask;
     }
   }
 }

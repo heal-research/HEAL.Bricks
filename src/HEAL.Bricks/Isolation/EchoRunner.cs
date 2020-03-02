@@ -12,15 +12,26 @@ namespace HEAL.Bricks {
   public sealed class EchoRunner : MessageRunner {
     public EchoRunner(IProcessRunnerStartInfo startInfo = null) : base(startInfo ?? new NetCoreEntryAssemblyStartInfo()) { }
 
-    protected override void ProcessRunnerMessage(IRunnerMessage message) {
+    protected override void ProcessRunnerMessageOnClient(IRunnerMessage message) {
       switch (message) {
         case RunnerTextMessage textMessage:
-          SendMessage(new RunnerTextMessage("ECHO: " + textMessage.Data));
+          Send("ECHO: " + textMessage.Data);
           break;
         default:
           SendException(new InvalidOperationException($"Cannot process message {message.GetType().Name}."));
           break;
       }
+    }
+
+    protected override void ProcessRunnerMessageOnHost(IRunnerMessage message) {
+      throw new NotImplementedException();
+    }
+
+    public void Send(string text) {
+      SendMessage(new RunnerTextMessage(text));
+    }
+    public string Receive() {
+      return ReceiveMessage<RunnerTextMessage>().Data;
     }
   }
 }

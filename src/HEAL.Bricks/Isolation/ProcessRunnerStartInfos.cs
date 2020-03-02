@@ -54,11 +54,13 @@ namespace HEAL.Bricks {
       if (assembly == null) throw new ArgumentNullException(nameof(assembly));
       if (assembly == "") throw new ArgumentException($"{nameof(assembly)} is empty", nameof(assembly));
 
-      ProgramPath += " " + (assembly.EndsWith(".dll") ? assembly : assembly + ".dll");
+      if (!assembly.EndsWith(".dll")) assembly += ".dll";
+      assembly = "\"" + assembly + "\"";
+      Arguments = assembly + (!string.IsNullOrEmpty(Arguments) ? " " + Arguments : "");
     }
   }
 
   public class NetCoreEntryAssemblyStartInfo : ProcessRunnerStartInfo {
-    public NetCoreEntryAssemblyStartInfo() : base("dotnet " + Assembly.GetEntryAssembly().Location, "--StartRunner") { }
+    public NetCoreEntryAssemblyStartInfo() : base("dotnet", "\"" + Assembly.GetEntryAssembly().Location + "\" " + Runner.StartRunnerArgument) { }
   }
 }

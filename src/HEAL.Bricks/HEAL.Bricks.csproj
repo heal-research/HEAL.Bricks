@@ -36,9 +36,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="HEAL.Bricks.PluginTypes" Version="0.1.0-alpha.29" />
     <PackageReference Include="NuGet.Resolver" Version="5.4.0" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HEAL.Bricks.PluginTypes\HEAL.Bricks.PluginTypes.csproj" />
   </ItemGroup>
 
   <ItemGroup>

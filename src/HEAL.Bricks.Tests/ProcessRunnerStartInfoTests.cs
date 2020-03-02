@@ -106,15 +106,18 @@ namespace HEAL.Bricks.Tests {
       NetCoreAssemblyStartInfo netCoreAssemblyStartInfo;
       string assembly = "assembly";
       string assemblyDll = "assembly.dll";
-      string programPath = "dotnet assembly.dll";
+      string programPath = "dotnet";
+      string arguments = "\"assembly.dll\"";
       ArgumentNullException argumentNullException;
       ArgumentException argumentException;
 
       netCoreAssemblyStartInfo = new NetCoreAssemblyStartInfo(assembly);
       Assert.AreEqual(programPath, netCoreAssemblyStartInfo.ProgramPath);
+      Assert.AreEqual(arguments, netCoreAssemblyStartInfo.Arguments);
 
       netCoreAssemblyStartInfo = new NetCoreAssemblyStartInfo(assemblyDll);
       Assert.AreEqual(programPath, netCoreAssemblyStartInfo.ProgramPath);
+      Assert.AreEqual(arguments, netCoreAssemblyStartInfo.Arguments);
 
       argumentNullException = Assert.ThrowsException<ArgumentNullException>(() => new NetCoreAssemblyStartInfo(null));
       Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
@@ -125,8 +128,8 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public void NetCoreEntryAssemblyStartInfo() {
       NetCoreEntryAssemblyStartInfo netCoreEntryAssemblyStartInfo;
-      string programPath = $"dotnet {Assembly.GetEntryAssembly().Location}";
-      string arguments = "--StartRunner";
+      string programPath = "dotnet";
+      string arguments = $"\"{Assembly.GetEntryAssembly().Location}\" --StartRunner";
 
       netCoreEntryAssemblyStartInfo = new NetCoreEntryAssemblyStartInfo();
       Assert.AreEqual(programPath, netCoreEntryAssemblyStartInfo.ProgramPath);
