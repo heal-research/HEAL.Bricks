@@ -32,27 +32,47 @@ namespace HEAL.Bricks.Tests {
     }
 
     [TestMethod]
-    [TestCategory("WIP")]
-    public async Task TestProcessRunner() {
-      EchoRunner runner = new EchoRunner();
-      
-      CancellationTokenSource cts = new CancellationTokenSource();
-      cts.CancelAfter(10000);
+    public async Task TestEchoRunner() {
+      EchoRunner runner;
+      CancellationTokenSource cts;
+      CancellationToken token;
+      Task task;
 
-      var t = runner.RunAsync(cts.Token);
-
-      while (!cts.Token.IsCancellationRequested) {
+      cts = new CancellationTokenSource();
+      token = cts.Token;
+      runner = new EchoRunner(CreateBricksRunnerStartInfo());
+      task = runner.RunAsync(token);
+      for (int i = 0; i < 10; i++) {
         Trace.Write("Send Hello ... ");
-        await runner.SendAsync("Hello");
+        await runner.SendAsync("Hello " + i, token);
         Trace.WriteLine("done");
 
         Trace.WriteLine("Receive Echo ... ");
-        var message = await runner.ReceiveAsync();
+        string message = await runner.ReceiveAsync(token);
         Trace.WriteLine(message);
         Trace.WriteLine("... done");
       }
+      cts.Cancel();
+      await task;
 
-      await t;
+      cts = new CancellationTokenSource();
+      cts.CancelAfter(3000);
+      token = cts.Token;
+      runner = new EchoRunner(CreateBricksRunnerStartInfo());
+      task = runner.RunAsync(token);
+      int j = 0;
+      while (!token.IsCancellationRequested) {
+        j++;
+        Trace.Write("Send Hello ... ");
+        await runner.SendAsync("Hello " + j, token);
+        Trace.WriteLine("done");
+
+        Trace.WriteLine("Receive Echo ... ");
+        string message = await runner.ReceiveAsync(token);
+        Trace.WriteLine(message);
+        Trace.WriteLine("... done");
+      }
+      await task;
     }
 
     [TestMethod]
@@ -69,5 +89,12 @@ namespace HEAL.Bricks.Tests {
       ConsoleApplicationRunner applicationRunner = new ConsoleApplicationRunner(pluginManager.Settings, app);
       await applicationRunner.RunAsync();
     }
+
+    #region Helpers
+    private IProcessRunnerStartInfo CreateBricksRunnerStartInfo() {
+      string runnerPath = Path.Combine(TestDeploymentPath, "HEAL.Bricks.Tests.BricksRunner.exe");
+      return new GenericProgramStartInfo(runnerPath);
+    }
+    #endregion
   }
 }

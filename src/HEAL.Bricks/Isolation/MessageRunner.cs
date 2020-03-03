@@ -15,9 +15,10 @@ namespace HEAL.Bricks {
     protected MessageRunner(IProcessRunnerStartInfo processRunnerStartInfo) : base(processRunnerStartInfo) { }
 
     protected sealed override async Task ExecuteOnClientAsync(CancellationToken cancellationToken) {
-      while (true) {
+      while (!cancellationToken.IsCancellationRequested) {
         IRunnerMessage message = await ReceiveMessageAsync(cancellationToken);
         switch (message) {
+          case null:
           case CancelRunnerMessage _:
             return;
           default:
@@ -29,8 +30,15 @@ namespace HEAL.Bricks {
 
     protected sealed override async Task ExecuteOnHostAsync(CancellationToken cancellationToken) {
       while (!cancellationToken.IsCancellationRequested) {
-        IRunnerMessage message = await ReceiveMessageAsync();
-        await ProcessRunnerMessageOnHostAsync(message, cancellationToken);
+        IRunnerMessage message = await ReceiveMessageAsync(cancellationToken);
+        switch (message) {
+          case null:
+          case RunnerStoppedMessage _:
+            return;
+          default:
+            await ProcessRunnerMessageOnHostAsync(message, cancellationToken);
+            break;
+        }
       }
     }
 

@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   [Serializable]
-  public class ConsoleApplicationRunner : PluginManagerProcessRunner {
+  public sealed class ConsoleApplicationRunner : PluginManagerProcessRunner {
     public ApplicationInfo ApplicationInfo { get; }
     public ICommandLineArgument[] Arguments { get; }
 
@@ -68,14 +68,14 @@ namespace HEAL.Bricks {
         }
       }, cancellationToken);
 
-      await reader.ConfigureAwait(false);
+      await reader;
 
       // not needed if writer polls
       TextReader stdIn = Console.In;
       Console.SetIn(new StringReader(""));
       Console.WriteLine($"Application {ApplicationInfo.Name} terminated. Press ENTER to continue.");
 
-      await writer.ConfigureAwait(false);
+      await writer;
 
       // not needed if writer polls
       Console.SetIn(stdIn);

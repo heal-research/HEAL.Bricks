@@ -6,12 +6,17 @@
 #endregion
 
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   [Serializable]
   public sealed class EchoRunner : MessageRunner {
+    [NonSerialized]
+    private readonly BlockingCollection<string> responses = new BlockingCollection<string>();
+
     public EchoRunner(IProcessRunnerStartInfo startInfo = null) : base(startInfo ?? new NetCoreEntryAssemblyStartInfo()) { }
 
     protected override async Task ProcessRunnerMessageOnClientAsync(IRunnerMessage message, CancellationToken cancellationToken) {
@@ -26,14 +31,35 @@ namespace HEAL.Bricks {
     }
 
     protected override Task ProcessRunnerMessageOnHostAsync(IRunnerMessage message, CancellationToken cancellationToken) {
-      throw new NotImplementedException();
+      switch (message) {
+        case RunnerStoppedMessage _:
+          responses.CompleteAdding();
+          break;
+        case RunnerTextMessage textMessage:
+          responses.Add(textMessage.Data);
+          break;
+        case RunnerExceptionMessage exceptionMessage:
+          throw exceptionMessage.Data;
+        default:
+          throw new InvalidOperationException($"Cannot process message {message.GetType().Name}.");
+      }
+      return Task.CompletedTask;
     }
 
     public async Task SendAsync(string text, CancellationToken cancellationToken = default) {
-      await SendMessageAsync(new RunnerTextMessage(text), cancellationToken);
+      try {
+        await SendMessageAsync(new RunnerTextMessage(text), cancellationToken);
+      }
+      catch (OperationCanceledException) { }
     }
     public async Task<string> ReceiveAsync(CancellationToken cancellationToken = default) {
-      return (await ReceiveMessageAsync<RunnerTextMessage>(cancellationToken)).Data;
+      try {
+        return await Task.Run<string>(() => {
+          return responses.Take(cancellationToken);
+        }, cancellationToken);
+      }
+      catch (OperationCanceledException) { }
+      return null;
     }
   }
 }

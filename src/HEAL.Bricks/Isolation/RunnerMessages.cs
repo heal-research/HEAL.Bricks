@@ -39,6 +39,9 @@ namespace HEAL.Bricks {
   public class RunnerStartedMessage : RunnerMessage { }
 
   [Serializable]
+  public class RunnerStoppedMessage : RunnerMessage { }
+
+  [Serializable]
   public class RunnerExceptionMessage : RunnerDataMessage<Exception> {
     public RunnerExceptionMessage(Exception exception) : base(exception) { }
   }

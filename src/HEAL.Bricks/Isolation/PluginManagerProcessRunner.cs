@@ -25,7 +25,7 @@ namespace HEAL.Bricks {
       pluginManager.Initialize();
 
       if (pluginManager.Status != PluginManagerStatus.OK) {
-        await SendExceptionAsync(new InvalidOperationException($"{nameof(PluginManager)}.{nameof(pluginManager.Status)} is not {nameof(PluginManagerStatus.OK)}."));
+        await SendExceptionAsync(new InvalidOperationException($"{nameof(PluginManager)}.{nameof(pluginManager.Status)} is not {nameof(PluginManagerStatus.OK)}."), cancellationToken);
       }
 
       await ExecuteOnClientAsync(pluginManager, cancellationToken);
