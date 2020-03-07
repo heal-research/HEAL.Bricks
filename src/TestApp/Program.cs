@@ -23,9 +23,24 @@ namespace TestApp {
       DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pluginManager.Settings);
       ApplicationInfo[] applications = await discoverApplicationsRunner.GetApplicationsAsync();
 
-      ConsoleApplicationRunner applicationRunner = new ConsoleApplicationRunner(pluginManager.Settings, applications[0]);
-      await applicationRunner.RunAsync();
+      if (applications.Length == 0) {
+        Console.WriteLine("No applications found.");
+        return;
+      }
+      
+      int index;
+      do {
+        for (index = 1; index <= applications.Length; index++) {
+          Console.WriteLine($"[{index}] {applications[index - 1].ToString()}");
+        }
+        Console.Write("application > ");
+        index = int.TryParse(Console.ReadLine(), out index) ? index - 1 : -1;
 
+        if (index != -1) {
+          ApplicationRunner applicationRunner = new ApplicationRunner(pluginManager.Settings, applications[index]);
+          await applicationRunner.RunAsync();
+        }
+      } while (index != -1);
 
       CancellationTokenSource cts = new CancellationTokenSource();
       CancellationToken token = cts.Token;

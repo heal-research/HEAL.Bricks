@@ -7,33 +7,21 @@ namespace TestApp {
   class EchoApplication : IApplication {
     public string Name => "EchoApplication";
     public string Description => "Reads strings and returns their echo.";
-
-    public void Run(ICommandLineArgument[] args) {
-      Console.WriteLine("EchoApplication started");
-      Console.Write("message > ");
-      string message = Console.ReadLine();
-      while (!string.IsNullOrEmpty(message)) {
-        Console.WriteLine("echo > " + message);
-        Console.Write("message > ");
-        message = Console.ReadLine();
-      }
-      Console.WriteLine("EchoApplication done");
-    }
+    public ApplicationKind Kind => ApplicationKind.Console;
 
     public async Task RunAsync(ICommandLineArgument[] args, CancellationToken cancellationToken = default) {
       await Task.Run(() => {
-        Run(args);
+        Console.WriteLine("EchoApplication started");
+        Console.Write("message > ");
+        string message = Console.ReadLine();
+        while (!string.IsNullOrEmpty(message)) {
+          cancellationToken.ThrowIfCancellationRequested();
+          Console.WriteLine("echo > " + message);
+          Console.Write("message > ");
+          message = Console.ReadLine();
+        }
+        Console.WriteLine("EchoApplication done");
       }, cancellationToken);
-    }
-
-    public void OnCancel() {
-      throw new NotImplementedException();
-    }
-    public void OnPause() {
-      throw new NotImplementedException();
-    }
-    public void OnResume() {
-      throw new NotImplementedException();
     }
   }
 }

@@ -25,8 +25,6 @@ namespace HEAL.Bricks {
     }
 
     protected override async Task ExecuteOnClientAsync(IPluginManager pluginManager, CancellationToken cancellationToken) {
-      pluginManager.LoadPackageAssemblies();
-
       ITypeDiscoverer typeDiscoverer = TypeDiscoverer.Create();
       IEnumerable<IApplication> applications = typeDiscoverer.GetInstances<IApplication>();
       ApplicationInfo[] applicationInfos = applications.Select(x => new ApplicationInfo(x)).OrderBy(x => x.Name).ToArray();

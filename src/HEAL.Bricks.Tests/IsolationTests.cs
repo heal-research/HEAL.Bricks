@@ -86,7 +86,7 @@ namespace HEAL.Bricks.Tests {
       DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pluginManager.Settings);
       ApplicationInfo app = (await discoverApplicationsRunner.GetApplicationsAsync())[0];
 
-      ConsoleApplicationRunner applicationRunner = new ConsoleApplicationRunner(pluginManager.Settings, app);
+      ApplicationRunner applicationRunner = new ApplicationRunner(pluginManager.Settings, app);
       await applicationRunner.RunAsync();
     }
 

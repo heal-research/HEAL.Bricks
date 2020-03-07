@@ -30,7 +30,7 @@ namespace HEAL.Bricks {
 
     public RunnerStatus Status { get; protected set; } = RunnerStatus.Created;
 
-    // TODO: review use of synchronisation contexts (i.e. await ...ConfigureAwait(true/false))
+    // TODO: review use of synchronization contexts (i.e. await ...ConfigureAwait(true/false))
 
     public void Run() => RunAsync().Wait();
     public async Task RunAsync(CancellationToken cancellationToken = default) {

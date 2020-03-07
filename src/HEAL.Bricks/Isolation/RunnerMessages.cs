@@ -27,7 +27,7 @@ namespace HEAL.Bricks {
   }
 
   [Serializable]
-  public class PauseRunnerMessage : RunnerMessage { }
+  public class SuspendRunnerMessage : RunnerMessage { }
 
   [Serializable]
   public class ResumeRunnerMessage : RunnerMessage { }

@@ -12,16 +12,18 @@ namespace HEAL.Bricks {
   public class ApplicationInfo {
     public string Name { get; }
     public string Description { get; }
-    public string TypeName { get; }
+    public ApplicationKind Kind { get; }
+    internal string TypeName { get; }
 
     internal ApplicationInfo(IApplication application) {
       Name = application.Name;
       Description = application.Description;
+      Kind = application.Kind;
       TypeName = application.GetType().FullName;
     }
 
     public override string ToString() {
-      return Name;
+      return Name + " (" + Kind + ")";
     }
   }
 }

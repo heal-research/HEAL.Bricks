@@ -23,11 +23,11 @@ namespace HEAL.Bricks {
     protected sealed override async Task ExecuteOnClientAsync(CancellationToken cancellationToken) {
       IPluginManager pluginManager = PluginManager.Create(Settings);
       pluginManager.Initialize();
-
       if (pluginManager.Status != PluginManagerStatus.OK) {
-        await SendExceptionAsync(new InvalidOperationException($"{nameof(PluginManager)}.{nameof(pluginManager.Status)} is not {nameof(PluginManagerStatus.OK)}."), cancellationToken);
+        throw new InvalidOperationException($"{nameof(PluginManager)}.{nameof(pluginManager.Status)} is not {nameof(PluginManagerStatus.OK)}.");
       }
 
+      pluginManager.LoadPackageAssemblies();
       await ExecuteOnClientAsync(pluginManager, cancellationToken);
     }
     protected abstract Task ExecuteOnClientAsync(IPluginManager pluginManager, CancellationToken cancellationToken);

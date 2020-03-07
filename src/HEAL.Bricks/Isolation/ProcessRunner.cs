@@ -51,10 +51,10 @@ namespace HEAL.Bricks {
     }
     protected sealed override Task<bool> RegisterCancellation(CancellationToken cancellationToken) {
       // Create a new LinkedTokenSource and a TaskCompletionSource. 
-      // When the specified token is cancelled, a cancel requests is sent to the started process. 
+      // When the specified token is canceled, a cancel requests is sent to the started process. 
       // Then the main process waits for the started process to exit and sets a result of the TaskCompletionSource.
-      // When the started process is finished normally (i.e., no cancellation), the linked token is cancelled and
-      // the result is set (true if started process was cancelled, otherwise false). 
+      // When the started process is finished normally (i.e., no cancellation), the linked token is canceled and
+      // the result is set (true if started process was canceled, otherwise false). 
 
       var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
       var tcs = new TaskCompletionSource<bool>();
