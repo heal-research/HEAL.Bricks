@@ -31,7 +31,7 @@ namespace HEAL.Bricks {
     Starting,
     Running,
     Stopped,
-    Cancelled,
+    Canceled,
     Faulted
   }
 }

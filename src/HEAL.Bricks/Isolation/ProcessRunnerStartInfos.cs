@@ -10,6 +10,7 @@ using System.IO;
 using System.Reflection;
 
 namespace HEAL.Bricks {
+  [Serializable]
   public class ProcessRunnerStartInfo : IProcessRunnerStartInfo {
     private string programPath;
     public virtual string ProgramPath {
@@ -21,6 +22,7 @@ namespace HEAL.Bricks {
       }
     }
     public virtual string Arguments { get; set; }
+    public virtual CommunicationMode CommunicationMode { get; set; }
     // TODO: reconsider if it is really a good idea to provide using alternative user accounts
     //       maybe we do not need this, as we provide other ways of isolation (e.g. docker)
     public virtual string UserName { get; set; }
@@ -30,17 +32,19 @@ namespace HEAL.Bricks {
     // we expect that the used user account has strongly restricted privileges, therefore storing the password in clear text is not that critical (???)
     public virtual string UserPassword { get; set; }
 
-    public ProcessRunnerStartInfo(string programPath, string arguments = null) {
+    public ProcessRunnerStartInfo(string programPath, string arguments = null, CommunicationMode communicationMode = CommunicationMode.AnonymousPipes) {
       ProgramPath = programPath;
       Arguments = arguments;
+      CommunicationMode = communicationMode;
     }
   }
 
+  [Serializable]
   public class GenericProgramStartInfo : ProcessRunnerStartInfo {
     public override string ProgramPath { get => base.ProgramPath; set => SetProgramPath(value); }
     public string Program { get => Path.GetFileName(ProgramPath); }
 
-    public GenericProgramStartInfo(string program, string arguments = null) : base(program, arguments) { }
+    public GenericProgramStartInfo(string program, string arguments = null, CommunicationMode communicationMode = CommunicationMode.AnonymousPipes) : base(program, arguments, communicationMode) { }
 
     private void SetProgramPath(string path) {
       if (path == null) throw new ArgumentNullException(nameof(ProgramPath));
@@ -54,8 +58,9 @@ namespace HEAL.Bricks {
     }
   }
 
+  [Serializable]
   public class NetCoreAssemblyStartInfo : ProcessRunnerStartInfo {
-    public NetCoreAssemblyStartInfo(string assembly, string arguments = null) : base("dotnet", arguments) {
+    public NetCoreAssemblyStartInfo(string assembly, string arguments = null, CommunicationMode communicationMode = CommunicationMode.AnonymousPipes) : base("dotnet", arguments, communicationMode) {
       if (assembly == null) throw new ArgumentNullException(nameof(assembly));
       if (assembly == "") throw new ArgumentException($"{nameof(assembly)} is empty", nameof(assembly));
 
@@ -65,7 +70,8 @@ namespace HEAL.Bricks {
     }
   }
 
+  [Serializable]
   public class NetCoreEntryAssemblyStartInfo : ProcessRunnerStartInfo {
-    public NetCoreEntryAssemblyStartInfo() : base("dotnet", "\"" + Assembly.GetEntryAssembly().Location + "\" " + Runner.StartRunnerArgument) { }
+    public NetCoreEntryAssemblyStartInfo(CommunicationMode communicationMode = CommunicationMode.AnonymousPipes) : base("dotnet", "\"" + Assembly.GetEntryAssembly().Location + "\"", communicationMode) { }
   }
 }

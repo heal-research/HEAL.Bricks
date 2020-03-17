@@ -7,6 +7,8 @@
 
 using System;
 using System.IO;
+using System.IO.Pipes;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
@@ -16,13 +18,48 @@ namespace HEAL.Bricks {
   [Serializable]
   public abstract class Runner {
     public static string StartRunnerArgument => "--StartRunner";
-    public static async Task ReceiveAndExecuteRunnerAsync(Stream stream, CancellationToken cancellationToken = default) {
-      Task<IRunnerMessage> task = ReceiveMessageAsync(stream, cancellationToken);
+    public static string CommunicationModeArgument => "--CommunicationMode";
+    public static string InputConnectionArgument => "--InputConnection";
+    public static string OutputConnectionArgument => "--OutputConnection";
+
+    public static bool ParseArguments(string[] args, out CommunicationMode communicationMode, out string inputConnection, out string outputConnection) {
+      bool startRunner = args.Any(x => x == StartRunnerArgument);
+      if (startRunner) {
+        try {
+          communicationMode = (CommunicationMode)Enum.Parse(typeof(CommunicationMode), args.Where(x => x.Contains(CommunicationModeArgument)).Select(x => x.Split('=')[1]).SingleOrDefault() ?? string.Empty);
+        }
+        catch (Exception) { communicationMode = CommunicationMode.AnonymousPipes; }
+        try {
+          inputConnection = args.Where(x => x.Contains(InputConnectionArgument)).Select(x => x.Split('=')[1]).SingleOrDefault() ?? string.Empty;
+        }
+        catch (Exception) { inputConnection = string.Empty; }
+        try {
+          outputConnection = args.Where(x => x.Contains(OutputConnectionArgument)).Select(x => x.Split('=')[1]).SingleOrDefault() ?? string.Empty;
+        }
+        catch (Exception) { outputConnection = string.Empty; }
+      } else {
+        communicationMode = default;
+        inputConnection = null;
+        outputConnection = null;
+      }
+      return startRunner;
+    }
+    public static async Task ReceiveAndExecuteRunnerAsync(CommunicationMode communicationMode, string inputConnection, string outputConnection, CancellationToken cancellationToken = default) {
+      Stream stream = null;
+      switch (communicationMode) {
+        case CommunicationMode.StdInOut:
+          stream = Console.OpenStandardInput();
+          break;
+        case CommunicationMode.AnonymousPipes:
+          stream = new AnonymousPipeClientStream(PipeDirection.In, inputConnection);
+          break;
+      }
+
       // handshake at runner startup has to be done synchronously
-      task.Wait(cancellationToken);
-      Runner runner = (task.Result as StartRunnerMessage)?.Data;
+      IRunnerMessage runnerMessage = ReceiveMessageAsync(stream, cancellationToken).Result;
+      Runner runner = (runnerMessage as StartRunnerMessage)?.Data;
       if (runner == null) throw new InvalidOperationException("Cannot deserialize runner from stream.");
-      await runner.ExecuteAsync(cancellationToken);
+      await runner.ExecuteAsync(communicationMode, inputConnection, outputConnection, cancellationToken);
     }
 
     [NonSerialized]
@@ -38,56 +75,62 @@ namespace HEAL.Bricks {
         if (Status != RunnerStatus.Created) throw new InvalidOperationException($"Runner status is not \"{nameof(RunnerStatus.Created)}\".");
 
         Status = RunnerStatus.Starting;
-        InitializeHostStreams();  // initialize input and output stream on host side
-        Task<bool> task = RegisterCancellation(cancellationToken);  // registers a task for cancellation (prevents polling in a loop)
+        StartCommunicationWithClient(cancellationToken, out Task<RunnerStatus> clientDone);
 
-        // handshake at runner startup has to be done synchronously
+        // handshake at runner startup is done synchronously
         SendMessageAsync(new StartRunnerMessage(this), cancellationToken).Wait(cancellationToken);
         ReceiveMessageAsync<RunnerStartedMessage>(cancellationToken).Wait(cancellationToken);
+
         Status = RunnerStatus.Running;
-
         await ExecuteOnHostAsync(cancellationToken);
-
-        if (await task) Status = RunnerStatus.Cancelled;
-        else Status = RunnerStatus.Stopped;
+        Status = await clientDone;
       }
       catch (OperationCanceledException) {
-        Status = RunnerStatus.Cancelled;
+        Status = RunnerStatus.Canceled;
       }
       catch (Exception ex) {
         Status = RunnerStatus.Faulted;
         throw ex;
       }
+      finally {
+        CloseCommunicationWithClient();
+      }
     }
 
-    private async Task ExecuteAsync(CancellationToken cancellationToken) {
+    private async Task ExecuteAsync(CommunicationMode communicationMode, string inputConnection, string outputConnection, CancellationToken cancellationToken) {
       try {
-        Status = RunnerStatus.Running;
-        InitializeClientStreams();  // initialize input and output stream on client side
+        Status = RunnerStatus.Starting;
+        StartCommunicationWithHost(communicationMode, inputConnection, outputConnection, cancellationToken);
 
         // handshake at runner startup has to be done synchronously
         SendMessageAsync(new RunnerStartedMessage(), cancellationToken).Wait(cancellationToken);
+
+        Status = RunnerStatus.Running;
         await ExecuteOnClientAsync(cancellationToken);
-        Status = (cancellationToken.IsCancellationRequested ? RunnerStatus.Cancelled : RunnerStatus.Stopped);
+        Status = (cancellationToken.IsCancellationRequested ? RunnerStatus.Canceled : RunnerStatus.Stopped);
       }
       catch (OperationCanceledException) {
-        Status = RunnerStatus.Cancelled;
+        Status = RunnerStatus.Canceled;
       }
       catch (Exception ex) {
         Status = RunnerStatus.Faulted;
         await SendExceptionAsync(ex, cancellationToken);
       }
+      finally {
+        CloseCommunicationWithHost(communicationMode);
+      }
     }
-    protected abstract void InitializeHostStreams();
-    protected abstract void InitializeClientStreams();
-    protected abstract Task<bool> RegisterCancellation(CancellationToken cancellationToken);
+    protected abstract void StartCommunicationWithClient(CancellationToken cancellationToken, out Task<RunnerStatus> clientDone);
+    protected abstract void StartCommunicationWithHost(CommunicationMode communicationMode, string inputHandle, string outputHandle, CancellationToken cancellationToken);
     protected abstract Task ExecuteOnHostAsync(CancellationToken cancellationToken);
     protected abstract Task ExecuteOnClientAsync(CancellationToken cancellationToken);
+    protected abstract void CloseCommunicationWithClient();
+    protected abstract void CloseCommunicationWithHost(CommunicationMode communicationMode);
 
-    protected async Task SendMessageAsync(IRunnerMessage message, CancellationToken cancellationToken) => await SendMessageAsync(message, outputStream, cancellationToken);
-    protected async Task SendExceptionAsync(Exception exception, CancellationToken cancellationToken) => await SendMessageAsync(new RunnerExceptionMessage(exception), cancellationToken);
-    protected async Task<IRunnerMessage> ReceiveMessageAsync(CancellationToken cancellationToken) => await ReceiveMessageAsync<IRunnerMessage>(cancellationToken);
-    protected async Task<T> ReceiveMessageAsync<T>(CancellationToken cancellationToken) where T : IRunnerMessage => await ReceiveMessageAsync<T>(inputStream, cancellationToken);
+    protected async Task SendMessageAsync(IRunnerMessage message, CancellationToken cancellationToken) => await SendMessageAsync(message, outputStream, cancellationToken).ConfigureAwait(false);
+    protected async Task SendExceptionAsync(Exception exception, CancellationToken cancellationToken) => await SendMessageAsync(new RunnerExceptionMessage(exception), cancellationToken).ConfigureAwait(false);
+    protected async Task<IRunnerMessage> ReceiveMessageAsync(CancellationToken cancellationToken) => await ReceiveMessageAsync<IRunnerMessage>(cancellationToken).ConfigureAwait(false);
+    protected async Task<T> ReceiveMessageAsync<T>(CancellationToken cancellationToken) where T : IRunnerMessage => await ReceiveMessageAsync<T>(inputStream, cancellationToken).ConfigureAwait(false);
 
     private static async Task SendMessageAsync(IRunnerMessage message, Stream stream, CancellationToken cancellationToken) {
       await Task.Run(() => {
@@ -95,7 +138,7 @@ namespace HEAL.Bricks {
         serializer.Serialize(stream, message);
         stream.Flush();
         cancellationToken.ThrowIfCancellationRequested();
-      }, cancellationToken);
+      }, cancellationToken).ConfigureAwait(false);
     }
     private static async Task<IRunnerMessage> ReceiveMessageAsync(Stream stream, CancellationToken cancellationToken) => await ReceiveMessageAsync<IRunnerMessage>(stream, cancellationToken);
     private static async Task<T> ReceiveMessageAsync<T>(Stream stream, CancellationToken cancellationToken) where T : IRunnerMessage {
@@ -109,7 +152,7 @@ namespace HEAL.Bricks {
         T t = (T)message;
         cancellationToken.ThrowIfCancellationRequested();
         return t;
-      }, cancellationToken);
+      }, cancellationToken).ConfigureAwait(false);
     }
   }
 }

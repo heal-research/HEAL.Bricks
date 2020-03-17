@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HEAL.Bricks\HEAL.Bricks.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <Compile Update="ApplicationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="ApplicationForm.Designer.cs">
+      <DependentUpon>ApplicationForm.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <Compile Update="StarterForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="StarterForm.Designer.cs">
+      <DependentUpon>StarterForm.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+</Project>

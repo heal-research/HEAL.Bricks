@@ -19,7 +19,9 @@ namespace HEAL.Bricks {
         IRunnerMessage message = await ReceiveMessageAsync(cancellationToken);
         switch (message) {
           case null:
+            return;
           case CancelRunnerMessage _:
+            await ProcessRunnerMessageOnClientAsync(message, cancellationToken);
             return;
           default:
             await ProcessRunnerMessageOnClientAsync(message, cancellationToken);
@@ -33,7 +35,9 @@ namespace HEAL.Bricks {
         IRunnerMessage message = await ReceiveMessageAsync(cancellationToken);
         switch (message) {
           case null:
+            return;
           case RunnerStoppedMessage _:
+            await ProcessRunnerMessageOnHostAsync(message, cancellationToken);
             return;
           default:
             await ProcessRunnerMessageOnHostAsync(message, cancellationToken);

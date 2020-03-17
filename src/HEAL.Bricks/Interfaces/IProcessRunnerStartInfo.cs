@@ -7,10 +7,11 @@
 
 namespace HEAL.Bricks {
   public interface IProcessRunnerStartInfo {
-    string ProgramPath { get; }
-    string Arguments { get; }
-    string UserName { get; }
-    string UserDomain { get; }
-    string UserPassword { get; }
+    string ProgramPath { get; set; }
+    string Arguments { get; set; }
+    CommunicationMode CommunicationMode { get; set; }
+    string UserName { get; set; }
+    string UserDomain { get; set; }
+    string UserPassword { get; set; }
   }
 }

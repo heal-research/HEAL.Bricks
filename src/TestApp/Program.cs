@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using HEAL.Bricks;
@@ -7,8 +9,8 @@ using HEAL.Bricks;
 namespace TestApp {
   class Program {
     static async Task Main(string[] args) {
-      if ((args.Length == 1) && (args[0] == Runner.StartRunnerArgument)) {
-        await Runner.ReceiveAndExecuteRunnerAsync(Console.OpenStandardInput());
+      if (Runner.ParseArguments(args, out CommunicationMode communicationMode, out string inputConnection, out string outputConnection)) {
+        await Runner.ReceiveAndExecuteRunnerAsync(communicationMode, inputConnection, outputConnection);
         return;
       }
 

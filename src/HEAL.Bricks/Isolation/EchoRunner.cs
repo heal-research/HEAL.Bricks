@@ -21,6 +21,8 @@ namespace HEAL.Bricks {
 
     protected override async Task ProcessRunnerMessageOnClientAsync(IRunnerMessage message, CancellationToken cancellationToken) {
       switch (message) {
+        case CancelRunnerMessage _:
+          break;
         case RunnerTextMessage textMessage:
           await SendMessageAsync(new RunnerTextMessage("ECHO: " + textMessage.Data), cancellationToken);
           break;

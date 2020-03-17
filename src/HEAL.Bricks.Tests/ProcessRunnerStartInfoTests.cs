@@ -129,7 +129,7 @@ namespace HEAL.Bricks.Tests {
     public void NetCoreEntryAssemblyStartInfo() {
       NetCoreEntryAssemblyStartInfo netCoreEntryAssemblyStartInfo;
       string programPath = "dotnet";
-      string arguments = $"\"{Assembly.GetEntryAssembly().Location}\" --StartRunner";
+      string arguments = $"\"{Assembly.GetEntryAssembly().Location}\"";
 
       netCoreEntryAssemblyStartInfo = new NetCoreEntryAssemblyStartInfo();
       Assert.AreEqual(programPath, netCoreEntryAssemblyStartInfo.ProgramPath);

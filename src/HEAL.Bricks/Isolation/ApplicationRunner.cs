@@ -20,6 +20,9 @@ namespace HEAL.Bricks {
     public ApplicationRunner(ISettings settings, ApplicationInfo applicationInfo, ICommandLineArgument[] arguments = null, IProcessRunnerStartInfo startInfo = null) : base(settings, startInfo ?? new NetCoreEntryAssemblyStartInfo()) {
       ApplicationInfo = applicationInfo;
       Arguments = arguments;
+      if (applicationInfo.Kind == ApplicationKind.Console) {
+        ProcessRunnerStartInfo.CommunicationMode = CommunicationMode.StdInOut;
+      }
     }
 
     protected override async Task ExecuteOnClientAsync(IPluginManager pluginManager, CancellationToken cancellationToken) {
