@@ -43,12 +43,12 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public void TestInitialize() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       PackageIdentity[] expectedPackages;
       LocalPackageInfo[] installedPackages;
 
       List<PackageIdentity> expectedPackagesList = new List<PackageIdentity>();
-      foreach (PackageFolderReader expectedPackageReader in nuGetConnector.GetInstalledPackages()) {
+      foreach (PackageFolderReader expectedPackageReader in nuGetConnector.GetInstalledPackages(LocalPackagesAbsolutePath)) {
         expectedPackagesList.Add(expectedPackageReader.GetIdentity());
         expectedPackageReader.Dispose();
       }
@@ -62,7 +62,7 @@ namespace HEAL.Bricks.Tests {
         Assert.IsTrue(installedPackage.Dependencies.All(x => x.Status != PackageDependencyStatus.Unknown));
       }
 
-      WriteLogToTestContextAndClear(nuGetConnector);
+      WriteLogToTestContextAndClear();
     }
     #endregion
 
@@ -70,7 +70,7 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public async Task TestGetMissingDependenciesAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       PackageIdentity[] expectedPackages;
       RemotePackageInfo[] missingPackages;
 
@@ -78,7 +78,7 @@ namespace HEAL.Bricks.Tests {
       missingPackages = (await pluginManager.GetMissingDependenciesAsync()).ToArray();
       CollectionAssert.AreEqual(expectedPackages, missingPackages, PackageInfoComparer.Default);
 
-      WriteLogToTestContextAndClear(nuGetConnector);
+      WriteLogToTestContextAndClear();
     }
     #endregion
 
@@ -86,14 +86,14 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public async Task TestInstallMissingDependenciesAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       PackageIdentity[] expectedPackages;
 
       expectedPackages = new[] { CreatePackageIdentity(Constants.namePluginA, Constants.version030) };
       await pluginManager.InstallMissingDependenciesAsync();
       Assert.IsTrue(expectedPackages.All(x => Directory.Exists(Path.Combine(pluginManager.Settings.PackagesPath, x.Id + "." + x.Version.ToString()))));
 
-      WriteLogToTestContextAndClear(nuGetConnector);
+      WriteLogToTestContextAndClear();
     }
     #endregion
 
@@ -101,7 +101,7 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public async Task TestSearchRemotePackageAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: false);
-      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: false), nuGetConnector);
       string searchString;
       bool includePreReleases;
       PackageIdentity[] expectedPackages;
@@ -137,7 +137,7 @@ namespace HEAL.Bricks.Tests {
       argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return pluginManager.SearchRemotePackagesAsync(searchString, 0, int.MaxValue, includePreReleases); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
 
-      WriteLogToTestContextAndClear(nuGetConnector);
+      WriteLogToTestContextAndClear();
     }
     #endregion
 
@@ -145,7 +145,7 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public async Task TestGetRemotePackageAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       string packageId;
       string version;
       RemotePackageInfo foundPackage;
@@ -200,7 +200,7 @@ namespace HEAL.Bricks.Tests {
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return pluginManager.GetRemotePackageAsync(packageId, version); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
-      WriteLogToTestContextAndClear(nuGetConnector);
+      WriteLogToTestContextAndClear();
     }
     #endregion
 
@@ -208,7 +208,7 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public async Task TestGetRemotePackagesAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       string packageId;
       bool includePreReleases;
       PackageIdentity[] expectedPackages;
@@ -264,7 +264,7 @@ namespace HEAL.Bricks.Tests {
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return pluginManager.GetRemotePackagesAsync(packageId, includePreReleases); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
-      WriteLogToTestContextAndClear(nuGetConnector);
+      WriteLogToTestContextAndClear();
     }
     #endregion
 
@@ -272,7 +272,7 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public async Task TestInstallRemotePackageAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       pluginManager.Initialize();
       RemotePackageInfo package;
       bool installMissingDependencies;
@@ -304,7 +304,7 @@ namespace HEAL.Bricks.Tests {
       argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return pluginManager.InstallRemotePackageAsync(package, installMissingDependencies); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
 
-      WriteLogToTestContextAndClear(nuGetConnector);
+      WriteLogToTestContextAndClear();
     }
     #endregion
 
@@ -312,7 +312,7 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public async Task TestInstallRemotePackagesAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       pluginManager.Initialize();
       RemotePackageInfo[] packages;
       bool installMissingDependencies;
@@ -361,7 +361,7 @@ namespace HEAL.Bricks.Tests {
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return pluginManager.InstallRemotePackagesAsync(packages, installMissingDependencies); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
-      WriteLogToTestContextAndClear(nuGetConnector);
+      WriteLogToTestContextAndClear();
     }
     #endregion
 
@@ -369,7 +369,7 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public void TestRemoveInstalledPackage() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       LocalPackageInfo package;
       ArgumentNullException argumentNullException;
 
@@ -383,7 +383,7 @@ namespace HEAL.Bricks.Tests {
       argumentNullException = Assert.ThrowsException<ArgumentNullException>(() => { pluginManager.RemoveInstalledPackage(package); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
 
-      WriteLogToTestContextAndClear(nuGetConnector);
+      WriteLogToTestContextAndClear();
     }
     #endregion
 
@@ -391,7 +391,7 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public void TestRemoveInstalledPackages() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       LocalPackageInfo[] packages;
       ArgumentNullException argumentNullException;
       ArgumentException argumentException;
@@ -419,7 +419,7 @@ namespace HEAL.Bricks.Tests {
       argumentException = Assert.ThrowsException<ArgumentException>(() => { pluginManager.RemoveInstalledPackages(packages); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
-      WriteLogToTestContextAndClear(nuGetConnector);
+      WriteLogToTestContextAndClear();
     }
     #endregion
 
@@ -427,7 +427,7 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public async Task TestGetPackageUpdateAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       pluginManager.Initialize();
       LocalPackageInfo package;
       PackageIdentity expectedPackage;
@@ -443,7 +443,7 @@ namespace HEAL.Bricks.Tests {
       argumentNullException = await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => { return pluginManager.GetPackageUpdateAsync(package); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
 
-      WriteLogToTestContextAndClear(nuGetConnector);
+      WriteLogToTestContextAndClear();
     }
     #endregion
 
@@ -451,7 +451,7 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public async Task TestGetPackageUpdatesAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       pluginManager.Initialize();
       LocalPackageInfo[] packages;
       PackageIdentity[] expectedPackages;
@@ -486,7 +486,7 @@ namespace HEAL.Bricks.Tests {
       argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return pluginManager.GetPackageUpdatesAsync(packages); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
-      WriteLogToTestContextAndClear(nuGetConnector);
+      WriteLogToTestContextAndClear();
     }
     #endregion
 
@@ -494,7 +494,7 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public async Task TestInstallPackageUpdatesAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       PackageIdentity[] expectedPackages;
       bool installMissingDependencies;
 
@@ -506,7 +506,7 @@ namespace HEAL.Bricks.Tests {
       Assert.IsTrue(expectedPackages.All(x => pluginManager.InstalledPackages.Select(y => y.nuspecReader.GetIdentity()).Contains(x, PackageIdentityComparer.Default)));
       Assert.IsTrue(expectedPackages.All(x => Directory.Exists(Path.Combine(pluginManager.Settings.PackagesPath, x.Id + "." + x.Version.ToString()))));
 
-      WriteLogToTestContextAndClear(nuGetConnector);
+      WriteLogToTestContextAndClear();
     }
     #endregion
 
@@ -514,7 +514,7 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public void TestLoadPackageAssemblies() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       LocalPackageInfo package;
 
       pluginManager.Initialize();
@@ -526,7 +526,7 @@ namespace HEAL.Bricks.Tests {
       pluginManager.LoadPackageAssemblies();
       Assert.IsTrue(pluginManager.InstalledPackages.All(x => (x.Status == PackageStatus.Loaded) || (x.Status == PackageStatus.Outdated)));
 
-      WriteLogToTestContextAndClear(nuGetConnector);
+      WriteLogToTestContextAndClear();
     }
     #endregion
 

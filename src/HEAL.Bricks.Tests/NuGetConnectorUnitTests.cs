@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks.Tests {
   [TestClass]
-  public class NuGetConnectorTests : PluginTestsBase {
+  public class NuGetConnectorUnitTests : PluginTestsBase {
     #region TestCtor
     [TestMethod]
     public void TestCtor() {

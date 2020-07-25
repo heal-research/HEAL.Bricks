@@ -5,6 +5,9 @@
  */
 #endregion
 
+using System.IO;
+using System.Reflection;
+
 namespace HEAL.Bricks.Tests {
   public class Constants {
     // deployment path
@@ -30,9 +33,9 @@ namespace HEAL.Bricks.Tests {
 
     // NuGet.Versioning package
     public const string nameNuGetVersioning = "NuGet.Versioning";
-    public const string versionNuGetVersioning = "5.4.0";
+    public const string versionNuGetVersioning = "5.6.0";
     public const string nameVersionNuGetVersioning = nameNuGetVersioning + "." + versionNuGetVersioning;
-    public const string versionPreReleaseNuGetVersioning = "5.5.0-preview.2.6382";
+    public const string versionPreReleaseNuGetVersioning = "5.7.0-rtm.6702";
     public const string nameVersionPreReleaseNuGetVersioning = nameNuGetVersioning + "." + versionPreReleaseNuGetVersioning;
 
     // nupkg-files of test plugins

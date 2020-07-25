@@ -23,52 +23,48 @@ using System.Threading.Tasks;
 using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 
 namespace HEAL.Bricks {
-  internal class NuGetConnector {
-    private ILogger logger = NullLogger.Instance;
+  internal class NuGetConnector : INuGetConnector {
+    private IEnumerable<SourceRepository> repositories = Enumerable.Empty<SourceRepository>();
+    private ILogger logger = NuGetLogger.NoLogger;
 
-    public ISettings Settings { get; }
-    public NuGetFramework CurrentFramework { get; private set; } = GetCurrentFramework();
-    public IEnumerable<SourceRepository> Repositories { get; }
+    public NuGetFramework CurrentFramework { get; private set; } = GetFrameworkFromEntryAssembly();
 
-    public NuGetConnector(ISettings settings) {
-      Settings = settings ?? throw new ArgumentNullException(nameof(settings));
-      Repositories = settings.Repositories.Select(x => CreateSourceRepository(x)).ToArray();
+    private NuGetConnector() { }
+    public NuGetConnector(IEnumerable<string> repositories, ILogger logger) {
+      this.repositories = repositories.Select(x => CreateSourceRepository(x)).ToArray();
+      this.logger = logger;
     }
 
-    public void EnableLogging(LogLevel minLevel = LogLevel.Information) {
-      logger = new NuGetLogger(minLevel);
-    }
-    public void DisableLogging() {
-      logger = NullLogger.Instance;
-    }
-    public void ClearLog() {
-      (logger as NuGetLogger)?.Clear();
-    }
-    public string[] GetLog() {
-      return (logger as NuGetLogger)?.GetLog() ?? Array.Empty<string>();
+    public static NuGetConnector CreateForUnitTests(string frameworkName, IEnumerable<string> repositories, ILogger logger) {
+      // only used for unit tests to create a specifically initialized NuGetConnector
+      // frameworkName: In unit tests, TargetFrameworkAttribute.FrameworkName of the entry assembly (testhost.dll) returns
+      // ".NETCoreApp,Version=v1.0". Consequently, GetFrameworkFromEntryAssembly returns .NET Core 1.0 as the current .NET
+      // framework for NuGet packages. As HEAL.Bricks is a .NET Standard 2.0 library and applications using HEAL.Bricks
+      // therefore have to be at least .NET Core 2.0 or .NET Framework 4.6.1, the detected NuGet framework is wrong and has
+      // to be defined explicitly. Otherwise, dependency resolution does not work correctly, as NuGet looks for dependencies
+      // of .NET Core 1.0.
+      // repositories: used to initialize NuGetConnector with mocked instances of SourceRepository.
+      return new NuGetConnector {
+        repositories = repositories.Select(x => CreateSourceRepository(x)).ToArray(),
+        logger = logger,
+        CurrentFramework = GetFrameworkFromName(frameworkName)
+      };
     }
 
     #region GetPackageAsync, GetPackagesAsync, SearchPackagesAsync
-    public async Task<IPackageSearchMetadata> GetPackageAsync(PackageIdentity identity, CancellationToken cancellationToken) {
-      if (identity == null) throw new ArgumentNullException(nameof(identity));
-      if (string.IsNullOrEmpty(identity.Id)) throw new ArgumentException($"{nameof(identity)}.Id is null or empty.", nameof(identity));
-      if (!identity.HasVersion) throw new ArgumentException($"{nameof(identity)} has no version.", nameof(identity));
-
-      return (await GetPackagesAsync(Enumerable.Repeat(identity, 1), cancellationToken)).SingleOrDefault();
+    public virtual async Task<IPackageSearchMetadata> GetPackageAsync(PackageIdentity identity,
+                                                                      CancellationToken ct) {
+      return (await GetPackagesAsync(Enumerable.Repeat(identity, 1), ct)).SingleOrDefault();
     }
 
-    public async Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(IEnumerable<PackageIdentity> identities, CancellationToken cancellationToken) {
-      if (identities == null) throw new ArgumentNullException(nameof(identities));
-      if (identities.Any(x => x == null)) throw new ArgumentException($"{nameof(identities)} contains null elements.", nameof(identities));
-      if (identities.Any(x => string.IsNullOrEmpty(x.Id))) throw new ArgumentException($"{nameof(identities)} contains elements whose Id is null or empty.", nameof(identities));
-      if (identities.Any(x => !x.HasVersion)) throw new ArgumentException($"{nameof(identities)} contains elements which have no version.", nameof(identities));
-
+    public virtual async Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(IEnumerable<PackageIdentity> identities,
+                                                                                    CancellationToken ct) {
       List<IPackageSearchMetadata> packages = new List<IPackageSearchMetadata>();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (PackageIdentity identity in identities) {
-          foreach (SourceRepository sourceRepository in Repositories) {
-            PackageMetadataResource packageMetadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>(cancellationToken);
-            IPackageSearchMetadata package = await packageMetadataResource.GetMetadataAsync(identity, cacheContext, logger, cancellationToken);
+          foreach (SourceRepository sourceRepository in repositories) {
+            PackageMetadataResource packageMetadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>(ct);
+            IPackageSearchMetadata package = await packageMetadataResource.GetMetadataAsync(identity, cacheContext, logger, ct);
             if (package != null) {
               packages.Add(package);
               break;
@@ -78,37 +74,37 @@ namespace HEAL.Bricks {
       }
       return packages.Distinct(PackageSearchMetadataComparer.Default).OrderBy(x => x, PackageSearchMetadataComparer.Default).ToArray();
     }
-    public async Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(string packageId, bool includePreReleases, CancellationToken cancellationToken) {
-      if (packageId == null) throw new ArgumentNullException(nameof(packageId));
-      if (packageId == "") throw new ArgumentException($"{nameof(packageId)} is empty.", nameof(packageId));
-
-      return await GetPackagesAsync(Enumerable.Repeat(packageId, 1), includePreReleases, cancellationToken);
+    public virtual async Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(string packageId,
+                                                                                    bool includePreReleases,
+                                                                                    CancellationToken ct) {
+      return await GetPackagesAsync(Enumerable.Repeat(packageId, 1), includePreReleases, ct);
     }
-    public async Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(IEnumerable<string> packageIds, bool includePreReleases, CancellationToken cancellationToken) {
-      if (packageIds == null) throw new ArgumentNullException(nameof(packageIds));
-      if (packageIds.Any(x => string.IsNullOrEmpty(x))) throw new ArgumentException($"{nameof(packageIds)} contains elements which are null or empty.", nameof(packageIds));
-
+    public virtual async Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(IEnumerable<string> packageIds,
+                                                                                    bool includePreReleases,
+                                                                                    CancellationToken ct) {
       List<IPackageSearchMetadata> packages = new List<IPackageSearchMetadata>();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (string packageId in packageIds) {
-          foreach (SourceRepository sourceRepository in Repositories) {
-            PackageMetadataResource packageMetadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>(cancellationToken);
-            packages.AddRange(await packageMetadataResource.GetMetadataAsync(packageId, includePreReleases, false, cacheContext, logger, cancellationToken));
+          foreach (SourceRepository sourceRepository in repositories) {
+            PackageMetadataResource packageMetadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>(ct);
+            packages.AddRange(await packageMetadataResource.GetMetadataAsync(packageId, includePreReleases, false, cacheContext, logger, ct));
           }
         }
       }
       return packages.Distinct(PackageSearchMetadataComparer.Default).OrderBy(x => x, PackageSearchMetadataComparer.Default).ToArray();
     }
 
-    public async Task<IEnumerable<(string Repository, IPackageSearchMetadata Package)>> SearchPackagesAsync(string searchString, bool includePreReleases, int skip, int take, CancellationToken cancellationToken) {
-      if (searchString == null) throw new ArgumentNullException(nameof(searchString));
-
+    public virtual async Task<IEnumerable<(string Repository, IPackageSearchMetadata Package)>> SearchPackagesAsync(string searchString,
+                                                                                                                    bool includePreReleases,
+                                                                                                                    int skip,
+                                                                                                                    int take,
+                                                                                                                    CancellationToken ct) {
       List<(string Repository, IPackageSearchMetadata Package)> packages = new List<(string Repository, IPackageSearchMetadata Package)>();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
-        foreach (SourceRepository sourceRepository in Repositories) {
-          PackageSearchResource packageSearchResource = await sourceRepository.GetResourceAsync<PackageSearchResource>(cancellationToken);
+        foreach (SourceRepository sourceRepository in repositories) {
+          PackageSearchResource packageSearchResource = await sourceRepository.GetResourceAsync<PackageSearchResource>(ct);
           SearchFilter filter = new SearchFilter(includePreReleases);
-          IEnumerable<IPackageSearchMetadata> searchResult = await packageSearchResource.SearchAsync(searchString, filter, skip, take, logger, cancellationToken);
+          IEnumerable<IPackageSearchMetadata> searchResult = await packageSearchResource.SearchAsync(searchString, filter, skip, take, logger, ct);
           packages.AddRange(searchResult.Select(x => (Repository: sourceRepository.PackageSource.Source, Package: x)));
         }
       }
@@ -117,76 +113,69 @@ namespace HEAL.Bricks {
     #endregion
 
     #region GetPackageDependenciesAsync
-    public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(PackageIdentity identity, bool getDependenciesRecursively, CancellationToken cancellationToken) {
-      if (identity == null) throw new ArgumentNullException(nameof(identity));
-      if (string.IsNullOrEmpty(identity.Id)) throw new ArgumentException($"{nameof(identity)}.Id is null or empty.", nameof(identity));
-      if (!identity.HasVersion) throw new ArgumentException($"{nameof(identity)} has no version.", nameof(identity));
-
-      return await GetPackageDependenciesAsync(Enumerable.Repeat(identity, 1), getDependenciesRecursively, cancellationToken);
+    public virtual async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(PackageIdentity identity,
+                                                                                                    bool getDependenciesRecursively,
+                                                                                                    CancellationToken ct) {
+      return await GetPackageDependenciesAsync(Enumerable.Repeat(identity, 1), getDependenciesRecursively, ct);
     }
-    public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(IEnumerable<PackageIdentity> identities, bool getDependenciesRecursively, CancellationToken cancellationToken) {
-      if (identities == null) throw new ArgumentNullException(nameof(identities));
-      if (identities.Any(x => x == null)) throw new ArgumentException($"{nameof(identities)} contains null elements.", nameof(identities));
-      if (identities.Any(x => string.IsNullOrEmpty(x.Id))) throw new ArgumentException($"{nameof(identities)} contains elements whose Id is null or empty.", nameof(identities));
-      if (identities.Any(x => !x.HasVersion)) throw new ArgumentException($"{nameof(identities)} contains elements which have no version.", nameof(identities));
-
+    public virtual async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(IEnumerable<PackageIdentity> identities,
+                                                                                                    bool getDependenciesRecursively,
+                                                                                                    CancellationToken ct) {
       HashSet<SourcePackageDependencyInfo> foundDependencies = new HashSet<SourcePackageDependencyInfo>(PackageIdentityComparer.Default);
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (PackageIdentity identity in identities) {
           if (foundDependencies.Contains(identity)) continue;
 
           bool found = false;
-          foreach (SourceRepository sourceRepository in Repositories) {
-            DependencyInfoResource dependencyInfoResource = await sourceRepository.GetResourceAsync<DependencyInfoResource>(cancellationToken);
-            SourcePackageDependencyInfo dependency = await dependencyInfoResource.ResolvePackage(identity, CurrentFramework, cacheContext, logger, cancellationToken);
+          foreach (SourceRepository sourceRepository in repositories) {
+            DependencyInfoResource dependencyInfoResource = await sourceRepository.GetResourceAsync<DependencyInfoResource>(ct);
+            SourcePackageDependencyInfo dependency = await dependencyInfoResource.ResolvePackage(identity, CurrentFramework, cacheContext, logger, ct);
             if (dependency != null) {
               foundDependencies.Add(dependency);
               if (getDependenciesRecursively)
-                await GetPackageDependenciesAsync(dependency.Dependencies, getDependenciesRecursively, foundDependencies, cacheContext, cancellationToken);
+                await GetPackageDependenciesAsync(dependency.Dependencies, getDependenciesRecursively, foundDependencies, cacheContext, ct);
               found = true;
               break;
             }
           }
-          if (!found) throw new InvalidOperationException($"Dependencies of package {identity.ToString()} not found.");
+          if (!found) throw new InvalidOperationException($"Dependencies of package {identity} not found.");
         }
       }
       return foundDependencies.ToArray();
     }
-    public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(NuGetPackageDependency dependency, bool getDependenciesRecursively, CancellationToken cancellationToken) {
-      if (dependency == null) throw new ArgumentNullException(nameof(dependency));
-
-      return await GetPackageDependenciesAsync(Enumerable.Repeat(dependency, 1), getDependenciesRecursively, cancellationToken);
+    public virtual async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(NuGetPackageDependency dependency,
+                                                                                                    bool getDependenciesRecursively,
+                                                                                                    CancellationToken ct) {
+      return await GetPackageDependenciesAsync(Enumerable.Repeat(dependency, 1), getDependenciesRecursively, ct);
     }
-    public async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(IEnumerable<NuGetPackageDependency> dependencies, bool getDependenciesRecursively, CancellationToken cancellationToken) {
-      if (dependencies == null) throw new ArgumentNullException(nameof(dependencies));
-      if (dependencies.Any(x => x == null)) throw new ArgumentException($"{nameof(dependencies)} contains null elements.", nameof(dependencies));
-
+    public virtual async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(IEnumerable<NuGetPackageDependency> dependencies,
+                                                                                                    bool getDependenciesRecursively,
+                                                                                                    CancellationToken ct) {
       HashSet<SourcePackageDependencyInfo> foundDependencies = new HashSet<SourcePackageDependencyInfo>(PackageIdentityComparer.Default);
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
-        await GetPackageDependenciesAsync(dependencies, getDependenciesRecursively, foundDependencies, cacheContext, cancellationToken);
+        await GetPackageDependenciesAsync(dependencies, getDependenciesRecursively, foundDependencies, cacheContext, ct);
       }
       return foundDependencies.ToArray();
     }
-    private async Task GetPackageDependenciesAsync(IEnumerable<NuGetPackageDependency> dependencies, bool getDependenciesRecursively, HashSet<SourcePackageDependencyInfo> foundDependencies, SourceCacheContext cacheContext, CancellationToken cancellationToken) {
-      if (dependencies == null) throw new ArgumentNullException(nameof(dependencies));
-      if (dependencies.Any(x => x == null)) throw new ArgumentException($"{nameof(dependencies)} contains null elements.", nameof(dependencies));
-      if (foundDependencies == null) throw new ArgumentNullException(nameof(foundDependencies));
-      if (cacheContext == null) throw new ArgumentNullException(nameof(cacheContext));
-
+    private async Task GetPackageDependenciesAsync(IEnumerable<NuGetPackageDependency> dependencies,
+                                                   bool getDependenciesRecursively,
+                                                   HashSet<SourcePackageDependencyInfo> foundDependencies,
+                                                   SourceCacheContext cacheContext,
+                                                   CancellationToken ct) {
       foreach (NuGetPackageDependency dependency in dependencies) {
         HashSet<SourcePackageDependencyInfo> satisfyingPackages = new HashSet<SourcePackageDependencyInfo>(PackageIdentityComparer.Default);
-        foreach (SourceRepository sourceRepository in Repositories) {
+        foreach (SourceRepository sourceRepository in repositories) {
           // find all satisfying packages
-          DependencyInfoResource dependencyInfoResource = await sourceRepository.GetResourceAsync<DependencyInfoResource>(cancellationToken);
-          satisfyingPackages.AddRange((await dependencyInfoResource.ResolvePackages(dependency.Id, CurrentFramework, cacheContext, logger, cancellationToken)).Where(x => dependency.VersionRange.Satisfies(x.Version)));
+          DependencyInfoResource dependencyInfoResource = await sourceRepository.GetResourceAsync<DependencyInfoResource>(ct);
+          satisfyingPackages.AddRange((await dependencyInfoResource.ResolvePackages(dependency.Id, CurrentFramework, cacheContext, logger, ct)).Where(x => dependency.VersionRange.Satisfies(x.Version)));
         }
-        if (satisfyingPackages.Count() == 0) throw new InvalidOperationException($"No packages found which satisfy dependency {dependency.ToString()}.");
+        if (satisfyingPackages.Count() == 0) throw new InvalidOperationException($"No packages found which satisfy dependency {dependency}.");
 
         foreach (SourcePackageDependencyInfo package in satisfyingPackages) {
           if (!foundDependencies.Contains(package)) {
             foundDependencies.Add(package);
             if (getDependenciesRecursively)
-              await GetPackageDependenciesAsync(package.Dependencies, getDependenciesRecursively, foundDependencies, cacheContext, cancellationToken);
+              await GetPackageDependenciesAsync(package.Dependencies, getDependenciesRecursively, foundDependencies, cacheContext, ct);
           }
         }
       }
@@ -194,17 +183,13 @@ namespace HEAL.Bricks {
     #endregion
 
     #region ResolveDependencies
-    public IEnumerable<SourcePackageDependencyInfo> ResolveDependencies(IEnumerable<string> additionalPackages, IEnumerable<PackageIdentity> existingPackages, IEnumerable<SourcePackageDependencyInfo> availablePackages, CancellationToken cancellationToken, out bool resolveSucceeded) {
-      if ((additionalPackages == null) && (existingPackages == null)) throw new ArgumentNullException(nameof(additionalPackages) + ", " + nameof(existingPackages));
+    public virtual IEnumerable<SourcePackageDependencyInfo> ResolveDependencies(IEnumerable<string> additionalPackages,
+                                                                                IEnumerable<PackageIdentity> existingPackages,
+                                                                                IEnumerable<SourcePackageDependencyInfo> availablePackages,
+                                                                                CancellationToken cancellationToken,
+                                                                                out bool resolveSucceeded) {
       if (additionalPackages == null) additionalPackages = Enumerable.Empty<string>();
-      if (additionalPackages.Any(x => string.IsNullOrEmpty(x))) throw new ArgumentException($"{nameof(additionalPackages)} contains elements which are null or empty.", nameof(additionalPackages));
       if (existingPackages == null) existingPackages = Enumerable.Empty<PackageIdentity>();
-      if (existingPackages.Any(x => x == null)) throw new ArgumentException($"{nameof(existingPackages)} contains elements which are null.", nameof(existingPackages));
-      if (existingPackages.Any(x => string.IsNullOrEmpty(x.Id))) throw new ArgumentException($"{nameof(existingPackages)} contains elements whose Id is null or empty.", nameof(existingPackages));
-      if (existingPackages.Any(x => !x.HasVersion)) throw new ArgumentException($"{nameof(existingPackages)} contains elements which have no version.", nameof(existingPackages));
-      if (existingPackages.GroupBy(x => x.Id).Any(x => x.Count() > 1)) throw new ArgumentException($"{nameof(existingPackages)} contains elements which have the same Id.", nameof(existingPackages));
-      if (availablePackages == null) throw new ArgumentNullException(nameof(availablePackages));
-      if (availablePackages.Any(x => x == null)) throw new ArgumentException($"{nameof(availablePackages)} contains elements which are null.", nameof(availablePackages));
 
       if ((additionalPackages.Count() == 0) && (existingPackages.Count() == 0)) {
         resolveSucceeded = true;
@@ -221,7 +206,7 @@ namespace HEAL.Bricks {
                                                                   Enumerable.Empty<PackageReference>(),
                                                                   existingPackages,
                                                                   availablePackages,
-                                                                  Repositories.Select(x => x.PackageSource),
+                                                                  repositories.Select(x => x.PackageSource),
                                                                   logger);
       PackageResolver resolver = new PackageResolver();
       IEnumerable<PackageIdentity> resolvedIdentities = Enumerable.Empty<PackageIdentity>();
@@ -239,17 +224,14 @@ namespace HEAL.Bricks {
     #endregion
 
     #region GetInstalledPackages, GetPackageDownloaderAsync, InstallPackageAsync, InstallPackagesAsync
-    public IEnumerable<PackageFolderReader> GetInstalledPackages() {
-      return Directory.GetDirectories(Settings.PackagesPath).Select(x => new PackageFolderReader(x));
+    public virtual IEnumerable<PackageFolderReader> GetInstalledPackages(string packagesPath) {
+      return Directory.GetDirectories(packagesPath).Select(x => new PackageFolderReader(x));
     }
 
-    public async Task<IPackageDownloader> GetPackageDownloaderAsync(PackageIdentity identity, CancellationToken cancellationToken) {
-      if (identity == null) throw new ArgumentNullException(nameof(identity));
-      if (string.IsNullOrEmpty(identity.Id)) throw new ArgumentException($"{nameof(identity)}.Id is null or empty.", nameof(identity));
-      if (!identity.HasVersion) throw new ArgumentException($"{nameof(identity)} has no version.", nameof(identity));
-
+    public virtual async Task<IPackageDownloader> GetPackageDownloaderAsync(PackageIdentity identity,
+                                                                            CancellationToken cancellationToken) {
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
-        foreach (SourceRepository sourceRepository in Repositories) {
+        foreach (SourceRepository sourceRepository in repositories) {
           FindPackageByIdResource findPackageByIdResource = await sourceRepository.GetResourceAsync<FindPackageByIdResource>(cancellationToken);
           IPackageDownloader downloader = await findPackageByIdResource.GetPackageDownloaderAsync(identity, cacheContext, logger, cancellationToken);
           if (downloader != null) return downloader;
@@ -258,29 +240,24 @@ namespace HEAL.Bricks {
       return null;
     }
 
-    public async Task InstallPackageAsync(SourcePackageDependencyInfo package, CancellationToken cancellationToken) {
-      if (package == null) throw new ArgumentNullException(nameof(package));
-      if (string.IsNullOrEmpty(package.Id)) throw new ArgumentException($"{nameof(package)}.Id is null or empty.", nameof(package));
-      if (!package.HasVersion) throw new ArgumentException($"{nameof(package)} has no version.", nameof(package));
-      if (package.Source == null) throw new ArgumentException($"{nameof(package)}.Source is null.", nameof(package));
-
-      await InstallPackagesAsync(Enumerable.Repeat(package, 1), cancellationToken);
+    public virtual async Task InstallPackageAsync(SourcePackageDependencyInfo package,
+                                                  string packagesPath,
+                                                  string packagesCachePath,
+                                                  CancellationToken cancellationToken) {
+      await InstallPackagesAsync(Enumerable.Repeat(package, 1), packagesPath, packagesCachePath, cancellationToken);
     }
-    public async Task InstallPackagesAsync(IEnumerable<SourcePackageDependencyInfo> packages, CancellationToken cancellationToken) {
-      if (packages == null) throw new ArgumentNullException(nameof(packages));
-      if (packages.Any(x => x == null)) throw new ArgumentException($"{nameof(packages)} contains null elements.", nameof(packages));
-      if (packages.Any(x => string.IsNullOrEmpty(x.Id))) throw new ArgumentException($"{nameof(packages)} contains elements whose Id is null or empty.", nameof(packages));
-      if (packages.Any(x => !x.HasVersion)) throw new ArgumentException($"{nameof(packages)} contains elements which have no version.", nameof(packages));
-      if (packages.Any(x => x.Source == null)) throw new ArgumentException($"{nameof(packages)} contains elements whose Source is null.", nameof(packages));
-
+    public virtual async Task InstallPackagesAsync(IEnumerable<SourcePackageDependencyInfo> packages,
+                                                   string packagesPath,
+                                                   string packagesCachePath,
+                                                   CancellationToken cancellationToken) {
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (SourcePackageDependencyInfo package in packages) {
           DownloadResource downloadResource = await package.Source.GetResourceAsync<DownloadResource>(cancellationToken);
-          PackageDownloadContext downloadContext = new PackageDownloadContext(cacheContext, Settings.PackagesCachePath, cacheContext.DirectDownload);
-          using (DownloadResourceResult downloadResult = await downloadResource.GetDownloadResourceResultAsync(package, downloadContext, Settings.PackagesCachePath, logger, cancellationToken)) {
-            if (downloadResult.Status == DownloadResourceResultStatus.NotFound) throw new InvalidOperationException($"{package.ToString()} at package source {package.Source.PackageSource} not found.");
+          PackageDownloadContext downloadContext = new PackageDownloadContext(cacheContext, packagesCachePath, cacheContext.DirectDownload);
+          using (DownloadResourceResult downloadResult = await downloadResource.GetDownloadResourceResultAsync(package, downloadContext, packagesCachePath, logger, cancellationToken)) {
+            if (downloadResult.Status == DownloadResourceResultStatus.NotFound) throw new InvalidOperationException($"{package} at package source {package.Source.PackageSource} not found.");
 
-            PackagePathResolver packagePathResolver = new PackagePathResolver(Settings.PackagesPath);
+            PackagePathResolver packagePathResolver = new PackagePathResolver(packagesPath);
             PackageExtractionContext packageExtractionContext = new PackageExtractionContext(PackageSaveMode.Defaultv3, XmlDocFileSaveMode.Skip, null, logger);
             await PackageExtractor.ExtractPackageAsync(downloadResult.PackageSource, downloadResult.PackageStream, packagePathResolver, packageExtractionContext, cancellationToken);
           }
@@ -290,19 +267,17 @@ namespace HEAL.Bricks {
     #endregion
 
     #region GetLatestVersionAsync, GetLatestVersionsAsync
-    public async Task<NuGetVersion> GetLatestVersionAsync(string packageId, bool includePreReleases, CancellationToken cancellationToken) {
-      if (packageId == null) throw new ArgumentNullException(nameof(packageId));
-      if (packageId == "") throw new ArgumentException($"{nameof(packageId)} is empty.", nameof(packageId));
-
+    public virtual async Task<NuGetVersion> GetLatestVersionAsync(string packageId,
+                                                                  bool includePreReleases,
+                                                                  CancellationToken cancellationToken) {
       return (await GetLatestVersionsAsync(Enumerable.Repeat(packageId, 1), includePreReleases, cancellationToken)).SingleOrDefault().Version;
     }
-    public async Task<IEnumerable<(string PackageId, NuGetVersion Version)>> GetLatestVersionsAsync(IEnumerable<string> packageIds, bool includePreReleases, CancellationToken cancellationToken) {
-      if (packageIds == null) throw new ArgumentNullException(nameof(packageIds));
-      if (packageIds.Any(x => string.IsNullOrEmpty(x))) throw new ArgumentException($"{nameof(packageIds)} contains elements which are null or empty.", nameof(packageIds));
-
+    public virtual async Task<IEnumerable<(string PackageId, NuGetVersion Version)>> GetLatestVersionsAsync(IEnumerable<string> packageIds,
+                                                                                                            bool includePreReleases,
+                                                                                                            CancellationToken cancellationToken) {
       List<KeyValuePair<string, NuGetVersion>> versions = new List<KeyValuePair<string, NuGetVersion>>();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
-        foreach (SourceRepository sourceRepository in Repositories) {
+        foreach (SourceRepository sourceRepository in repositories) {
           MetadataResource metadataResource = await sourceRepository.GetResourceAsync<MetadataResource>(cancellationToken);
           versions.AddRange(await metadataResource.GetLatestVersions(packageIds, includePreReleases, false, cacheContext, logger, cancellationToken));
         }
@@ -316,27 +291,20 @@ namespace HEAL.Bricks {
     #endregion
 
     #region Helpers
-    private static NuGetFramework GetCurrentFramework() {
+    private static NuGetFramework GetFrameworkFromEntryAssembly() {
       string frameworkName = Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName;
       return frameworkName != null ? NuGetFramework.ParseFrameworkName(frameworkName, DefaultFrameworkNameProvider.Instance) : NuGetFramework.AnyFramework;
     }
-    internal void SetFrameworkForUnitTests(string frameworkName) {
-      // only used for unit tests to correct the current NuGet framework manually
-      // Explanation: In unit tests, TargetFrameworkAttribute.FrameworkName of the entry assembly (testhost.dll) returns
-      // ".NETCoreApp,Version=v1.0". Consequently, GetCurrentFramework returns .NET Core 1.0 as the current .NET framework
-      // for NuGet packages. As HEAL.Bricks is a .NET Standard 2.0 library and applications using HEAL.Bricks therefore
-      // have to be at least .NET Core 2.0 or .NET Framework 4.6.1, the detected NuGet framework is wrong and has to be
-      // corrected. Otherwise, dependency resultion does not work correctly, as NuGet looks for dependencies of .NET Core 1.0.
-      CurrentFramework = NuGetFramework.ParseFrameworkName(frameworkName, DefaultFrameworkNameProvider.Instance);
+    private static NuGetFramework GetFrameworkFromName(string frameworkName) {
+      return NuGetFramework.ParseFrameworkName(frameworkName, DefaultFrameworkNameProvider.Instance);
     }
+
     private static SourceRepository CreateSourceRepository(string packageSource) {
       return Repository.CreateSource(Repository.Provider.GetCoreV3(), packageSource);
     }
-    private static SourceCacheContext CreateSourceCacheContext() {
-      return new SourceCacheContext();
-    }
-    private static SourceCacheContext CreateNoSourceCacheContext() {
-      return new SourceCacheContext() { NoCache = true, DirectDownload = true };
+
+    private static SourceCacheContext CreateSourceCacheContext(bool useCache = true) {
+      return useCache ? new SourceCacheContext() : new SourceCacheContext() { NoCache = true, DirectDownload = true };
     }
 
     #region PackageSearchMetadataEqualityComparer
@@ -351,63 +319,6 @@ namespace HEAL.Bricks {
       }
       public int Compare(IPackageSearchMetadata x, IPackageSearchMetadata y) {
         return identityComparer.Compare(x.Identity, y.Identity);
-      }
-    }
-    #endregion
-
-    #region NuGetLogger
-    private class NuGetLogger : ILogger {
-      private readonly List<string> log = new List<string>();
-      private readonly LogLevel minLevel;
-
-      public NuGetLogger() {
-        minLevel = LogLevel.Verbose;
-      }
-      public NuGetLogger(LogLevel minLevel) {
-        this.minLevel = minLevel;
-      }
-
-      public string[] GetLog() {
-        return log.ToArray();
-      }
-      public void Clear() {
-        log.Clear();
-      }
-
-      public void Log(LogLevel level, string data) {
-        if (level >= minLevel)
-          log.Add($"{level.ToString()}: {data}");
-      }
-      public void Log(ILogMessage message) {
-        if (message.Level >= minLevel)
-          log.Add($"[{message.Time.ToString()}] {message.Level.ToString()}: {message.FormatWithCode()}");
-      }
-      public Task LogAsync(LogLevel level, string data) {
-        return Task.Run(() => Log(level, data));
-      }
-      public Task LogAsync(ILogMessage message) {
-        return Task.Run(() => Log(message));
-      }
-      public void LogDebug(string data) {
-        Log(LogLevel.Debug, data);
-      }
-      public void LogError(string data) {
-        Log(LogLevel.Error, data);
-      }
-      public void LogInformation(string data) {
-        Log(LogLevel.Information, data);
-      }
-      public void LogInformationSummary(string data) {
-        Log(LogLevel.Information, $"[Summary] {data}");
-      }
-      public void LogMinimal(string data) {
-        Log(LogLevel.Minimal, data);
-      }
-      public void LogVerbose(string data) {
-        Log(LogLevel.Verbose, data);
-      }
-      public void LogWarning(string data) {
-        Log(LogLevel.Warning, data);
       }
     }
     #endregion

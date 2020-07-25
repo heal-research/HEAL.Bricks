@@ -11,7 +11,11 @@ using System.Threading.Tasks;
 namespace HEAL.Bricks.Tests.BricksRunner {
   class Program {
     static async Task Main(string[] args) {
-      await Runner.ReceiveAndExecuteRunnerAsync(Console.OpenStandardInput());
+      if (Runner.ParseArguments(args, out CommunicationMode communicationMode, out string inputConnection, out string outputConnection)) {
+        await Runner.ReceiveAndExecuteRunnerAsync(communicationMode, inputConnection, outputConnection);
+      } else {
+        Console.WriteLine("Invalid command line arguments.");
+      }
     }
   }
 }

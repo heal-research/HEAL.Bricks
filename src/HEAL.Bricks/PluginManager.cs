@@ -5,6 +5,7 @@
  */
 #endregion
 
+using NuGet.Common;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.Protocol.Core.Types;
@@ -20,30 +21,33 @@ using System.Threading.Tasks;
 namespace HEAL.Bricks {
   public sealed class PluginManager : IPluginManager {
     public static IPluginManager Create(ISettings settings) {
-      if (settings == null) throw new ArgumentNullException(nameof(settings));
-
+      if (ParameterIsNull(settings, nameof(settings), out Exception e)) throw e;
       return new PluginManager(settings);
     }
 
-    private readonly NuGetConnector nuGetConnector;
+    private INuGetConnector nuGetConnector;
+    private ILogger logger = NuGetLogger.NoLogger;
+
     public ISettings Settings { get; }
     public IEnumerable<LocalPackageInfo> InstalledPackages { get; private set; } = Enumerable.Empty<LocalPackageInfo>();
     public PluginManagerStatus Status { get; private set; } = PluginManagerStatus.Uninitialized;
 
     private PluginManager(ISettings settings) {
       Settings = settings;
-      nuGetConnector = new NuGetConnector(settings);
+      nuGetConnector = new NuGetConnector(settings.Repositories, logger);
     }
-    internal PluginManager(NuGetConnector nuGetConnector) {
-      // only used for unit tests, if a specially initialized NuGetConnector is required
-      this.nuGetConnector = nuGetConnector ?? throw new ArgumentNullException(nameof(nuGetConnector));
-      Settings = nuGetConnector?.Settings;
+    internal PluginManager(ISettings settings, INuGetConnector nuGetConnector) {
+      // only used for unit tests, if a mocked NuGetConnector has to be used
+      if (ParameterIsNull(settings, nameof(settings), out Exception e)) throw e;
+      if (ParameterIsNull(nuGetConnector, nameof(nuGetConnector), out e)) throw e;
+      Settings = settings;
+      this.nuGetConnector = nuGetConnector;
     }
 
     public void Initialize() {
       IEnumerable<PackageFolderReader> packageReaders = Enumerable.Empty<PackageFolderReader>();
       try {
-        packageReaders = nuGetConnector.GetInstalledPackages();
+        packageReaders = nuGetConnector.GetInstalledPackages(Settings.PackagesPath);
         LocalPackageInfo[] installedPackages = packageReaders.Select(x => new LocalPackageInfo(x, nuGetConnector.CurrentFramework, Settings.PluginTag)).ToArray();
         UpdatePackageAndDependencyStatus(installedPackages);
         Status = GetPluginManagerStatus(installedPackages);
@@ -74,20 +78,17 @@ namespace HEAL.Bricks {
     }
 
     public async Task<IEnumerable<(string Repository, RemotePackageInfo Package)>> SearchRemotePackagesAsync(string searchString, int skip, int take, bool includePreReleases = false, CancellationToken cancellationToken = default) {
-      if (searchString == null) throw new ArgumentNullException(nameof(searchString));
+      if (ParameterIsNull(searchString, nameof(searchString), out Exception e)) throw e;
 
       IEnumerable<(string Repository, IPackageSearchMetadata Package)> packages = await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, skip, take, cancellationToken);
       IEnumerable<SourcePackageDependencyInfo> dependencyInfos = await nuGetConnector.GetPackageDependenciesAsync(packages.Select(x => x.Package.Identity), false, cancellationToken);
       return packages.Zip(dependencyInfos, (x, y) => (x.Repository, Package: new RemotePackageInfo(x.Package, y))).ToArray();
     }
     public async Task<RemotePackageInfo> GetRemotePackageAsync(string packageId, string version, CancellationToken cancellationToken = default) {
-      if (packageId == null) throw new ArgumentNullException(nameof(packageId));
-      if (packageId == "") throw new ArgumentException($"{nameof(packageId)} is empty.", nameof(packageId));
-      if (version == null) throw new ArgumentNullException(nameof(version));
-      if (version == "") throw new ArgumentException($"{nameof(version)} is empty.", nameof(version));
-      if (!NuGetVersion.TryParse(version, out NuGetVersion nuGetVersion)) throw new ArgumentException($"{nameof(version)} is invalid.", nameof(version));
+      if (StringParameterIsNullOrEmpty(packageId, nameof(packageId), out Exception e)) throw e;
+      if (VersionStringParameterIsNullOrEmptyOrInvalid(version, nameof(version), out e)) throw e;
 
-      PackageIdentity identity = new PackageIdentity(packageId, nuGetVersion);
+      PackageIdentity identity = new PackageIdentity(packageId, NuGetVersion.Parse(version));
       IPackageSearchMetadata package = await nuGetConnector.GetPackageAsync(identity, cancellationToken);
       if (package == null) return null;
 
@@ -95,8 +96,7 @@ namespace HEAL.Bricks {
       return new RemotePackageInfo(package, dependencyInfo);
     }
     public async Task<IEnumerable<RemotePackageInfo>> GetRemotePackagesAsync(string packageId, bool includePreReleases = false, CancellationToken cancellationToken = default) {
-      if (packageId == null) throw new ArgumentNullException(nameof(packageId));
-      if (packageId == "") throw new ArgumentException($"{nameof(packageId)} is empty.", nameof(packageId));
+      if (StringParameterIsNullOrEmpty(packageId, nameof(packageId), out Exception e)) throw e;
 
       IEnumerable<IPackageSearchMetadata> packages = await nuGetConnector.GetPackagesAsync(packageId, includePreReleases, cancellationToken);
       IEnumerable<SourcePackageDependencyInfo> dependencyInfos = await nuGetConnector.GetPackageDependenciesAsync(packages.Select(x => x.Identity), false, cancellationToken);
@@ -104,7 +104,7 @@ namespace HEAL.Bricks {
     }
 
     public async Task InstallRemotePackageAsync(RemotePackageInfo package, bool installMissingDependencies = true, CancellationToken cancellationToken = default) {
-      if (package == null) throw new ArgumentNullException(nameof(package));
+      if (ParameterIsNull(package, nameof(package), out Exception e)) throw e;
 
       await InstallRemotePackagesAsync(Enumerable.Repeat(package, 1), installMissingDependencies, cancellationToken);
     }
@@ -113,7 +113,7 @@ namespace HEAL.Bricks {
       if (packages.Any(x => x == null)) throw new ArgumentException($"{nameof(packages)} contains null elements.", nameof(packages));
 
       if (packages.Count() > 0) {
-        await nuGetConnector.InstallPackagesAsync(packages.Select(x => x.sourcePackageDependencyInfo), cancellationToken);
+        await nuGetConnector.InstallPackagesAsync(packages.Select(x => x.sourcePackageDependencyInfo), Settings.PackagesPath, Settings.PackagesCachePath, cancellationToken);
         Initialize();
         if (installMissingDependencies) await InstallMissingDependenciesAsync(cancellationToken);
       }
@@ -174,10 +174,10 @@ namespace HEAL.Bricks {
     }
 
     public void LoadPackageAssemblies(LocalPackageInfo package) {
-      if (package.Status == PackageStatus.Unknown) throw new InvalidOperationException($"Cannot load assemblies of {package.ToString()}. Package status is unknown.");
-      if (package.Status == PackageStatus.DependenciesMissing) throw new InvalidOperationException($"Cannot load assemblies of {package.ToString()}. Dependencies are missing.");
-      if (package.Status == PackageStatus.IndirectDependenciesMissing) throw new InvalidOperationException($"Cannot load assemblies of {package.ToString()}. Dependencies of dependencies are missing.");
-      if (package.Status == PackageStatus.IncompatibleFramework) throw new InvalidOperationException($"Cannot load assemblies of {package.ToString()}. Package is not compatible to the current .NET framework.");
+      if (package.Status == PackageStatus.Unknown) throw new InvalidOperationException($"Cannot load assemblies of {package}. Package status is unknown.");
+      if (package.Status == PackageStatus.DependenciesMissing) throw new InvalidOperationException($"Cannot load assemblies of {package}. Dependencies are missing.");
+      if (package.Status == PackageStatus.IndirectDependenciesMissing) throw new InvalidOperationException($"Cannot load assemblies of {package}. Dependencies of dependencies are missing.");
+      if (package.Status == PackageStatus.IncompatibleFramework) throw new InvalidOperationException($"Cannot load assemblies of {package}. Package is not compatible to the current .NET framework.");
 
       if (package.Status != PackageStatus.Loaded) {
         foreach (string assemblyPath in package.ReferenceItems) {
@@ -191,6 +191,22 @@ namespace HEAL.Bricks {
         LoadPackageAssemblies(package);
       }
     }
+
+    #region Logging
+    public bool LoggingEnabled => logger != NuGetLogger.NoLogger;
+    public void EnableLogging(bool logDebugInfo = false) {
+      logger = new NuGetLogger(logDebugInfo ? LogLevel.Debug : LogLevel.Information);
+    }
+    public void DisableLogging() {
+      logger = NuGetLogger.NoLogger;
+    }
+    public string[] GetLog() {
+      return (logger as NuGetLogger)?.GetLog() ?? Array.Empty<string>();
+    }
+    public void ClearLog() {
+      (logger as NuGetLogger)?.Clear();
+    }
+    #endregion
 
     #region Helpers
     private static void UpdatePackageAndDependencyStatus(IEnumerable<LocalPackageInfo> packages) {
@@ -229,7 +245,7 @@ namespace HEAL.Bricks {
               package.Status = PackageStatus.IndirectDependenciesMissing;
               break;
             } else if (dependencyPackages.Any(x => x.Status == PackageStatus.OK)) {
-              // all packages which fulfill the dependency are known and at least one of these packages is ok
+              // all packages which fulfill the dependency are known and at least one of these packages is OK
               package.Status = PackageStatus.OK;
             }
           }
@@ -250,6 +266,72 @@ namespace HEAL.Bricks {
         return PluginManagerStatus.Unknown;
       }
     }
+
+    #region Parameter Validation
+    private static bool ParameterIsNull<T>(T parameter, string parameterName, out Exception exception) {
+      if (parameter == null) {
+        exception = new ArgumentNullException(parameterName);
+        return true;
+      }
+      exception = null;
+      return false;
+    }
+    private static bool StringParameterIsNullOrEmpty(string parameter, string parameterName, out Exception exception) {
+      if (ParameterIsNull(parameter, parameterName, out exception)) return true;
+      if (string.IsNullOrEmpty(parameter)) {
+        exception = new ArgumentException($"{parameterName} is empty.", parameterName);
+        return true;
+      }
+      exception = null;
+      return false;
+    }
+    private static bool EnumerableParameterIsNull<T>(IEnumerable<T> enumerable, string parameterName, out Exception exception) {
+      if (enumerable == null) {
+        exception = new ArgumentNullException(parameterName);
+        return true;
+      }
+      if (enumerable.Any(x => x == null)) {
+        exception = new ArgumentException($"{parameterName} contains elements which are null.", parameterName);
+        return true;
+      }
+      exception = null;
+      return false;
+    }
+    private static bool StringEnumerableParameterIsNullOrEmpty(IEnumerable<string> strings, string parameterName, out Exception exception) {
+      if (strings == null) {
+        exception = new ArgumentNullException(parameterName);
+        return true;
+      }
+      if (strings.Any(x => string.IsNullOrEmpty(x))) {
+        exception = new ArgumentException($"{parameterName} contains elements which are null or empty.", parameterName);
+        return true;
+      }
+      exception = null;
+      return false;
+    }
+    private static bool PackageIdentitiesParameterIsInvalid(IEnumerable<PackageIdentity> identities, string parameterName, out Exception exception) {
+      if (EnumerableParameterIsNull(identities, parameterName, out exception)) return true;
+      if (identities.Any(x => string.IsNullOrEmpty(x.Id))) {
+        exception = new ArgumentException($"{parameterName} contains elements whose Id is null or empty.", parameterName);
+        return true;
+      }
+      if (identities.Any(x => !x.HasVersion)) {
+        exception = new ArgumentException($"{parameterName} contains elements which have no version.", parameterName);
+        return true;
+      }
+      exception = null;
+      return false;
+    }
+    private static bool VersionStringParameterIsNullOrEmptyOrInvalid(string version, string parameterName, out Exception exception) {
+      if (StringParameterIsNullOrEmpty(version, parameterName, out exception)) return true;
+      if (!NuGetVersion.TryParse(version, out _)) {
+        exception = new ArgumentException($"{parameterName} is invalid.", parameterName);
+        return true;
+      }
+      exception = null;
+      return false;
+    }
+    #endregion
     #endregion
   }
 }

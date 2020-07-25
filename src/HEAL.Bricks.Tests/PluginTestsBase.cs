@@ -12,6 +12,8 @@ using NuGet.Packaging.Core;
 using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 using NuGet.Versioning;
 using System.IO;
+using System.Collections.Generic;
+using System.Reflection;
 
 namespace HEAL.Bricks.Tests {
   [TestClass]
@@ -49,6 +51,8 @@ namespace HEAL.Bricks.Tests {
   [DeploymentItem(Constants.pathPluginB_030, Constants.remoteDevRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginB_031, Constants.remoteDevRepositoryRelativePath)]
   public abstract class PluginTestsBase {
+    private NuGetLogger logger;
+
     public TestContext TestContext { get; set; }
     protected string TestDeploymentPath {
       get { return TestContext.DeploymentDirectory; }
@@ -58,6 +62,18 @@ namespace HEAL.Bricks.Tests {
     }
     protected string TestExecutionPath {
       get { return Path.Combine(TestContext.TestRunDirectory, UniqueTestId); }
+    }
+    protected string LocalPackagesAbsolutePath {
+      get { return Path.Combine(TestExecutionPath, Constants.localPackagesRelativePath); }
+    }
+    protected string LocalPackagesCacheAbsolutePath {
+      get { return Path.Combine(TestExecutionPath, Constants.localPackagesCacheRelativePath); }
+    }
+    protected string RemoteOfficialRepositoryAbsolutePath {
+      get { return Path.Combine(TestExecutionPath, Constants.remoteOfficialRepositoryRelativePath); }
+    }
+    protected string RemoteDevRepositoryAbsolutePath {
+      get { return Path.Combine(TestExecutionPath, Constants.remoteDevRepositoryRelativePath); }
     }
 
     [AssemblyInitialize]
@@ -77,6 +93,10 @@ namespace HEAL.Bricks.Tests {
     }
 
     [TestInitialize]
+    public void CreateLogger() {
+      logger = new NuGetLogger(LogLevel.Debug);
+    }
+    [TestInitialize]
     public void DeployTestPackageSources() {
       string sourcePath = Path.Combine(TestDeploymentPath, Constants.testPackageSourcesRelativePath);
       string targetPath = Path.Combine(TestExecutionPath, Constants.testPackageSourcesRelativePath);
@@ -91,17 +111,21 @@ namespace HEAL.Bricks.Tests {
       settings.PackagesPath = Constants.localPackagesRelativePath;
       settings.PackagesCachePath = Constants.localPackagesCacheRelativePath;
       settings.Repositories.Clear();
-      settings.Repositories.Add(Path.Combine(settings.AppPath, Constants.remoteOfficialRepositoryRelativePath));
-      settings.Repositories.Add(Path.Combine(settings.AppPath, Constants.remoteDevRepositoryRelativePath));
+      settings.Repositories.Add(RemoteOfficialRepositoryAbsolutePath);
+      settings.Repositories.Add(RemoteDevRepositoryAbsolutePath);
       if (includePublicNuGetRepository)
         settings.Repositories.Add(Constants.publicNuGetRepository);
       return settings;
     }
-    private protected NuGetConnector CreateNuGetConnector(bool includePublicNuGetRepository = false) {
-      ISettings settings = CreateSettings(includePublicNuGetRepository);
-      NuGetConnector nuGetConnector = new NuGetConnector(settings);
-      nuGetConnector.EnableLogging(LogLevel.Debug);
-      nuGetConnector.SetFrameworkForUnitTests(".NETCoreApp,Version=v3.1");
+    private protected NuGetConnector CreateNuGetConnector(bool includePublicNuGetRepository) {
+      List<string> repositories = new List<string> {
+        RemoteOfficialRepositoryAbsolutePath,
+        RemoteDevRepositoryAbsolutePath
+      };
+      if (includePublicNuGetRepository)
+        repositories.Add(Constants.publicNuGetRepository);
+
+      NuGetConnector nuGetConnector = NuGetConnector.CreateForUnitTests(".NETCoreApp,Version=v3.1", repositories, logger);
       return nuGetConnector;
     }
     private protected PackageIdentity CreatePackageIdentity(string id, string version) {
@@ -111,15 +135,15 @@ namespace HEAL.Bricks.Tests {
       return new NuGetPackageDependency(id, new VersionRange(minVersion != null ? new NuGetVersion(minVersion) : null));
     }
 
-    private protected void WriteLogToTestContextAndClear(NuGetConnector nuGetConnector, string header = null) {
-      string[] log = nuGetConnector.GetLog();
+    private protected void WriteLogToTestContextAndClear(string header = null) {
+      string[] log = logger.GetLog();
       if (log.Length > 0) {
         if (header != null) TestContext.WriteLine(header);
-        TestContext.WriteLine("NuGetConnector Log:");
+        TestContext.WriteLine("NuGetLogger Log:");
         foreach (string line in log)
           TestContext.WriteLine(line);
         TestContext.WriteLine("");
-        nuGetConnector.ClearLog();
+        logger.Clear();
       }
     }
 

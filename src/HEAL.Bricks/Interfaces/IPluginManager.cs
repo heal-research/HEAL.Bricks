@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using NuGet.Common;
 
 namespace HEAL.Bricks {
   public interface IPluginManager {
@@ -39,5 +40,11 @@ namespace HEAL.Bricks {
 
     void LoadPackageAssemblies(LocalPackageInfo package);
     void LoadPackageAssemblies();
+
+    bool LoggingEnabled { get; }
+    void EnableLogging(bool logDebugInfo = false);
+    void DisableLogging();
+    string[] GetLog();
+    void ClearLog();
   }
 }

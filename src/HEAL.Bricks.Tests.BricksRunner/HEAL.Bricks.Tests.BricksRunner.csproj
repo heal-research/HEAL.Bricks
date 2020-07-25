@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="HEAL.Bricks" Version="0.1.0-alpha.35" />
+    <PackageReference Include="HEAL.Bricks" Version="0.1.0-alpha.38" />
   </ItemGroup>
 
 </Project>

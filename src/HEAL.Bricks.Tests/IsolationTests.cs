@@ -79,7 +79,7 @@ namespace HEAL.Bricks.Tests {
     [TestCategory("WIP")]
     public async Task TestEchoApplication() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(nuGetConnector);
+      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
 
       await pluginManager.InstallMissingDependenciesAsync();
 
