@@ -34,7 +34,7 @@ namespace HEAL.Bricks.Tests {
     public void TestCreateForUnitTests() {
       string frameworkName = ".NETCoreApp,Version=v3.1";
 
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForUnitTests(frameworkName, Enumerable.Empty<string>(), NuGetLogger.NoLogger);
+      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(frameworkName, Enumerable.Empty<string>(), NuGetLogger.NoLogger);
 
       Assert.AreEqual(frameworkName, nuGetConnector.CurrentFramework.DotNetFrameworkName);
     }

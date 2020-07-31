@@ -35,17 +35,21 @@ namespace HEAL.Bricks {
       this.logger = logger;
     }
 
-    public static NuGetConnector CreateForUnitTests(string frameworkName, IEnumerable<string> repositories, ILogger logger) {
-      // only used for unit tests to create a specifically initialized NuGetConnector
+    public static NuGetConnector CreateForTests(string frameworkName, IEnumerable<string> packageSources, ILogger logger) {
+      // only used for tests to create a specifically initialized NuGetConnector
+      return CreateForTests(frameworkName, packageSources.Select(ps => CreateSourceRepository(ps)).ToArray(), logger);
+    }
+    public static NuGetConnector CreateForTests(string frameworkName, IEnumerable<SourceRepository> repositories, ILogger logger) {
+      // only used for tests to create a specifically initialized NuGetConnector
       // frameworkName: In unit tests, TargetFrameworkAttribute.FrameworkName of the entry assembly (testhost.dll) returns
-      // ".NETCoreApp,Version=v1.0". Consequently, GetFrameworkFromEntryAssembly returns .NET Core 1.0 as the current .NET
-      // framework for NuGet packages. As HEAL.Bricks is a .NET Standard 2.0 library and applications using HEAL.Bricks
-      // therefore have to be at least .NET Core 2.0 or .NET Framework 4.6.1, the detected NuGet framework is wrong and has
-      // to be defined explicitly. Otherwise, dependency resolution does not work correctly, as NuGet looks for dependencies
-      // of .NET Core 1.0.
+      // ".NETCoreApp,Version=v1.0" (MSTest) or ".NETCoreApp,Version=v1.0" (xUnit). Consequently, GetFrameworkFromEntryAssembly
+      // returns .NET Core 1.0 or .NET Core 2.1 as the current .NET framework for NuGet packages. As HEAL.Bricks is a .NET
+      // Standard 2.0 library and applications using HEAL.Bricks therefore have to be at least .NET Core 2.0 or
+      // .NET Framework 4.6.1, the detected NuGet framework is wrong and has to be defined explicitly. Otherwise, dependency
+      // resolution does not work correctly, as NuGet looks for dependencies of .NET Core 1.0 or .NET Core 2.1.
       // repositories: used to initialize NuGetConnector with mocked instances of SourceRepository.
       return new NuGetConnector {
-        repositories = repositories.Select(x => CreateSourceRepository(x)).ToArray(),
+        repositories = repositories,
         logger = logger,
         CurrentFramework = GetFrameworkFromName(frameworkName)
       };

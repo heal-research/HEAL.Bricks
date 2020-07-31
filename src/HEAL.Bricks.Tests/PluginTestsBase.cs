@@ -125,7 +125,7 @@ namespace HEAL.Bricks.Tests {
       if (includePublicNuGetRepository)
         repositories.Add(Constants.publicNuGetRepository);
 
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForUnitTests(".NETCoreApp,Version=v3.1", repositories, logger);
+      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(".NETCoreApp,Version=v3.1", repositories, logger);
       return nuGetConnector;
     }
     private protected PackageIdentity CreatePackageIdentity(string id, string version) {
