@@ -17,8 +17,6 @@ namespace HEAL.Bricks {
     IEnumerable<LocalPackageInfo> InstalledPackages { get; }
     PluginManagerStatus Status { get; }
 
-    void Initialize();
-    
     Task<IEnumerable<RemotePackageInfo>> GetMissingDependenciesAsync(CancellationToken cancellationToken = default);
     Task InstallMissingDependenciesAsync(CancellationToken cancellationToken = default);
     

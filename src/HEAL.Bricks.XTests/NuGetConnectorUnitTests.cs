@@ -14,14 +14,23 @@ using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace HEAL.Bricks.XTests {
   public class NuGetConnectorUnitTests {
+    private readonly ITestOutputHelper output;
+    private readonly ILogger logger;
+
+    public NuGetConnectorUnitTests(ITestOutputHelper output) {
+      this.output = output;
+      logger = new XunitLogger(output);
+    }
+
     [Fact]
     public void NuGetConnectorConstructor_CurrentFrameworkCorrect() {
       string expectedCurrentFrameworkName = Constants.netCoreApp21FrameworkName;
 
-      NuGetConnector nuGetConnector = new NuGetConnector(Enumerable.Empty<string>(), NuGetLogger.NoLogger);
+      NuGetConnector nuGetConnector = new NuGetConnector(Enumerable.Empty<string>(), logger);
 
       Assert.Equal(expectedCurrentFrameworkName, nuGetConnector.CurrentFramework.DotNetFrameworkName);
     }
@@ -29,7 +38,7 @@ namespace HEAL.Bricks.XTests {
     public void CreateForTests_CurrentFrameworkCorrect() {
       string currentFrameworkName = Constants.netCoreApp31FrameworkName;
 
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(currentFrameworkName, Enumerable.Empty<string>(), NuGetLogger.NoLogger);
+      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(currentFrameworkName, Enumerable.Empty<string>(), logger);
 
       Assert.Equal(currentFrameworkName, nuGetConnector.CurrentFramework.DotNetFrameworkName);
     }
@@ -55,7 +64,7 @@ namespace HEAL.Bricks.XTests {
     public void GetPackageAsync_PackageFound() {
       var packages = CreatePackageSearchMetadata(("package", "1.0.0"));
       var repository = CreatePackageSearchMetadataSourceRepositoryMock(packages);
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, NuGetLogger.NoLogger);
+      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
 
       var result = nuGetConnector.GetPackageAsync(packages.First().Identity, default).Result;
 
@@ -66,7 +75,7 @@ namespace HEAL.Bricks.XTests {
       var packages = CreatePackageSearchMetadata(("package", "1.0.0"));
       var repository = CreatePackageSearchMetadataSourceRepositoryMock(packages);
       var missingId = CreatePackageIdentities(("unknown", "1.0.0"));
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, NuGetLogger.NoLogger);
+      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
 
       var result = nuGetConnector.GetPackageAsync(missingId.First(), default).Result;
 
@@ -78,7 +87,7 @@ namespace HEAL.Bricks.XTests {
       var repository1 = CreatePackageSearchMetadataSourceRepositoryMock(packages1);
       var packages2 = CreatePackageSearchMetadata(("duplicate", "1.0.0"));
       var repository2 = CreatePackageSearchMetadataSourceRepositoryMock(packages2);
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository1, repository2 }, NuGetLogger.NoLogger);
+      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository1, repository2 }, logger);
 
       var result = nuGetConnector.GetPackageAsync(packages2.First().Identity, default).Result;
 

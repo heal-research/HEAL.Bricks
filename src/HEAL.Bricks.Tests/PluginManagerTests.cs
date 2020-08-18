@@ -25,35 +25,31 @@ namespace HEAL.Bricks.Tests {
       IPluginManager pluginManager;
       ArgumentNullException argumentNullException;
 
-      settings = Settings.Default;
-      pluginManager = PluginManager.Create(settings);
-      Assert.IsNotNull(pluginManager);
-      Assert.IsNotNull(pluginManager.Settings);
-      Assert.IsNotNull(pluginManager.InstalledPackages);
-      Assert.AreEqual(0, pluginManager.InstalledPackages.Count());
-      Assert.AreEqual(PluginManagerStatus.Uninitialized, pluginManager.Status);
-
       settings = null;
       argumentNullException = Assert.ThrowsException<ArgumentNullException>(() => { PluginManager.Create(settings); });
       Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
     }
     #endregion
 
-    #region TestInitialize
+    #region TestCtor
     [TestMethod]
-    public void TestInitialize() {
+    public void TestCtor() {
+      ISettings settings = CreateSettings(includePublicNuGetRepository: true);
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       PackageIdentity[] expectedPackages;
       LocalPackageInfo[] installedPackages;
-
       List<PackageIdentity> expectedPackagesList = new List<PackageIdentity>();
       foreach (PackageFolderReader expectedPackageReader in nuGetConnector.GetInstalledPackages(LocalPackagesAbsolutePath)) {
         expectedPackagesList.Add(expectedPackageReader.GetIdentity());
         expectedPackageReader.Dispose();
       }
       expectedPackages = expectedPackagesList.ToArray();
-      pluginManager.Initialize();
+
+      PluginManager pluginManager = new PluginManager(settings, nuGetConnector);
+
+      Assert.IsNotNull(pluginManager);
+      Assert.IsNotNull(pluginManager.Settings);
+      Assert.IsNotNull(pluginManager.InstalledPackages);
       installedPackages = pluginManager.InstalledPackages.ToArray();
       CollectionAssert.AreEqual(expectedPackages, installedPackages, PackageInfoComparer.Default);
       Assert.IsTrue((pluginManager.Status == PluginManagerStatus.OK) || (pluginManager.Status == PluginManagerStatus.InvalidPlugins));
@@ -273,7 +269,6 @@ namespace HEAL.Bricks.Tests {
     public async Task TestInstallRemotePackageAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
       PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
-      pluginManager.Initialize();
       RemotePackageInfo package;
       bool installMissingDependencies;
       PackageIdentity[] expectedPackages;
@@ -313,7 +308,6 @@ namespace HEAL.Bricks.Tests {
     public async Task TestInstallRemotePackagesAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
       PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
-      pluginManager.Initialize();
       RemotePackageInfo[] packages;
       bool installMissingDependencies;
       PackageIdentity[] expectedPackages;
@@ -349,7 +343,8 @@ namespace HEAL.Bricks.Tests {
 
       packages = Array.Empty<RemotePackageInfo>();
       installMissingDependencies = false;
-      await pluginManager.InstallRemotePackagesAsync(packages, installMissingDependencies);
+      argumentException = await Assert.ThrowsExceptionAsync<ArgumentException>(() => { return pluginManager.InstallRemotePackagesAsync(packages, installMissingDependencies); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
       packages = null;
       installMissingDependencies = false;
@@ -373,7 +368,6 @@ namespace HEAL.Bricks.Tests {
       LocalPackageInfo package;
       ArgumentNullException argumentNullException;
 
-      pluginManager.Initialize();
       package = pluginManager.InstalledPackages.First();
       pluginManager.RemoveInstalledPackage(package);
       Assert.IsFalse(pluginManager.InstalledPackages.Contains(package, PackageInfoIdentityComparer.Default));
@@ -396,7 +390,6 @@ namespace HEAL.Bricks.Tests {
       ArgumentNullException argumentNullException;
       ArgumentException argumentException;
 
-      pluginManager.Initialize();
       packages = pluginManager.InstalledPackages.Take(2).ToArray();
       pluginManager.RemoveInstalledPackages(packages);
       Assert.IsFalse(packages.Any(x => pluginManager.InstalledPackages.Contains(x, PackageInfoIdentityComparer.Default)));
@@ -428,7 +421,6 @@ namespace HEAL.Bricks.Tests {
     public async Task TestGetPackageUpdateAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
       PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
-      pluginManager.Initialize();
       LocalPackageInfo package;
       PackageIdentity expectedPackage;
       RemotePackageInfo foundPackage;
@@ -452,7 +444,6 @@ namespace HEAL.Bricks.Tests {
     public async Task TestGetPackageUpdatesAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
       PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
-      pluginManager.Initialize();
       LocalPackageInfo[] packages;
       PackageIdentity[] expectedPackages;
       PackageIdentity[] foundPackages;
@@ -498,7 +489,6 @@ namespace HEAL.Bricks.Tests {
       PackageIdentity[] expectedPackages;
       bool installMissingDependencies;
 
-      pluginManager.Initialize();
       expectedPackages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version031),
                                  CreatePackageIdentity(Constants.namePluginA, Constants.version030) };
       installMissingDependencies = true;
@@ -517,7 +507,6 @@ namespace HEAL.Bricks.Tests {
       PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       LocalPackageInfo package;
 
-      pluginManager.Initialize();
       package = pluginManager.InstalledPackages.Where(x => x.Id == Constants.nameBricksPluginTypes).Single();
       pluginManager.LoadPackageAssemblies(package);
       Assert.IsTrue(package.Status == PackageStatus.Loaded);

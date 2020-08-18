@@ -20,7 +20,6 @@ namespace TestApp {
       Directory.CreateDirectory(settings.PackagesPath);
       Directory.CreateDirectory(settings.PackagesCachePath);
       IPluginManager pluginManager = PluginManager.Create(settings);
-      pluginManager.Initialize();
 
       DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pluginManager.Settings);
       ApplicationInfo[] applications = await discoverApplicationsRunner.GetApplicationsAsync();

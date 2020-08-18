@@ -246,13 +246,13 @@ namespace HEAL.Bricks.Tests {
 
       searchString = "PackageId:NuGet.Protocol";
       includePreReleases = false;
-      expectedPackages = new[] { "NuGet.Protocol.5.6.0" };
+      expectedPackages = new[] { "NuGet.Protocol.5.7.0" };
       foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, 0, int.MaxValue, default)).Select(x => x.Package.Identity.ToString()).ToArray();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
 
       searchString = "PackageId:NuGet.Protocol";
       includePreReleases = true;
-      expectedPackages = new[] { "NuGet.Protocol.5.7.0-rtm.6702" };
+      expectedPackages = new[] { "NuGet.Protocol.5.8.0-preview.1" };
       foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, 0, int.MaxValue, default)).Select(x => x.Package.Identity.ToString()).ToArray();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
 
@@ -312,7 +312,7 @@ namespace HEAL.Bricks.Tests {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
       }
-      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package.ToString()}");
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
       WriteLogToTestContextAndClear();
       TestContext.WriteLine("");
@@ -338,7 +338,7 @@ namespace HEAL.Bricks.Tests {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
       }
-      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package.ToString()}");
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
       WriteLogToTestContextAndClear();
       TestContext.WriteLine("");
@@ -360,7 +360,7 @@ namespace HEAL.Bricks.Tests {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
       }
-      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package.ToString()}");
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
       WriteLogToTestContextAndClear();
       TestContext.WriteLine("");
@@ -376,7 +376,7 @@ namespace HEAL.Bricks.Tests {
       sw.Restart();
       foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, getDependenciesRecursively, default)).ToArray();
       sw.Stop();
-      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package.ToString()}");
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
       WriteLogToTestContextAndClear();
       TestContext.WriteLine("");
@@ -424,7 +424,7 @@ namespace HEAL.Bricks.Tests {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
       }
-      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {packages[0].ToString()} and {packages[1].ToString()}");
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {packages[0]} and {packages[1]}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
       WriteLogToTestContextAndClear();
       TestContext.WriteLine("");
@@ -452,7 +452,7 @@ namespace HEAL.Bricks.Tests {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
       }
-      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {dependency.ToString()}");
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {dependency}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
       WriteLogToTestContextAndClear();
       TestContext.WriteLine("");
@@ -496,7 +496,7 @@ namespace HEAL.Bricks.Tests {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
       }
-      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {dependency.ToString()}");
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {dependency}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
       WriteLogToTestContextAndClear();
       TestContext.WriteLine("");
@@ -546,7 +546,7 @@ namespace HEAL.Bricks.Tests {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
       }
-      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {dependency.ToString()}");
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {dependency}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
       WriteLogToTestContextAndClear();
       TestContext.WriteLine("");
@@ -585,7 +585,7 @@ namespace HEAL.Bricks.Tests {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
       }
-      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {dependencies[0].ToString()} and {dependencies[1].ToString()}");
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {dependencies[0]} and {dependencies[1]}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
       WriteLogToTestContextAndClear();
       TestContext.WriteLine("");
@@ -630,7 +630,7 @@ namespace HEAL.Bricks.Tests {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
       }
-      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {dependencies[0].ToString()} and {dependencies[1].ToString()}");
+      TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {dependencies[0]} and {dependencies[1]}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
       WriteLogToTestContextAndClear();
       TestContext.WriteLine("");

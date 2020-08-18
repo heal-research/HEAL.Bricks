@@ -27,7 +27,6 @@ namespace WinFormsTestApp {
       Directory.CreateDirectory(settings.PackagesPath);
       Directory.CreateDirectory(settings.PackagesCachePath);
       pluginManager = PluginManager.Create(settings);
-      pluginManager.Initialize();
 
       DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pluginManager.Settings);
       applications = await discoverApplicationsRunner.GetApplicationsAsync();

@@ -37,10 +37,10 @@ namespace HEAL.Bricks {
     }
 
     public override string ToString() {
-      return $"{Id} ({Version}) [{Status.ToString()}]";
+      return $"{Id} ({Version}) [{Status}]";
     }
     public string ToStringWithDependencies() {
-      string s = $"{Id} ({Version}) [{Status.ToString()}]";
+      string s = $"{Id} ({Version}) [{Status}]";
       if (Dependencies.Any())
         s += Dependencies.Aggregate("", (a, b) => a.ToString() + "\n  - " + b.ToString());
       return s;

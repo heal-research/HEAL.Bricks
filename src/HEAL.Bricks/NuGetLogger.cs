@@ -11,15 +11,12 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
-  internal class NuGetLogger : ILogger {
+  internal class NuGetLogger : LoggerBase {
     public static ILogger NoLogger => NullLogger.Instance;
 
     private readonly List<string> log = new List<string>();
-    private readonly LogLevel minLevel;
 
-    public NuGetLogger(LogLevel minLevel = LogLevel.Verbose) {
-      this.minLevel = minLevel;
-    }
+    public NuGetLogger(LogLevel verbosityLevel = LogLevel.Verbose) : base(verbosityLevel) { }
 
     public string[] GetLog() {
       return log.ToArray();
@@ -28,40 +25,17 @@ namespace HEAL.Bricks {
       log.Clear();
     }
 
-    public void Log(LogLevel level, string data) {
-      if (level >= minLevel)
-        log.Add($"[{DateTimeOffset.Now}] {level}: {data}");
-    }
-    public void Log(ILogMessage message) {
-      if (message.Level >= minLevel)
+    public override void Log(ILogMessage message) {
+      if (DisplayMessage(message.Level)) {
         log.Add($"[{message.Time}] {message.Level}: {message.FormatWithCode()}");
+      }
     }
-    public Task LogAsync(LogLevel level, string data) {
-      return Task.Run(() => Log(level, data));
+    public override async Task LogAsync(ILogMessage message) {
+      await Task.Run(() => Log(message));
     }
-    public Task LogAsync(ILogMessage message) {
-      return Task.Run(() => Log(message));
-    }
-    public void LogDebug(string data) {
-      Log(LogLevel.Debug, data);
-    }
-    public void LogError(string data) {
-      Log(LogLevel.Error, data);
-    }
-    public void LogInformation(string data) {
-      Log(LogLevel.Information, data);
-    }
-    public void LogInformationSummary(string data) {
+
+    public override void LogInformationSummary(string data) {
       Log(LogLevel.Information, $"[Summary] {data}");
-    }
-    public void LogMinimal(string data) {
-      Log(LogLevel.Minimal, data);
-    }
-    public void LogVerbose(string data) {
-      Log(LogLevel.Verbose, data);
-    }
-    public void LogWarning(string data) {
-      Log(LogLevel.Warning, data);
     }
   }
 }
