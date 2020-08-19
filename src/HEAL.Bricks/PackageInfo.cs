@@ -5,6 +5,7 @@
  */
 #endregion
 
+using Dawn;
 using NuGet.Packaging.Core;
 using System;
 using System.Collections.Generic;
@@ -21,15 +22,13 @@ namespace HEAL.Bricks {
     public IEnumerable<PackageDependency> Dependencies { get; protected set; }
 
     internal PackageInfo(PackageIdentity identity) {
-      if (identity == null) throw new ArgumentNullException(nameof(identity));
-      if (string.IsNullOrEmpty(identity.Id)) throw new ArgumentException($"{nameof(identity)}.Id is null or empty.", nameof(identity));
-
-      packageIdentity = identity;
+      packageIdentity = Guard.Argument(identity, nameof(identity)).NotNull().Member(i => i.Id, s => s.NotNull().NotEmpty());
       Version = new PackageVersion(identity.Version);
       Dependencies = Enumerable.Empty<PackageDependency>();
     }
     internal PackageInfo(PackageIdentity identity, IEnumerable<NuGetPackageDependency> dependencies) : this(identity) {
-      if (dependencies == null) throw new ArgumentNullException(nameof(dependencies));
+      Guard.Argument(dependencies, nameof(dependencies)).NotNull();
+
       Dependencies = dependencies.Select(x => new PackageDependency(x)).ToArray();
     }
 

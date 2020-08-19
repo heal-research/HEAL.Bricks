@@ -5,6 +5,7 @@
  */
 #endregion
 
+using Dawn;
 using NuGet.Protocol.Core.Types;
 using System;
 using System.Linq;
@@ -17,11 +18,9 @@ namespace HEAL.Bricks {
     public string Source => sourcePackageDependencyInfo.Source.PackageSource.Source;
 
     internal RemotePackageInfo(IPackageSearchMetadata packageSearchMetadata, SourcePackageDependencyInfo sourcePackageDependencyInfo) : base(sourcePackageDependencyInfo) {
-      if (packageSearchMetadata == null) throw new ArgumentNullException(nameof(packageSearchMetadata));
-      if (sourcePackageDependencyInfo == null) throw new ArgumentNullException(nameof(sourcePackageDependencyInfo));
-      if (sourcePackageDependencyInfo.Dependencies == null) throw new ArgumentException($"{nameof(sourcePackageDependencyInfo)}.Dependencies is null.", nameof(sourcePackageDependencyInfo));
-      if (!packageSearchMetadata.Identity.Id.Equals(sourcePackageDependencyInfo.Id, StringComparison.OrdinalIgnoreCase)) throw new ArgumentException($"Id of {nameof(packageSearchMetadata)} and {nameof(sourcePackageDependencyInfo)} do not match.", nameof(packageSearchMetadata) + ", " + nameof(sourcePackageDependencyInfo));
-      if (!packageSearchMetadata.Identity.Version.Equals(sourcePackageDependencyInfo.Version)) throw new ArgumentException($"Version of {nameof(packageSearchMetadata)} and {nameof(sourcePackageDependencyInfo)} do not match.", nameof(packageSearchMetadata) + ", " + nameof(sourcePackageDependencyInfo));
+      Guard.Argument(packageSearchMetadata, nameof(packageSearchMetadata)).NotNull().Member(p => p.Identity.Id, i => i.Equal(sourcePackageDependencyInfo.Id, StringComparison.OrdinalIgnoreCase))
+                                                                                    .Member(p => p.Identity.Version, v => v.Equal(sourcePackageDependencyInfo.Version));
+      Guard.Argument(sourcePackageDependencyInfo, nameof(sourcePackageDependencyInfo)).NotNull().Member(s => s.Dependencies, d => d.NotNull());
 
       this.packageSearchMetadata = packageSearchMetadata;
       this.sourcePackageDependencyInfo = sourcePackageDependencyInfo;

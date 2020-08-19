@@ -6,12 +6,7 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using FluentValidation;
 using NuGet.Versioning;
-using System.Reflection.Emit;
 using Dawn;
 
 namespace HEAL.Bricks {

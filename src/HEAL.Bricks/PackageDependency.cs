@@ -6,6 +6,7 @@
 #endregion
 
 using System;
+using Dawn;
 using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 
 namespace HEAL.Bricks {
@@ -17,10 +18,7 @@ namespace HEAL.Bricks {
     public PackageDependencyStatus Status { get; internal set; }
     
     internal PackageDependency(NuGetPackageDependency nuGetPackageDependency) {
-      if (nuGetPackageDependency == null) throw new ArgumentNullException(nameof(nuGetPackageDependency));
-      if (string.IsNullOrEmpty(nuGetPackageDependency.Id)) throw new ArgumentException($"{nameof(nuGetPackageDependency)}.Id is null or empty.", nameof(nuGetPackageDependency));
-
-      this.nuGetPackageDependency = nuGetPackageDependency;
+      this.nuGetPackageDependency = Guard.Argument(nuGetPackageDependency, nameof(nuGetPackageDependency)).NotNull().Member(d => d.Id, s => s.NotNull().NotEmpty());
       VersionRange = new PackageVersionRange(nuGetPackageDependency.VersionRange);
       Status = PackageDependencyStatus.Unknown;
     }

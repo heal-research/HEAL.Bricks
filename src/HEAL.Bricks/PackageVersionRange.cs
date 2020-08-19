@@ -5,6 +5,7 @@
  */
 #endregion
 
+using Dawn;
 using NuGet.Versioning;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ namespace HEAL.Bricks {
     internal PackageVersion MaxVersion { get; }
     
     internal PackageVersionRange(VersionRange nuGetVersionRange) {
-      this.nuGetVersionRange = nuGetVersionRange ?? throw new ArgumentNullException(nameof(PackageVersionRange.nuGetVersionRange));
+      this.nuGetVersionRange = Guard.Argument(nuGetVersionRange, nameof(nuGetVersionRange)).NotNull();
       MinVersion = nuGetVersionRange.MinVersion != null ? new PackageVersion(nuGetVersionRange.MinVersion) : null;
       MaxVersion = nuGetVersionRange.MaxVersion != null ? new PackageVersion(nuGetVersionRange.MaxVersion) : null;
     }

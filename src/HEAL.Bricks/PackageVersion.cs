@@ -5,6 +5,7 @@
  */
 #endregion
 
+using Dawn;
 using NuGet.Versioning;
 using System;
 
@@ -19,7 +20,7 @@ namespace HEAL.Bricks {
     public bool IsPrerelease => nuGetVersion.IsPrerelease;
 
     internal PackageVersion(NuGetVersion nuGetVersion) {
-      this.nuGetVersion = nuGetVersion ?? throw new ArgumentNullException(nameof(nuGetVersion));
+      this.nuGetVersion = Guard.Argument(nuGetVersion, nameof(nuGetVersion)).NotNull();
     }
 
     public override string ToString() {

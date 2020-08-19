@@ -5,6 +5,7 @@
  */
 #endregion
 
+using Dawn;
 using NuGet.Frameworks;
 using NuGet.Packaging;
 using System;
@@ -23,9 +24,8 @@ namespace HEAL.Bricks {
     public PackageStatus Status { get; internal set; }
 
     internal LocalPackageInfo(PackageFolderReader packageReader, NuGetFramework currentFramework, string pluginTag = "") : base(packageReader?.GetIdentity()) {
-      if (packageReader == null) throw new ArgumentNullException(nameof(packageReader));
-      if (packageReader.NuspecReader == null) throw new ArgumentException($"{nameof(packageReader)}.NuspecReader is null.", nameof(packageReader));
-      if (currentFramework == null) throw new ArgumentNullException(nameof(currentFramework));
+      Guard.Argument(packageReader, nameof(packageReader)).NotNull().Member(p => p.NuspecReader, n => n.NotNull());
+      Guard.Argument(currentFramework, nameof(currentFramework)).NotNull();
 
       nuspecReader = packageReader.NuspecReader;
       Dependencies = NuGetFrameworkUtility.GetNearest(nuspecReader.GetDependencyGroups(), currentFramework).Packages.Select(x => new PackageDependency(x)).ToArray();
