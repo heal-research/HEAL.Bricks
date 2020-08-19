@@ -1,3 +1,10 @@
+#region License Information
+/*
+ * This file is part of HEAL.Bricks which is licensed under the MIT license.
+ * See the LICENSE file in the project root for more information.
+ */
+#endregion
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -27,7 +34,7 @@ namespace HEAL.Bricks.XTests {
     }
 
     [Fact]
-    public void NuGetConnectorConstructor_CurrentFrameworkCorrect() {
+    public void Constructor_CurrentFrameworkCorrect() {
       string expectedCurrentFrameworkName = Constants.netCoreApp21FrameworkName;
 
       NuGetConnector nuGetConnector = new NuGetConnector(Enumerable.Empty<string>(), logger);

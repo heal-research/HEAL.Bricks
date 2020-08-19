@@ -6,7 +6,6 @@
 #endregion
 
 using Dawn;
-using FluentValidation;
 using NuGet.Common;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
@@ -23,7 +22,11 @@ using System.Threading.Tasks;
 namespace HEAL.Bricks {
   public sealed class PluginManager : IPluginManager {
     public static IPluginManager Create(ISettings settings) {
-      Guard.Argument(settings, nameof(settings)).NotNull();
+      Guard.Argument(settings, nameof(settings)).NotNull().Member(s => s.PluginTag, t => t.NotNull().NotWhiteSpace())
+                                                          .Member(s => s.Repositories, r => r.NotNull().NotEmpty().Require(r.Value.All(x => !string.IsNullOrWhiteSpace(x))))
+                                                          .Member(s => s.AppPath, p => p.NotNull().NotWhiteSpace().AbsolutePath())
+                                                          .Member(s => s.PackagesPath, p => p.NotNull().NotWhiteSpace().AbsolutePath())
+                                                          .Member(s => s.PackagesCachePath, p => p.NotNull().NotWhiteSpace().AbsolutePath());
       return new PluginManager(settings);
     }
 

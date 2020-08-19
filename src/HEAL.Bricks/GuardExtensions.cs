@@ -8,6 +8,7 @@
 using System;
 using NuGet.Versioning;
 using Dawn;
+using System.IO;
 
 namespace HEAL.Bricks {
   public static class GuardExtensions {
@@ -15,6 +16,22 @@ namespace HEAL.Bricks {
       if (argument.HasValue() && (argument.Value.Length > 0)) {
         if (!NuGetVersion.TryParse(argument.Value, out _)) {
           throw Guard.Fail(new ArgumentException($"{argument.Name} is not a valid NuGet version.", argument.Name));
+        }
+      }
+      return ref argument;
+    }
+    public static ref readonly Guard.ArgumentInfo<string> AbsolutePath(in this Guard.ArgumentInfo<string> argument) {
+      if (argument.HasValue() && (argument.Value.Length > 0)) {
+        if (!Path.IsPathRooted(argument.Value)) {
+          throw Guard.Fail(new ArgumentException($"{argument.Name} is not an absolute path.", argument.Name));
+        }
+      }
+      return ref argument;
+    }
+    public static ref readonly Guard.ArgumentInfo<string> RelativePath(in this Guard.ArgumentInfo<string> argument) {
+      if (argument.HasValue() && (argument.Value.Length > 0)) {
+        if (Path.IsPathRooted(argument.Value)) {
+          throw Guard.Fail(new ArgumentException($"{argument.Name} is not a relative path.", argument.Name));
         }
       }
       return ref argument;

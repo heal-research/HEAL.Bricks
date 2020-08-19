@@ -14,32 +14,30 @@ using Dawn;
 namespace HEAL.Bricks {
   [Serializable]
   public class Settings : ISettings {
-    public static ISettings Default => new Settings();
     public static string PublicNuGetRepository => "https://api.nuget.org/v3/index.json";
+    public static Settings Default { get; } = new Settings();
 
+    private string pluginTag;
     private string packagesPath;
     private string packagesCachePath;
 
-    public string PluginTag { get; set; }
+    public string PluginTag {
+      get { return pluginTag; }
+      set { pluginTag = Guard.Argument(value, nameof(PluginTag)).NotNull().NotWhiteSpace(); }
+    }
     IEnumerable<string> ISettings.Repositories => Repositories;
     public List<string> Repositories { get; }
     public string AppPath { get; private set; }
     public string PackagesPath {
       get { return packagesPath; }
       set {
-        Guard.Argument(value, nameof(PackagesPath)).NotNull().NotEmpty();
-        packagesPath = value;
-        if (!Path.IsPathRooted(packagesPath))
-          packagesPath = Path.Combine(AppPath, packagesPath);
+        packagesPath = Guard.Argument(value, nameof(PackagesPath)).NotNull().NotWhiteSpace().Modify(s => Path.IsPathRooted(s) ? s : Path.Combine(AppPath, s));
       }
     }
     public string PackagesCachePath {
       get { return packagesCachePath; }
       set {
-        Guard.Argument(value, nameof(PackagesCachePath)).NotNull().NotEmpty();
-        packagesCachePath = value;
-        if (!Path.IsPathRooted(packagesCachePath))
-          packagesCachePath = Path.Combine(AppPath, packagesCachePath);
+        packagesCachePath = Guard.Argument(value, nameof(PackagesCachePath)).NotNull().NotWhiteSpace().Modify(s => Path.IsPathRooted(s) ? s : Path.Combine(AppPath, s));
       }
     }
 
@@ -54,6 +52,7 @@ namespace HEAL.Bricks {
     internal void SetAppPath(string appPath) {
       // only used for unit test to set AppPath manually
       // Explanation: In unit tests it is required to store packages in another directory and not at the location of the entry assembly.
+      Guard.Argument(appPath, nameof(appPath)).NotNull().NotWhiteSpace().Require(Path.IsPathRooted(appPath), _ => $"{nameof(appPath)} must be an absolute path");
       AppPath = appPath;
     }
   }
