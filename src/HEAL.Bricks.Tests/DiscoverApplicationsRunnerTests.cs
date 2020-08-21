@@ -19,15 +19,15 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks.Tests {
   [TestClass]
-  public class DiscoverApplicationsRunnerTests : PluginTestsBase {
+  public class DiscoverApplicationsRunnerTests : PackageTestsBase {
     [TestMethod]
     public async Task TestGetApplicationsAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
-      await pluginManager.InstallMissingDependenciesAsync();
+      IPackageManager pm = PackageManager.CreateForTests(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
+      await pm.InstallMissingDependenciesAsync();
 
       IProcessRunnerStartInfo startInfo = CreateBricksRunnerStartInfo();
-      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pluginManager.Settings, startInfo);
+      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pm.Settings, startInfo);
       ApplicationInfo[] app = (await discoverApplicationsRunner.GetApplicationsAsync());
 
 

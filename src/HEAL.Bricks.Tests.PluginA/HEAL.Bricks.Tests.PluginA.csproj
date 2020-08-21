@@ -7,7 +7,7 @@
     <Company>HEAL</Company>
     <Product>HEAL.Bricks.Tests</Product>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Description>This is test plugin PluginA for HEAL.Bricks tests. PluginA depends on HEAL.Bricks (0.1.0-alpha.1).</Description>
+    <Description>This is test package PluginA for HEAL.Bricks tests. PluginA depends on HEAL.Bricks (0.1.0-alpha.1).</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Copyright>(c) 2020 HEAL</Copyright>
     <PackageTags>HEALBricksPlugin</PackageTags>

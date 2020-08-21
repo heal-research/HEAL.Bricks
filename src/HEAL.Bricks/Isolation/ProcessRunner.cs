@@ -42,8 +42,8 @@ namespace HEAL.Bricks {
           FileName = ProcessRunnerStartInfo.ProgramPath,
           Arguments = (ProcessRunnerStartInfo.Arguments ?? "") + arguments,
           UseShellExecute = false,
-          RedirectStandardOutput = ProcessRunnerStartInfo.CommunicationMode == CommunicationMode.StdInOut ? true : false,
-          RedirectStandardInput = ProcessRunnerStartInfo.CommunicationMode == CommunicationMode.StdInOut ? true : false,
+          RedirectStandardOutput = ProcessRunnerStartInfo.CommunicationMode == CommunicationMode.StdInOut,
+          RedirectStandardInput = ProcessRunnerStartInfo.CommunicationMode == CommunicationMode.StdInOut,
           CreateNoWindow = true,
           ErrorDialog = true,
           UserName = ProcessRunnerStartInfo.UserName ?? "", // to use built-in Windows system accounts (e.g., LocalService, LocalSystem, ...) the process has to be run as service

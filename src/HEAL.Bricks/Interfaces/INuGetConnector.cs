@@ -19,6 +19,17 @@ namespace HEAL.Bricks {
   internal interface INuGetConnector {
     NuGetFramework CurrentFramework { get; }
 
+
+    IEnumerable<LocalPackageInfo> GetLocalPackages(string packagesPath, string bricksPackageTag);
+    Task<RemotePackageInfo> GetRemotePackageAsync(string packageId, string version, CancellationToken ct);
+    Task<IEnumerable<RemotePackageInfo>> GetRemotePackagesAsync(string packageId, bool includePreReleases, CancellationToken ct);
+    Task<IEnumerable<(string Repository, RemotePackageInfo Package)>> SearchRemotePackagesAsync(string searchString, int skip, int take, bool includePreReleases, CancellationToken ct);
+    Task InstallRemotePackagesAsync(IEnumerable<RemotePackageInfo> packages, string packagesPath, string packagesCachePath, CancellationToken ct);
+    void RemoveLocalPackages(IEnumerable<LocalPackageInfo> packages);
+    Task<IEnumerable<RemotePackageInfo>> GetMissingDependenciesAsync(IEnumerable<LocalPackageInfo> packages, CancellationToken ct);
+    Task<IEnumerable<RemotePackageInfo>> GetPackageUpdatesAsync(IEnumerable<LocalPackageInfo> packages, bool includePreReleases, CancellationToken ct);
+
+
     Task<IPackageSearchMetadata> GetPackageAsync(PackageIdentity identity, CancellationToken ct);
     Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(IEnumerable<PackageIdentity> identities, CancellationToken ct);
     Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(string packageId, bool includePreReleases, CancellationToken ct);

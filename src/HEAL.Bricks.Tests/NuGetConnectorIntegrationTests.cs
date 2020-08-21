@@ -22,7 +22,7 @@ using NuGet.Common;
 
 namespace HEAL.Bricks.Tests {
   [TestClass]
-  public class NuGetConnectorIntegrationTests : PluginTestsBase {
+  public class NuGetConnectorIntegrationTests : PackageTestsBase {
     #region TestCtor
     [TestMethod]
     public void TestCtor() {

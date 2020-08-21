@@ -19,15 +19,15 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks.Tests {
   [TestClass]
-  public class IsolationTests : PluginTestsBase {
+  public class IsolationTests : PackageTestsBase {
     [TestMethod]
     [TestCategory("WIP")]
     public async Task TestIsolation() {
       ISettings settings = CreateSettings(includePublicNuGetRepository: true);
 
       //NativeRunnerHost nativeRunnerHost = new NativeRunnerHost();
-      //DiscoverPluginsRunner discoverPluginsRunner = new DiscoverPluginsRunner(settings);
-      //await nativeRunnerHost.RunAsync(discoverPluginsRunner);
+      //DiscoverPackagesRunner discoverPackagesRunner = new DiscoverPackagesRunner(settings);
+      //await nativeRunnerHost.RunAsync(discoverPackagesRunner);
       //var message = nativeRunnerHost.Receive();
     }
 
@@ -79,14 +79,14 @@ namespace HEAL.Bricks.Tests {
     [TestCategory("WIP")]
     public async Task TestEchoApplication() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
-      PluginManager pluginManager = new PluginManager(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
+      IPackageManager pm = PackageManager.CreateForTests(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
 
-      await pluginManager.InstallMissingDependenciesAsync();
+      await pm.InstallMissingDependenciesAsync();
 
-      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pluginManager.Settings);
+      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pm.Settings);
       ApplicationInfo app = (await discoverApplicationsRunner.GetApplicationsAsync())[0];
 
-      ApplicationRunner applicationRunner = new ApplicationRunner(pluginManager.Settings, app);
+      ApplicationRunner applicationRunner = new ApplicationRunner(pm.Settings, app);
       await applicationRunner.RunAsync();
     }
 

@@ -7,7 +7,7 @@
     <Authors>SWa</Authors>
     <Company>HEAL</Company>
     <Product>HEAL.Bricks.Tests</Product>
-    <Description>This is test plugin PluginB for HEAL.Bricks tests. PluginB depends on PluginA.</Description>
+    <Description>This is test package PluginB for HEAL.Bricks tests. PluginB depends on PluginA.</Description>
     <Copyright>(c) 2020 HEAL</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>HEALBricksPlugin</PackageTags>

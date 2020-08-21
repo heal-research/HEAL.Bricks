@@ -17,12 +17,12 @@ using System.Reflection;
 
 namespace HEAL.Bricks.Tests {
   [TestClass]
-  // local plugins
+  // local packages
   [DeploymentItem(Constants.pathBricksPluginTypes, Constants.localPackagesRelativePath)]
   [DeploymentItem(Constants.pathPluginB_010_alpha1, Constants.localPackagesRelativePath)]
   [DeploymentItem(Constants.pathPluginB_020, Constants.localPackagesRelativePath)]
   [DeploymentItem(Constants.pathEchoApp_100, Constants.localPackagesRelativePath)]
-  // released plugins
+  // released packages
   [DeploymentItem(Constants.pathBricksPluginTypes, Constants.remoteOfficialRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginA_010_alpha1, Constants.remoteOfficialRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginA_010_alpha2, Constants.remoteOfficialRepositoryRelativePath)]
@@ -36,7 +36,7 @@ namespace HEAL.Bricks.Tests {
   [DeploymentItem(Constants.pathPluginB_020_alpha1, Constants.remoteOfficialRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginB_020, Constants.remoteOfficialRepositoryRelativePath)]
   [DeploymentItem(Constants.pathEchoApp_100, Constants.remoteOfficialRepositoryRelativePath)]
-  // plugins in development
+  // packages in development
   [DeploymentItem(Constants.pathBricksPluginTypes, Constants.remoteDevRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginA_020_alpha1, Constants.remoteDevRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginA_020, Constants.remoteDevRepositoryRelativePath)]
@@ -50,7 +50,7 @@ namespace HEAL.Bricks.Tests {
   [DeploymentItem(Constants.pathPluginB_030_alpha2, Constants.remoteDevRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginB_030, Constants.remoteDevRepositoryRelativePath)]
   [DeploymentItem(Constants.pathPluginB_031, Constants.remoteDevRepositoryRelativePath)]
-  public abstract class PluginTestsBase {
+  public abstract class PackageTestsBase {
     private NuGetLogger logger;
 
     public TestContext TestContext { get; set; }
@@ -107,7 +107,7 @@ namespace HEAL.Bricks.Tests {
     private protected ISettings CreateSettings(bool includePublicNuGetRepository = false) {
       Settings settings = new Settings();
       settings.SetAppPath(TestExecutionPath);
-      settings.PluginTag = "HEALBricksPlugin";
+      settings.PackageTag = "HEALBricksPlugin";
       settings.PackagesPath = Constants.localPackagesRelativePath;
       settings.PackagesCachePath = Constants.localPackagesCacheRelativePath;
       settings.Repositories.Clear();

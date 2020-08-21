@@ -7,10 +7,15 @@
 
 using System;
 using Dawn;
+using NuGet.Versioning;
 using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 
 namespace HEAL.Bricks {
   public sealed class PackageDependency : IEquatable<PackageDependency> {
+    internal static PackageDependency CreateForTests(string id, string minVersion) {
+      return new PackageDependency(new NuGetPackageDependency(id, new VersionRange(new NuGetVersion(minVersion))));
+    }
+
     internal readonly NuGetPackageDependency nuGetPackageDependency;
 
     public string Id => nuGetPackageDependency.Id;

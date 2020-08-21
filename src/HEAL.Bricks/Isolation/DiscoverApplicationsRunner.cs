@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   [Serializable]
-  public sealed class DiscoverApplicationsRunner : PluginManagerProcessRunner {
+  public sealed class DiscoverApplicationsRunner : PackageManagerProcessRunner {
     [NonSerialized]
     private ApplicationInfo[] applicationInfos;
 
@@ -24,7 +24,7 @@ namespace HEAL.Bricks {
       return applicationInfos;
     }
 
-    protected override async Task ExecuteOnClientAsync(IPluginManager pluginManager, CancellationToken cancellationToken) {
+    protected override async Task ExecuteOnClientAsync(IPackageManager packageManager, CancellationToken cancellationToken) {
       ITypeDiscoverer typeDiscoverer = TypeDiscoverer.Create();
       IEnumerable<IApplication> applications = typeDiscoverer.GetInstances<IApplication>();
       ApplicationInfo[] applicationInfos = applications.Select(x => new ApplicationInfo(x)).OrderBy(x => x.Name).ToArray();

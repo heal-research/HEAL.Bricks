@@ -15,8 +15,8 @@ namespace HEAL.Bricks {
   public sealed class PackageVersionRange : IEquatable<PackageVersionRange> {
     internal readonly VersionRange nuGetVersionRange;
 
-    internal PackageVersion MinVersion { get; }
-    internal PackageVersion MaxVersion { get; }
+    public PackageVersion MinVersion { get; }
+    public PackageVersion MaxVersion { get; }
     
     internal PackageVersionRange(VersionRange nuGetVersionRange) {
       this.nuGetVersionRange = Guard.Argument(nuGetVersionRange, nameof(nuGetVersionRange)).NotNull();
@@ -24,11 +24,11 @@ namespace HEAL.Bricks {
       MaxVersion = nuGetVersionRange.MaxVersion != null ? new PackageVersion(nuGetVersionRange.MaxVersion) : null;
     }
 
-    internal PackageVersion FindBestMatch(IEnumerable<PackageVersion> versions) {
+    public PackageVersion FindBestMatch(IEnumerable<PackageVersion> versions) {
       NuGetVersion bestMatch = nuGetVersionRange.FindBestMatch(versions.Select(x => x.nuGetVersion));
       return bestMatch != null ? new PackageVersion(bestMatch) : null;
     }
-    internal bool Satiesfies(PackageVersion version) {
+    public bool Satiesfies(PackageVersion version) {
       return nuGetVersionRange.Satisfies(version.nuGetVersion);
     }
 

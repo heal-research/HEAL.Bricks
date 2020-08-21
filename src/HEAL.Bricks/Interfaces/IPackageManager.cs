@@ -9,17 +9,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using NuGet.Common;
 
 namespace HEAL.Bricks {
-  public interface IPluginManager {
+  public interface IPackageManager {
     ISettings Settings { get; }
     IEnumerable<LocalPackageInfo> InstalledPackages { get; }
-    PluginManagerStatus Status { get; }
+    PackageManagerStatus Status { get; }
 
-    Task<IEnumerable<RemotePackageInfo>> GetMissingDependenciesAsync(CancellationToken cancellationToken = default);
-    Task InstallMissingDependenciesAsync(CancellationToken cancellationToken = default);
-    
     Task<IEnumerable<(string Repository, RemotePackageInfo Package)>> SearchRemotePackagesAsync(string searchString, int skip, int take, bool includePreReleases = false, CancellationToken cancellationToken = default);
     Task<RemotePackageInfo> GetRemotePackageAsync(string packageId, string version, CancellationToken cancellationToken = default);
     Task<IEnumerable<RemotePackageInfo>> GetRemotePackagesAsync(string packageId, bool includePreReleases = false, CancellationToken cancellationToken = default);
@@ -29,7 +25,10 @@ namespace HEAL.Bricks {
     
     void RemoveInstalledPackage(LocalPackageInfo package);
     void RemoveInstalledPackages(IEnumerable<LocalPackageInfo> packages);
-    
+
+    Task<IEnumerable<RemotePackageInfo>> GetMissingDependenciesAsync(CancellationToken cancellationToken = default);
+    Task InstallMissingDependenciesAsync(CancellationToken cancellationToken = default);
+
     Task<RemotePackageInfo> GetPackageUpdateAsync(LocalPackageInfo package, bool includePreReleases = false, CancellationToken cancellationToken = default);
     Task<IEnumerable<RemotePackageInfo>> GetPackageUpdatesAsync(IEnumerable<LocalPackageInfo> packages, bool includePreReleases = false, CancellationToken cancellationToken = default);
     Task<IEnumerable<RemotePackageInfo>> GetPackageUpdatesAsync(bool includePreReleases = false, CancellationToken cancellationToken = default);

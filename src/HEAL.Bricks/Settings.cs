@@ -17,13 +17,13 @@ namespace HEAL.Bricks {
     public static string PublicNuGetRepository => "https://api.nuget.org/v3/index.json";
     public static Settings Default { get; } = new Settings();
 
-    private string pluginTag;
+    private string packageTag;
     private string packagesPath;
     private string packagesCachePath;
 
-    public string PluginTag {
-      get { return pluginTag; }
-      set { pluginTag = Guard.Argument(value, nameof(PluginTag)).NotNull().NotWhiteSpace(); }
+    public string PackageTag {
+      get { return packageTag; }
+      set { packageTag = Guard.Argument(value, nameof(PackageTag)).NotNull().NotWhiteSpace(); }
     }
     IEnumerable<string> ISettings.Repositories => Repositories;
     public List<string> Repositories { get; }
@@ -42,7 +42,7 @@ namespace HEAL.Bricks {
     }
 
     public Settings() {
-      PluginTag = "HEALBricksPlugin";
+      PackageTag = "HEALBricksPlugin";
       Repositories = new List<string>(new[] { PublicNuGetRepository });
       AppPath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
       PackagesPath = "packages";

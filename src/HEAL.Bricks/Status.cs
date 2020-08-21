@@ -20,10 +20,10 @@ namespace HEAL.Bricks {
     Missing,
     Unknown
   }
-  public enum PluginManagerStatus {
+  public enum PackageManagerStatus {
     Uninitialized,
     OK,
-    InvalidPlugins,
+    InvalidPackages,
     Unknown
   }
   public enum RunnerStatus {

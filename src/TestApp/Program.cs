@@ -14,14 +14,15 @@ namespace TestApp {
         return;
       }
 
-      Settings settings = new Settings();
-      settings.PluginTag = "HEALBricksPlugin";
+      Settings settings = new Settings() {
+        PackageTag = "HEALBricksPlugin"
+      };
       settings.Repositories.Add(@"C:\# Daten\NuGet");
       Directory.CreateDirectory(settings.PackagesPath);
       Directory.CreateDirectory(settings.PackagesCachePath);
-      IPluginManager pluginManager = PluginManager.Create(settings);
+      IPackageManager pm = PackageManager.Create(settings);
 
-      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pluginManager.Settings);
+      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pm.Settings);
       ApplicationInfo[] applications = await discoverApplicationsRunner.GetApplicationsAsync();
 
       if (applications.Length == 0) {
@@ -32,13 +33,13 @@ namespace TestApp {
       int index;
       do {
         for (index = 1; index <= applications.Length; index++) {
-          Console.WriteLine($"[{index}] {applications[index - 1].ToString()}");
+          Console.WriteLine($"[{index}] {applications[index - 1]}");
         }
         Console.Write("application > ");
         index = int.TryParse(Console.ReadLine(), out index) ? index - 1 : -1;
 
         if (index != -1) {
-          ApplicationRunner applicationRunner = new ApplicationRunner(pluginManager.Settings, applications[index]);
+          ApplicationRunner applicationRunner = new ApplicationRunner(pm.Settings, applications[index]);
           await applicationRunner.RunAsync();
         }
       } while (index != -1);

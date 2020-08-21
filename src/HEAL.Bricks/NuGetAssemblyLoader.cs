@@ -24,7 +24,7 @@ namespace HEAL.Bricks {
 
         using (PackageArchiveReader packageReader = new PackageArchiveReader(packagePath)) {
           NuspecReader nuspecReader = new NuspecReader(packageReader.GetNuspec());
-          Console.WriteLine($"Loading assemblies from package {nuspecReader.GetIdentity().ToString()}:");
+          Console.WriteLine($"Loading assemblies from package {nuspecReader.GetIdentity()}:");
 
           var files = NuGetFrameworkUtility.GetNearest(packageReader.GetReferenceItems(), GetCurrentFramework()).Items;
           foreach (string dllFile in files) {

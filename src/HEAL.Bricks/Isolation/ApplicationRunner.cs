@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   [Serializable]
-  public sealed class ApplicationRunner : PluginManagerProcessRunner {
+  public sealed class ApplicationRunner : PackageManagerProcessRunner {
     public ApplicationInfo ApplicationInfo { get; }
     public ICommandLineArgument[] Arguments { get; }
 
@@ -25,7 +25,7 @@ namespace HEAL.Bricks {
       }
     }
 
-    protected override async Task ExecuteOnClientAsync(IPluginManager pluginManager, CancellationToken cancellationToken) {
+    protected override async Task ExecuteOnClientAsync(IPackageManager packageManager, CancellationToken cancellationToken) {
       ITypeDiscoverer typeDiscoverer = TypeDiscoverer.Create();
       Type applicationType = typeDiscoverer.GetTypes(typeof(IApplication)).Where(x => x.FullName == ApplicationInfo.TypeName).SingleOrDefault();
       

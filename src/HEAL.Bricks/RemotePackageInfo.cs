@@ -8,10 +8,18 @@
 using Dawn;
 using NuGet.Protocol.Core.Types;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace HEAL.Bricks {
   public sealed class RemotePackageInfo : PackageInfo {
+    internal static RemotePackageInfo CreateForTests(string id, string version, IEnumerable<PackageDependency> dependencies = null) {
+      RemotePackageInfo rpi = new RemotePackageInfo(id, version) {
+        Dependencies = dependencies ?? Enumerable.Empty<PackageDependency>()
+      };
+      return rpi;
+    }
+
     internal readonly IPackageSearchMetadata packageSearchMetadata;
     internal readonly SourcePackageDependencyInfo sourcePackageDependencyInfo;
 
@@ -25,6 +33,9 @@ namespace HEAL.Bricks {
       this.packageSearchMetadata = packageSearchMetadata;
       this.sourcePackageDependencyInfo = sourcePackageDependencyInfo;
       Dependencies = sourcePackageDependencyInfo.Dependencies.Select(x => new PackageDependency(x)).ToArray();
+    }
+    private RemotePackageInfo(string id, string version) : base(id, version) {
+      // required for unit tests
     }
 
     public override string ToString() {

@@ -13,7 +13,7 @@ using HEAL.Bricks;
 namespace WinFormsTestApp {
   public partial class StarterForm : Form {
     private Settings settings;
-    private IPluginManager pluginManager;
+    private IPackageManager pm;
     private ApplicationInfo[] applications;
 
     public StarterForm() {
@@ -21,20 +21,19 @@ namespace WinFormsTestApp {
     }
 
     private async void StarterForm_Load(object sender, EventArgs e) {
-      settings = new Settings();
-      settings.PluginTag = "HEALBricksPlugin";
+      settings = new Settings() {
+        PackageTag = "HEALBricksPlugin"
+      };
       settings.Repositories.Add(@"C:\# Daten\NuGet");
       Directory.CreateDirectory(settings.PackagesPath);
       Directory.CreateDirectory(settings.PackagesCachePath);
-      pluginManager = PluginManager.Create(settings);
+      pm = PackageManager.Create(settings);
 
-      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pluginManager.Settings);
+      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pm.Settings);
       applications = await discoverApplicationsRunner.GetApplicationsAsync();
 
       foreach (ApplicationInfo application in applications) {
-        ListViewItem item = new ListViewItem(application.ToString());
-        item.Tag = application;
-        appsListView.Items.Add(item);
+        appsListView.Items.Add(new ListViewItem(application.ToString()) { Tag = application });
       }
 
 

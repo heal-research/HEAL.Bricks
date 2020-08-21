@@ -7,13 +7,14 @@
 
 using Dawn;
 using NuGet.Packaging.Core;
+using NuGet.Versioning;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 
 namespace HEAL.Bricks {
-  public class PackageInfo : IEquatable<PackageInfo>, IComparable<PackageInfo> {
+  public abstract class PackageInfo : IEquatable<PackageInfo>, IComparable<PackageInfo> {
     internal readonly PackageIdentity packageIdentity;
     public static PackageInfoIdentityComparer Comparer => PackageInfoIdentityComparer.Default;
 
@@ -31,6 +32,7 @@ namespace HEAL.Bricks {
 
       Dependencies = dependencies.Select(x => new PackageDependency(x)).ToArray();
     }
+    protected PackageInfo(string id, string version) : this(new PackageIdentity(id, new NuGetVersion(version))) { }
 
     public override string ToString() {
       return packageIdentity.ToString();

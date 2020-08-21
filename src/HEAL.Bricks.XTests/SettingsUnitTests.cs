@@ -47,31 +47,31 @@ namespace HEAL.Bricks.XTests {
     }
     #endregion
 
-    #region PluginTag
+    #region PackageTag
     [Fact]
-    public void PluginTag_SetString_Succeeds() {
-      string tag = "MyTestPluginTag";
+    public void PackageTag_SetString_Succeeds() {
+      string tag = "MyTestPackageTag";
       Settings settings = new Settings();
 
-      settings.PluginTag = tag;
+      settings.PackageTag = tag;
 
-      Assert.Equal(tag, settings.PluginTag);
+      Assert.Equal(tag, settings.PackageTag);
     }
     [Fact]
-    public void PluginTag_SetNull_ThrowsArgumentNullException() {
+    public void PackageTag_SetNull_ThrowsArgumentNullException() {
       Settings settings = new Settings();
 
-      var e = Assert.Throws<ArgumentNullException>(() => settings.PluginTag = null);
+      var e = Assert.Throws<ArgumentNullException>(() => settings.PackageTag = null);
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public void PluginTag_SetEmptyString_ThrowsArgumentException(string tag) {
+    public void PackageTag_SetEmptyString_ThrowsArgumentException(string tag) {
       Settings settings = new Settings();
 
-      var e = Assert.Throws<ArgumentException>(() => settings.PluginTag = tag);
+      var e = Assert.Throws<ArgumentException>(() => settings.PackageTag = tag);
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }

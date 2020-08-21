@@ -55,6 +55,73 @@ namespace HEAL.Bricks {
       };
     }
 
+    #region essential methods
+    public virtual IEnumerable<LocalPackageInfo> GetLocalPackages(string packagesPath, string bricksPackageTag) {
+      IEnumerable<PackageFolderReader> packageReaders = Enumerable.Empty<PackageFolderReader>();
+      try {
+        packageReaders = GetInstalledPackages(packagesPath);
+        return packageReaders.Select(x => new LocalPackageInfo(x, CurrentFramework, bricksPackageTag)).ToArray();
+      }
+      finally {
+        foreach (PackageFolderReader packageReader in packageReaders) packageReader.Dispose();
+      }
+    }
+    public virtual async Task<RemotePackageInfo> GetRemotePackageAsync(string packageId, string version, CancellationToken ct) {
+      PackageIdentity identity = new PackageIdentity(packageId, NuGetVersion.Parse(version));
+      IPackageSearchMetadata package = await GetPackageAsync(identity, ct);
+      if (package == null) return null;
+
+      SourcePackageDependencyInfo dependencyInfo = (await GetPackageDependenciesAsync(package.Identity, false, ct)).Single();
+      return new RemotePackageInfo(package, dependencyInfo);
+    }
+    public virtual async Task<IEnumerable<RemotePackageInfo>> GetRemotePackagesAsync(string packageId, bool includePreReleases, CancellationToken ct) {
+      IEnumerable<IPackageSearchMetadata> packages = await GetPackagesAsync(packageId, includePreReleases, ct);
+      IEnumerable<SourcePackageDependencyInfo> dependencyInfos = await GetPackageDependenciesAsync(packages.Select(x => x.Identity), false, ct);
+      return packages.Zip(dependencyInfos, (x, y) => new RemotePackageInfo(x, y)).ToArray();
+    }
+    public virtual async Task<IEnumerable<(string Repository, RemotePackageInfo Package)>> SearchRemotePackagesAsync(string searchString, int skip, int take, bool includePreReleases, CancellationToken ct) {
+      IEnumerable<(string Repository, IPackageSearchMetadata Package)> packages = await SearchPackagesAsync(searchString, includePreReleases, skip, take, ct);
+      IEnumerable<SourcePackageDependencyInfo> dependencyInfos = await GetPackageDependenciesAsync(packages.Select(x => x.Package.Identity), false, ct);
+      return packages.Zip(dependencyInfos, (x, y) => (x.Repository, Package: new RemotePackageInfo(x.Package, y))).ToArray();
+    }
+    public virtual async Task InstallRemotePackagesAsync(IEnumerable<RemotePackageInfo> packages, string packagesPath, string packagesCachePath, CancellationToken ct) {
+      await InstallPackagesAsync(packages.Select(x => x.sourcePackageDependencyInfo), packagesPath, packagesCachePath, ct);
+    }
+    public virtual void RemoveLocalPackages(IEnumerable<LocalPackageInfo> packages) {
+      foreach (LocalPackageInfo package in packages) {
+        Directory.Delete(package.PackagePath, true);
+      }
+    }
+    public virtual async Task<IEnumerable<RemotePackageInfo>> GetMissingDependenciesAsync(IEnumerable<LocalPackageInfo> packages, CancellationToken ct) {
+      IEnumerable<PackageIdentity> localPackages = packages.Select(x => x.nuspecReader.GetIdentity());
+      IEnumerable<SourcePackageDependencyInfo> allDependencies = await GetPackageDependenciesAsync(localPackages, true, ct);
+      IEnumerable<LocalPackageInfo> latestVersionOfInstalledPackages = packages.Where(x => x.IsBricksPackage).GroupBy(x => x.Id).Select(x => x.OrderByDescending(y => y, PackageInfoIdentityComparer.Default).First());
+      IEnumerable<PackageIdentity> installedPackages = latestVersionOfInstalledPackages.Select(x => x.nuspecReader.GetIdentity());
+
+      IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = ResolveDependencies(Enumerable.Empty<string>(), installedPackages, allDependencies, ct, out bool resolveSucceeded);
+      if (!resolveSucceeded) throw new InvalidOperationException("Dependency resolution failed.");
+
+      IEnumerable<SourcePackageDependencyInfo> missingDependencies = resolvedDependencies.Where(x => !packages.Any(y => x.Equals(y.nuspecReader.GetIdentity())));
+      IEnumerable<IPackageSearchMetadata> packageMetadata = await GetPackagesAsync(missingDependencies, ct);
+      return packageMetadata.Zip(missingDependencies, (x, y) => new RemotePackageInfo(x, y)).ToArray();
+    }
+    public virtual async Task<IEnumerable<RemotePackageInfo>> GetPackageUpdatesAsync(IEnumerable<LocalPackageInfo> packages, bool includePreReleases, CancellationToken ct) {
+      List<PackageIdentity> updates = new List<PackageIdentity>();
+      IEnumerable<(string PackageId, NuGetVersion Version)> latestVersions = await GetLatestVersionsAsync(packages.Select(x => x.Id), includePreReleases, ct);
+      foreach (PackageIdentity package in packages.Select(x => x.packageIdentity)) {
+        (string PackageId, NuGetVersion Version) latestVersion = latestVersions.Where(x => (x.PackageId == package.Id) && (x.Version.CompareTo(package.Version) > 0)).SingleOrDefault();
+        if (latestVersion.Version != null) {
+          updates.Add(new PackageIdentity(latestVersion.PackageId, latestVersion.Version));
+        }
+      }
+
+      IEnumerable<IPackageSearchMetadata> latestPackages = await GetPackagesAsync(updates, ct);
+      IEnumerable<SourcePackageDependencyInfo> dependencyInfos = await GetPackageDependenciesAsync(latestPackages.Select(x => x.Identity), false, ct);
+      return latestPackages.Zip(dependencyInfos, (x, y) => new RemotePackageInfo(x, y)).ToArray();
+    }
+    #endregion
+
+
     #region GetPackageAsync, GetPackagesAsync, SearchPackagesAsync
     public virtual async Task<IPackageSearchMetadata> GetPackageAsync(PackageIdentity identity,
                                                                       CancellationToken ct) {

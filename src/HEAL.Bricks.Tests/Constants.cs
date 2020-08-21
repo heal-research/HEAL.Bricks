@@ -38,7 +38,7 @@ namespace HEAL.Bricks.Tests {
     public const string versionPreReleaseNuGetVersioning = "5.8.0-preview.1";
     public const string nameVersionPreReleaseNuGetVersioning = nameNuGetVersioning + "." + versionPreReleaseNuGetVersioning;
 
-    // nupkg-files of test plugins
+    // nupkg-files of test packages
     public const string pathPluginA_010_alpha1 = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.1.0-alpha.1.nupkg";
     public const string pathPluginA_010_alpha2 = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.1.0-alpha.2.nupkg";
     public const string pathPluginA_010        = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.1.0.nupkg";
@@ -59,13 +59,13 @@ namespace HEAL.Bricks.Tests {
     public const string pathPluginB_031        = @"TestPlugins\HEAL.Bricks.Tests.PluginB.0.3.1.nupkg";
     public const string pathEchoApp_100        = @"TestPlugins\HEAL.Bricks.Tests.EchoApplication.1.0.0.nupkg";
 
-    // names of test plugins
+    // names of test packages
     public const string nameInvalid = "HEAL.Bricks.Tests.InvalidPluginName";
     public const string namePluginA = "HEAL.Bricks.Tests.PluginA";
     public const string namePluginB = "HEAL.Bricks.Tests.PluginB";
     public const string nameEchoApp = "HEAL.Bricks.Tests.EchoApplication";
 
-    // versions of test plugins
+    // versions of test packages
     public const string versionInvalid    = "abcdefg";
     public const string version000        = "0.0.0";
     public const string version010_alpha1 = "0.1.0-alpha.1";
