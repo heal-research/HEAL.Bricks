@@ -20,12 +20,11 @@ namespace HEAL.Bricks {
 
     public string Id => nuGetPackageDependency.Id;
     public PackageVersionRange VersionRange { get; }
-    public PackageDependencyStatus Status { get; internal set; }
+    public PackageDependencyStatus Status { get; internal set; } = PackageDependencyStatus.Undefined;
     
     internal PackageDependency(NuGetPackageDependency nuGetPackageDependency) {
       this.nuGetPackageDependency = Guard.Argument(nuGetPackageDependency, nameof(nuGetPackageDependency)).NotNull().Member(d => d.Id, s => s.NotNull().NotEmpty());
       VersionRange = new PackageVersionRange(nuGetPackageDependency.VersionRange);
-      Status = PackageDependencyStatus.Unknown;
     }
 
     public override string ToString() {

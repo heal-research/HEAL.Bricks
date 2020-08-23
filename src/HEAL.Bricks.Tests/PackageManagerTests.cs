@@ -53,8 +53,8 @@ namespace HEAL.Bricks.Tests {
       CollectionAssert.AreEqual(expectedPackages, installedPackages, PackageInfoComparer.Default);
       Assert.IsTrue((pm.Status == PackageManagerStatus.OK) || (pm.Status == PackageManagerStatus.InvalidPackages));
       foreach (LocalPackageInfo installedPackage in installedPackages) {
-        Assert.IsTrue(installedPackage.Status != PackageStatus.Unknown);
-        Assert.IsTrue(installedPackage.Dependencies.All(x => x.Status != PackageDependencyStatus.Unknown));
+        Assert.IsTrue(installedPackage.Status != PackageStatus.Undefined);
+        Assert.IsTrue(installedPackage.Dependencies.All(x => x.Status != PackageDependencyStatus.Undefined));
       }
 
       WriteLogToTestContextAndClear();
@@ -388,6 +388,7 @@ namespace HEAL.Bricks.Tests {
       LocalPackageInfo[] packages;
       ArgumentNullException argumentNullException;
       ArgumentException argumentException;
+      InvalidOperationException invalidOperationException;
 
       packages = pm.InstalledPackages.Take(2).ToArray();
       pm.RemoveInstalledPackages(packages);
@@ -396,12 +397,11 @@ namespace HEAL.Bricks.Tests {
 
       packages = new[] { pm.InstalledPackages.First(),
                          pm.InstalledPackages.First() };
-      pm.RemoveInstalledPackages(packages);
-      Assert.IsFalse(packages.Any(x => pm.InstalledPackages.Contains(x, PackageInfoIdentityComparer.Default)));
-      Assert.IsFalse(packages.Any(x => Directory.Exists(Path.Combine(pm.Settings.PackagesPath, x.Id + "." + x.Version.ToString()))));
+      invalidOperationException = Assert.ThrowsException<InvalidOperationException>(() => { pm.RemoveInstalledPackages(packages); });
 
       packages = Array.Empty<LocalPackageInfo>();
-      pm.RemoveInstalledPackages(packages);
+      argumentException = Assert.ThrowsException<ArgumentException>(() => { pm.RemoveInstalledPackages(packages); });
+      Assert.IsFalse(string.IsNullOrEmpty(argumentException.ParamName));
 
       packages = null;
       argumentNullException = Assert.ThrowsException<ArgumentNullException>(() => { pm.RemoveInstalledPackages(packages); });

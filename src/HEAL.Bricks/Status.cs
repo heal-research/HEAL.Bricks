@@ -13,18 +13,17 @@ namespace HEAL.Bricks {
     IndirectDependenciesMissing,
     IncompatibleFramework,
     Loaded,
-    Unknown
+    Undefined
   }
   public enum PackageDependencyStatus {
     OK,
     Missing,
-    Unknown
+    Undefined
   }
   public enum PackageManagerStatus {
-    Uninitialized,
     OK,
     InvalidPackages,
-    Unknown
+    Undefined
   }
   public enum RunnerStatus {
     Created,

@@ -12,23 +12,38 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
 
 namespace HEAL.Bricks {
-  public sealed class LocalPackageInfo : PackageInfo {
-    internal static LocalPackageInfo CreateForTests(string id, string version, IEnumerable<PackageDependency> dependencies = null, bool isBricksPackage = true, string packagePath = null, IEnumerable<string> referenceItems = null, PackageStatus status = PackageStatus.Unknown) {
-      LocalPackageInfo lpi = new LocalPackageInfo(id, version, isBricksPackage, packagePath, referenceItems, status) {
-        Dependencies = dependencies ?? Enumerable.Empty<PackageDependency>()
+  public sealed class LocalPackageInfo : PackageInfo, IEquatable<LocalPackageInfo>, IComparable<LocalPackageInfo> {
+    internal static LocalPackageInfo CreateForTests(string id, string version, IEnumerable<PackageDependency> dependencies = null, bool isBricksPackage = true, string packagePath = null, IEnumerable<string> referenceItems = null, bool frameworkNotSupported = false) {
+      LocalPackageInfo lpi = new LocalPackageInfo(id, version, isBricksPackage, packagePath, referenceItems) {
+        Dependencies = dependencies ?? Enumerable.Empty<PackageDependency>(),
+        status = frameworkNotSupported ? PackageStatus.IncompatibleFramework : PackageStatus.Undefined
+      };
+      return lpi;
+    }
+    internal static LocalPackageInfo CreateForTestsFromRemotePackageInfo(RemotePackageInfo package, bool isBricksPackage = true, string packagePath = null, IEnumerable<string> referenceItems = null, bool frameworkNotSupported = false) {
+      LocalPackageInfo lpi = new LocalPackageInfo(package.Id, package.Version.ToString(), isBricksPackage, packagePath, referenceItems) {
+        Dependencies = package.Dependencies,
+        status = frameworkNotSupported ? PackageStatus.IncompatibleFramework : PackageStatus.Undefined
       };
       return lpi;
     }
 
     internal readonly NuspecReader nuspecReader;
+    private PackageStatus status = PackageStatus.Undefined;
 
-    public string Description => nuspecReader.GetDescription();
+    public string Description => nuspecReader?.GetDescription();
     public bool IsBricksPackage { get; }
     public string PackagePath { get; }
     public IEnumerable<string> ReferenceItems { get; }
-    public PackageStatus Status { get; internal set; }
+    public PackageStatus Status {
+      get { return status; }
+      internal set {
+        if (status != PackageStatus.IncompatibleFramework) status = value;
+      }
+    } 
 
     internal LocalPackageInfo(PackageFolderReader packageReader, NuGetFramework currentFramework, string packageTag = "") : base(packageReader?.GetIdentity()) {
       Guard.Argument(packageReader, nameof(packageReader)).NotNull().Member(p => p.NuspecReader, n => n.NotNull());
@@ -40,14 +55,13 @@ namespace HEAL.Bricks {
       PackagePath = System.IO.Path.GetDirectoryName(packageReader.GetNuspecFile());
       ReferenceItems = NuGetFrameworkUtility.GetNearest(packageReader.GetReferenceItems(), currentFramework).Items.Select(x => Path.Combine(PackagePath, x)).ToArray();
       bool frameworkNotSupported = new FrameworkReducer().GetNearest(currentFramework, packageReader.GetSupportedFrameworks()) == null;
-      Status = frameworkNotSupported ? PackageStatus.IncompatibleFramework : PackageStatus.Unknown;
+      status = frameworkNotSupported ? PackageStatus.IncompatibleFramework : PackageStatus.Undefined;
     }
-    private LocalPackageInfo(string id, string version, bool isBricksPackage, string packagePath, IEnumerable<string> referenceItems, PackageStatus status) : base(id, version) {
+    private LocalPackageInfo(string id, string version, bool isBricksPackage, string packagePath, IEnumerable<string> referenceItems) : base(id, version) {
       // required for unit tests
       IsBricksPackage = isBricksPackage;
       PackagePath = packagePath;
       ReferenceItems = referenceItems;
-      Status = status;
     }
 
     public override string ToString() {
@@ -58,6 +72,13 @@ namespace HEAL.Bricks {
       if (Dependencies.Any())
         s += Dependencies.Aggregate("", (a, b) => a.ToString() + "\n  - " + b.ToString());
       return s;
+    }
+
+    public bool Equals(LocalPackageInfo other) {
+      return base.Equals(other);
+    }
+    public int CompareTo(LocalPackageInfo other) {
+      return base.CompareTo(other);
     }
   }
 }

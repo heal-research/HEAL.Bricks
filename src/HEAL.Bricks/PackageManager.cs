@@ -35,7 +35,7 @@ namespace HEAL.Bricks {
 
     public ISettings Settings { get; }
     public IEnumerable<LocalPackageInfo> InstalledPackages { get; private set; } = Enumerable.Empty<LocalPackageInfo>();
-    public PackageManagerStatus Status { get; private set; } = PackageManagerStatus.Uninitialized;
+    public PackageManagerStatus Status { get; private set; } = PackageManagerStatus.Undefined;
 
     private PackageManager(ISettings settings) {
       Settings = settings;
@@ -51,7 +51,7 @@ namespace HEAL.Bricks {
 
     private void Initialize() {
       IEnumerable<LocalPackageInfo> installedPackages = nuGetConnector.GetLocalPackages(Settings.PackagesPath, Settings.PackageTag).ToArray();
-      UpdatePackageAndDependencyStatus(installedPackages);
+      SetPackageAndDependencyStatus(installedPackages);
       Status = GetPackageManagerStatus(installedPackages);
       InstalledPackages = installedPackages;
     }
@@ -81,11 +81,9 @@ namespace HEAL.Bricks {
     public async Task InstallRemotePackagesAsync(IEnumerable<RemotePackageInfo> packages, bool installMissingDependencies = true, CancellationToken cancellationToken = default) {
       Guard.Argument(packages, nameof(packages)).NotNull().NotEmpty().DoesNotContainNull();
 
-      if (packages.Count() > 0) {
-        await nuGetConnector.InstallRemotePackagesAsync(packages, Settings.PackagesPath, Settings.PackagesCachePath, cancellationToken);
-        Initialize();
-        if (installMissingDependencies) await InstallMissingDependenciesAsync(cancellationToken);
-      }
+      await nuGetConnector.InstallRemotePackagesAsync(packages, Settings.PackagesPath, Settings.PackagesCachePath, cancellationToken);
+      Initialize();
+      if (installMissingDependencies) await InstallMissingDependenciesAsync(cancellationToken);
     }
 
     public void RemoveInstalledPackage(LocalPackageInfo package) {
@@ -94,13 +92,15 @@ namespace HEAL.Bricks {
       RemoveInstalledPackages(Enumerable.Repeat(package, 1));
     }
     public void RemoveInstalledPackages(IEnumerable<LocalPackageInfo> packages) {
-      Guard.Argument(packages, nameof(packages)).NotNull().DoesNotContainNull().Require(packages.All(x => !string.IsNullOrEmpty(x.PackagePath)));
+      Guard.Argument(packages, nameof(packages)).NotNull().NotEmpty().DoesNotContainNull().Require(packages.All(x => !string.IsNullOrEmpty(x.PackagePath)));
 
-      if (packages.Count() > 0) {
-        try {
-          nuGetConnector.RemoveLocalPackages(packages);
-        }
-        catch (DirectoryNotFoundException) { }
+      try {
+        nuGetConnector.RemoveLocalPackages(packages);
+      }
+      catch (DirectoryNotFoundException e) {
+        throw new InvalidOperationException("Package not found.", e);
+      }
+      finally {
         Initialize();
       }
     }
@@ -109,7 +109,10 @@ namespace HEAL.Bricks {
       return await nuGetConnector.GetMissingDependenciesAsync(InstalledPackages, cancellationToken);
     }
     public async Task InstallMissingDependenciesAsync(CancellationToken cancellationToken = default) {
-      await InstallRemotePackagesAsync(await GetMissingDependenciesAsync(cancellationToken), false, cancellationToken);
+      IEnumerable<RemotePackageInfo> dependencies = await GetMissingDependenciesAsync(cancellationToken);
+      if (dependencies.Count() > 0) {
+        await InstallRemotePackagesAsync(dependencies, false, cancellationToken);
+      }
     }
 
     public async Task<RemotePackageInfo> GetPackageUpdateAsync(LocalPackageInfo package, bool includePreReleases = false, CancellationToken cancellationToken = default) {
@@ -126,11 +129,14 @@ namespace HEAL.Bricks {
       return await GetPackageUpdatesAsync(InstalledPackages, includePreReleases, cancellationToken);
     }
     public async Task InstallPackageUpdatesAsync(bool installMissingDependencies = true, bool includePreReleases = false, CancellationToken cancellationToken = default) {
-      await InstallRemotePackagesAsync(await GetPackageUpdatesAsync(includePreReleases, cancellationToken), installMissingDependencies, cancellationToken);
+      IEnumerable<RemotePackageInfo> updates = await GetPackageUpdatesAsync(includePreReleases, cancellationToken);
+      if (updates.Count() > 0) {
+        await InstallRemotePackagesAsync(updates, installMissingDependencies, cancellationToken);
+      }
     }
 
     public void LoadPackageAssemblies(LocalPackageInfo package) {
-      Guard.Argument(package, nameof(package)).NotNull().Member(p => p.Status, s => s.NotEqual(PackageStatus.Unknown)
+      Guard.Argument(package, nameof(package)).NotNull().Member(p => p.Status, s => s.NotEqual(PackageStatus.Undefined)
                                                                                      .NotEqual(PackageStatus.DependenciesMissing)
                                                                                      .NotEqual(PackageStatus.IndirectDependenciesMissing)
                                                                                      .NotEqual(PackageStatus.IncompatibleFramework));
@@ -165,36 +171,41 @@ namespace HEAL.Bricks {
     #endregion
 
     #region Helpers
-    private static void UpdatePackageAndDependencyStatus(IEnumerable<LocalPackageInfo> packages) {
+    private static void SetPackageAndDependencyStatus(IEnumerable<LocalPackageInfo> packages) {
+      foreach (LocalPackageInfo package in packages) {
+        package.Status = PackageStatus.Undefined; 
+        foreach (PackageDependency dependency in package.Dependencies) {
+          dependency.Status = packages.Any(x =>
+            (x.Id == dependency.Id) && (x.Status != PackageStatus.IncompatibleFramework) && dependency.VersionRange.Satiesfies(x.Version)
+          ) ? PackageDependencyStatus.OK : PackageDependencyStatus.Missing;
+        }
+      }
+      
       foreach (var group in packages.GroupBy(x => x.Id)) {
         foreach (LocalPackageInfo package in group.OrderByDescending(x => x.Version).Skip(1)) {
           package.Status = PackageStatus.Outdated;
         }
       }
-      foreach (LocalPackageInfo package in packages) {
-        foreach (PackageDependency dependency in package.Dependencies) {
-          dependency.Status = packages.Any(x => (x.Id == dependency.Id) && dependency.VersionRange.Satiesfies(x.Version)) ? PackageDependencyStatus.OK : PackageDependencyStatus.Missing;
-        }
-        if (package.Status == PackageStatus.Unknown) {
-          if (package.Dependencies.Count() == 0) {
-            package.Status = PackageStatus.OK;
-          } else if (package.Dependencies.Any(x => x.Status == PackageDependencyStatus.Missing)) {
-            package.Status = PackageStatus.DependenciesMissing;
-          } else {
-            // in this case we do not know, if dependencies of dependencies might be missing; so status remains unknown
-            package.Status = PackageStatus.Unknown;
-          }
+
+      foreach (LocalPackageInfo package in packages.Where(x => x.Status == PackageStatus.Undefined)) {
+        if (package.Dependencies.Count() == 0) {
+          package.Status = PackageStatus.OK;
+        } else if (package.Dependencies.Any(x => x.Status == PackageDependencyStatus.Missing)) {
+          package.Status = PackageStatus.DependenciesMissing;
+        } else {
+          // we do not know yet, if dependencies of dependencies might be missing; so status remains unknown
         }
       }
+
       bool packageStatusChanged;
       do {
         packageStatusChanged = false;
-        foreach (LocalPackageInfo package in packages.Where(x => x.Status == PackageStatus.Unknown)) {
+        foreach (LocalPackageInfo package in packages.Where(x => x.Status == PackageStatus.Undefined)) {
           foreach (PackageDependency dependency in package.Dependencies.Where(x => x.Status == PackageDependencyStatus.OK)) {
             var dependencyPackages = packages.Where(x => (x.Id == dependency.Id) && dependency.VersionRange.Satiesfies(x.Version));
-            if (dependencyPackages.Any(x => x.Status == PackageStatus.Unknown)) {
+            if (dependencyPackages.Any(x => x.Status == PackageStatus.Undefined)) {
               // some of the packages which fulfill the dependency are still unknown, so we need to reset the package status to unknown
-              package.Status = PackageStatus.Unknown;
+              package.Status = PackageStatus.Undefined;
               break;
             } else if (dependencyPackages.All(x => x.Status == PackageStatus.DependenciesMissing || x.Status == PackageStatus.IndirectDependenciesMissing || x.Status == PackageStatus.IncompatibleFramework)) {
               // all packages which fulfill the dependency are either missing or incompatible
@@ -205,21 +216,20 @@ namespace HEAL.Bricks {
               package.Status = PackageStatus.OK;
             }
           }
-          packageStatusChanged = packageStatusChanged || package.Status != PackageStatus.Unknown;
+          packageStatusChanged = packageStatusChanged || package.Status != PackageStatus.Undefined;
         }
       } while (packageStatusChanged);
     }
 
     private static PackageManagerStatus GetPackageManagerStatus(IEnumerable<LocalPackageInfo> packages) {
-      IEnumerable<LocalPackageInfo> bricksPackages = packages.Where(x => x.IsBricksPackage);
-      if (bricksPackages.All(x => (x.Status == PackageStatus.OK) || (x.Status == PackageStatus.Outdated))) {
+      if (packages.All(x => (x.Status == PackageStatus.OK) || (x.Status == PackageStatus.Outdated))) {
         return PackageManagerStatus.OK;
-      } else if (bricksPackages.Any(x => x.Status == PackageStatus.Unknown)) {
-        return PackageManagerStatus.Unknown;
-      } else if (bricksPackages.Any(x => x.Status == PackageStatus.DependenciesMissing || x.Status == PackageStatus.IndirectDependenciesMissing || x.Status == PackageStatus.IncompatibleFramework)) {
+      } else if (packages.Any(x => x.Status == PackageStatus.Undefined)) {
+        return PackageManagerStatus.Undefined;
+      } else if (packages.Any(x => x.Status == PackageStatus.DependenciesMissing || x.Status == PackageStatus.IndirectDependenciesMissing || x.Status == PackageStatus.IncompatibleFramework)) {
         return PackageManagerStatus.InvalidPackages;
       } else {
-        return PackageManagerStatus.Unknown;
+        return PackageManagerStatus.Undefined;
       }
     }
     #endregion
