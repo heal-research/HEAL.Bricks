@@ -6,7 +6,6 @@
 #endregion
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -49,7 +48,7 @@ namespace HEAL.Bricks.XTests {
 
     #region CreateForTests
     [Fact]
-    public void CreateForTests_CreatesValidInstance() {
+    public void CreateForTests_ReturnsInstanceWhereStatusIsOK() {
       ISettings settings = new Settings() {
         PackagesPath = Path.GetTempPath(),
         PackageTag = "testPackageTag"
@@ -70,7 +69,7 @@ namespace HEAL.Bricks.XTests {
       Assert.Equal(PackageManagerStatus.OK, pm.Status);
     }
     [Fact]
-    public void CreateForTests_WithoutPackages_StatusIsOK() {
+    public void CreateForTests_WithoutPackages_ReturnsInstanceWhereStatusIsOK() {
       INuGetConnector nuGetConnector = new NuGetConnectorStub();
 
       IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnector);
@@ -79,7 +78,7 @@ namespace HEAL.Bricks.XTests {
       Assert.Equal(PackageManagerStatus.OK, pm.Status);
     }
     [Fact]
-    public void CreateForTests_WithSinglePackage_StatusIsOK() {
+    public void CreateForTests_WithSinglePackage_ReturnsInstanceWhereStatusIsOK() {
       LocalPackageInfo[] localPackages = new[] {
         LocalPackageInfo.CreateForTests("a", "1.0.0")
       };
@@ -93,7 +92,7 @@ namespace HEAL.Bricks.XTests {
       Assert.Equal(PackageManagerStatus.OK, pm.Status);
     }
     [Fact]
-    public void CreateForTests_WithDependencies_StatusIsOK() {
+    public void CreateForTests_WithDependencies_ReturnsInstanceWhereStatusIsOK() {
       LocalPackageInfo[] localPackages = new[] {
         LocalPackageInfo.CreateForTests("a", "2.0.0"),
         LocalPackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }),
@@ -109,7 +108,7 @@ namespace HEAL.Bricks.XTests {
       Assert.Equal(PackageManagerStatus.OK, pm.Status);
     }
     [Fact]
-    public void CreateForTests_WithOutdatedPackages_StatusIsOK() {
+    public void CreateForTests_WithOutdatedPackages_ReturnsInstanceWhereStatusIsOK() {
       LocalPackageInfo[] localPackages = new[] {
         LocalPackageInfo.CreateForTests("a", "1.0.0"),
         LocalPackageInfo.CreateForTests("a", "2.0.0-alpha.1"),
@@ -127,7 +126,7 @@ namespace HEAL.Bricks.XTests {
       Assert.Equal(PackageManagerStatus.OK, pm.Status);
     }
     [Fact]
-    public void CreateForTests_WithMissingDependencies_StatusIsInvalidPackages() {
+    public void CreateForTests_WithMissingDependencies_ReturnsInstanceWhereStatusIsInvalidPackages() {
       LocalPackageInfo[] localPackages = new[] {
         LocalPackageInfo.CreateForTests("a", "2.0.0"),
         LocalPackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "2.1.0") }),
@@ -150,7 +149,7 @@ namespace HEAL.Bricks.XTests {
       Assert.Equal(PackageManagerStatus.InvalidPackages, pm.Status);
     }
     [Fact]
-    public void CreateForTests_WithIncompatiblePackages_StatusIsInvalidPackages() {
+    public void CreateForTests_WithIncompatiblePackages_ReturnsInstanceWhereStatusIsInvalidPackages() {
       LocalPackageInfo[] localPackages = new[] {
         LocalPackageInfo.CreateForTests("a", "2.0.0", frameworkNotSupported: true),
         LocalPackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }),
@@ -283,8 +282,10 @@ namespace HEAL.Bricks.XTests {
     #endregion
 
     #region InstallRemotePackageAsync, InstallRemotePackagesAsync
-    [Fact]
-    public async Task InstallRemotePackageAsync_IncludeMissingDependencies_StatusIsOK() {
+    [Theory]
+    [InlineData("d", true,  new[] { "a", "b", "c", "d" }, new[] { "1.0.0", "1.1.0", "1.0.0", "1.0.0" }, PackageManagerStatus.OK)]
+    [InlineData("d", false, new[] { "d"                }, new[] { "1.0.0"                            }, PackageManagerStatus.InvalidPackages)]
+    public async Task InstallRemotePackageAsync_WithPackage(string packageNameToInstall, bool installMissingDependencies, string[] expectedPackageNames, string[] expectedVersions, PackageManagerStatus expectedStatus) {
       RemotePackageInfo[] remotePackages = new[] {
         RemotePackageInfo.CreateForTests("a", "1.0.0"),
         RemotePackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }),
@@ -293,21 +294,16 @@ namespace HEAL.Bricks.XTests {
         RemotePackageInfo.CreateForTests("c", "1.0.0", new[] { PackageDependency.CreateForTests("b", "1.0.1") }),
         RemotePackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "1.0.0") })
       };
+      RemotePackageInfo packageToInstall = remotePackages.Where(x => x.Id == packageNameToInstall).Single();
+      LocalPackageInfo[] expectedPackages = expectedPackageNames.Select((n, i) => LocalPackageInfo.CreateForTests(n, expectedVersions[i])).ToArray();
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(remotePackages);
       IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
-      RemotePackageInfo packageToInstall = remotePackages[5];
-      LocalPackageInfo[] expectedPackages = new[] {
-        LocalPackageInfo.CreateForTests("a", "1.0.0"),
-        LocalPackageInfo.CreateForTests("b", "1.1.0"),
-        LocalPackageInfo.CreateForTests("c", "1.0.0"),
-        LocalPackageInfo.CreateForTests("d", "1.0.0")
-      };
 
-      await pm.InstallRemotePackageAsync(packageToInstall);
+      await pm.InstallRemotePackageAsync(packageToInstall, installMissingDependencies: installMissingDependencies);
 
       WriteInstalledPackagesToOutput(pm);
       Assert.Equal(expectedPackages.OrderBy(x => x), pm.InstalledPackages.OrderBy(x => x));
-      Assert.Equal(PackageManagerStatus.OK, pm.Status);
+      Assert.Equal(expectedStatus, pm.Status);
     }
     [Fact]
     public async Task InstallRemotePackageAsync_WithNullParameter_ThrowsArgumentNullException() {
@@ -317,8 +313,10 @@ namespace HEAL.Bricks.XTests {
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
-    [Fact]
-    public async Task InstallRemotePackagesAsync_IncludeMissingDependencies_StatusIsOK() {
+    [Theory]
+    [InlineData(new[] { "c", "d" }, true,  new[] { "a", "b", "c", "d" }, new[] { "1.0.0", "1.0.0", "1.0.0", "1.0.0" }, PackageManagerStatus.OK)]
+    [InlineData(new[] { "c", "d" }, false, new[] { "c", "d"           }, new[] { "1.0.0", "1.0.0"                   }, PackageManagerStatus.InvalidPackages)]
+    public async Task InstallRemotePackagesAsync_WithPackages(string[] packageNamesToInstall, bool installMissingDependencies, string[] expectedPackageNames, string[] expectedVersions, PackageManagerStatus expectedStatus) {
       RemotePackageInfo[] remotePackages = new[] {
         RemotePackageInfo.CreateForTests("a", "1.0.0"),
         RemotePackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }),
@@ -327,41 +325,14 @@ namespace HEAL.Bricks.XTests {
       };
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(remotePackages);
       IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
-      RemotePackageInfo[] packagesToInstall = new[] { remotePackages[3], remotePackages[2] };
-      LocalPackageInfo[] expectedPackages = new[] {
-        LocalPackageInfo.CreateForTests("a", "1.0.0"),
-        LocalPackageInfo.CreateForTests("b", "1.0.0"),
-        LocalPackageInfo.CreateForTests("c", "1.0.0"),
-        LocalPackageInfo.CreateForTests("d", "1.0.0")
-      };
+      IEnumerable<RemotePackageInfo> packagesToInstall = remotePackages.Where(x => packageNamesToInstall.Contains(x.Id));
+      LocalPackageInfo[] expectedPackages = expectedPackageNames.Select((n, i) => LocalPackageInfo.CreateForTests(n, expectedVersions[i])).ToArray();
 
-      await pm.InstallRemotePackagesAsync(packagesToInstall);
+      await pm.InstallRemotePackagesAsync(packagesToInstall, installMissingDependencies: installMissingDependencies);
 
       WriteInstalledPackagesToOutput(pm);
       Assert.Equal(expectedPackages.OrderBy(x => x), pm.InstalledPackages.OrderBy(x => x));
-      Assert.Equal(PackageManagerStatus.OK, pm.Status);
-    }
-    [Fact]
-    public async Task InstallRemotePackagesAsync_ExcludeMissingDependencies_StatusIsInvalidPackages() {
-      RemotePackageInfo[] remotePackages = new[] {
-        RemotePackageInfo.CreateForTests("a", "1.0.0"),
-        RemotePackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }),
-        RemotePackageInfo.CreateForTests("c", "1.0.0", new[] { PackageDependency.CreateForTests("b", "1.0.0") }),
-        RemotePackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "1.0.0") })
-      };
-      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
-      RemotePackageInfo[] packagesToInstall = new[] { remotePackages[3], remotePackages[2] };
-      LocalPackageInfo[] expectedPackages = new[] {
-        LocalPackageInfo.CreateForTests("c", "1.0.0"),
-        LocalPackageInfo.CreateForTests("d", "1.0.0")
-      };
-
-      await pm.InstallRemotePackagesAsync(packagesToInstall, false);
-
-      WriteInstalledPackagesToOutput(pm);
-      Assert.Equal(expectedPackages.OrderBy(x => x), pm.InstalledPackages.OrderBy(x => x));
-      Assert.Equal(PackageManagerStatus.InvalidPackages, pm.Status);
+      Assert.Equal(expectedStatus, pm.Status);
     }
     [Fact]
     public async Task InstallRemotePackagesAsync_WithNullParameter_ThrowsArgumentNullException() {
@@ -393,7 +364,7 @@ namespace HEAL.Bricks.XTests {
     [Theory]
     [InlineData("a", PackageManagerStatus.InvalidPackages)]
     [InlineData("c", PackageManagerStatus.OK)]
-    public void RemoveInstalledPackage_WithInstalledPackage_RemovesPackage(string packageNameToRemove, PackageManagerStatus expectedStatus) {
+    public void RemoveInstalledPackage_WithInstalledPackage(string packageNameToRemove, PackageManagerStatus expectedStatus) {
       LocalPackageInfo[] localPackages = new[] {
         LocalPackageInfo.CreateForTests("a", "1.0.0", packagePath: "packagePath"),
         LocalPackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }, packagePath: "packagePath"),
@@ -444,7 +415,7 @@ namespace HEAL.Bricks.XTests {
     [Theory]
     [InlineData(new[] { "a", "c" }, PackageManagerStatus.InvalidPackages)]
     [InlineData(new[] { "b", "c" }, PackageManagerStatus.OK)]
-    public void RemoveInstalledPackages_WithInstalledPackages_RemovesPackage(string[] packageNamesToRemove, PackageManagerStatus expectedStatus) {
+    public void RemoveInstalledPackages_WithInstalledPackages(string[] packageNamesToRemove, PackageManagerStatus expectedStatus) {
       LocalPackageInfo[] localPackages = new[] {
         LocalPackageInfo.CreateForTests("a", "1.0.0", packagePath: "packagePath"),
         LocalPackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }, packagePath: "packagePath"),
@@ -564,7 +535,7 @@ namespace HEAL.Bricks.XTests {
       Assert.Empty(result);
     }
     [Fact]
-    public async Task InstallMissingDependenciesAsync_WhenDependenciesAreMissing_InstallsMissingDependencies() {
+    public async Task InstallMissingDependenciesAsync_WhenDependenciesAreMissing() {
       LocalPackageInfo[] localPackages = new[] {
         LocalPackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "1.0.0") })
       };
@@ -589,7 +560,7 @@ namespace HEAL.Bricks.XTests {
       Assert.Equal(PackageManagerStatus.OK, pm.Status);
     }
     [Fact]
-    public async Task InstallMissingDependenciesAsync_WhenNoDependenciesAreMissing_DoesNothing() {
+    public async Task InstallMissingDependenciesAsync_WhenNoDependenciesAreMissing() {
       LocalPackageInfo[] localPackages = new[] {
         LocalPackageInfo.CreateForTests("a", "1.0.0"),
         LocalPackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }),
@@ -614,24 +585,120 @@ namespace HEAL.Bricks.XTests {
 
     #region GetPackageUpdateAsync, GetPackageUpdatesAsync, InstallPackageUpdatesAsync
     [Theory]
-    [InlineData(true, "2.1.0-alpha.1")]
-    [InlineData(false, "2.0.0")]
-    public async Task GetPackageUpdateAsync_WithUpdateablePackage_ReturnsLatestVersion(bool includePreReleases, string expectedVersion) {
-      LocalPackageInfo[] localPackages = new[] {
-        LocalPackageInfo.CreateForTests("a", "1.0.0")
-      };
+    [InlineData("a", "1.0.0", true, "a", "2.1.0-alpha.1")]
+    [InlineData("a", "1.0.0", false, "a", "2.0.0")]
+    [InlineData("a", "2.1.0-alpha.1", true, null, null)]
+    [InlineData("a", "2.1.0-alpha.1", false, null, null)]
+    [InlineData("a", "2.0.0", false, null, null)]
+    [InlineData("b", "1.0.0", true, null, null)]
+    [InlineData("b", "1.0.0", false, null, null)]
+    public async Task GetPackageUpdateAsync_WithPackage_ReturnsLatestUpdateOrNull(string packageToUpdate, string versionToUpdate, bool includePreReleases, string expectedPackage, string expectedVersion) {
       RemotePackageInfo[] remotePackages = new[] {
         RemotePackageInfo.CreateForTests("a", "1.0.0"),
+        RemotePackageInfo.CreateForTests("a", "1.1.0-alpha.1"),
         RemotePackageInfo.CreateForTests("a", "1.1.0"),
+        RemotePackageInfo.CreateForTests("a", "2.0.0-alpha.1"),
         RemotePackageInfo.CreateForTests("a", "2.0.0"),
         RemotePackageInfo.CreateForTests("a", "2.1.0-alpha.1")
       };
+      LocalPackageInfo localPackage = LocalPackageInfo.CreateForTests(packageToUpdate, versionToUpdate);
+      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(remotePackages);
+      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
+
+      RemotePackageInfo result = await pm.GetPackageUpdateAsync(localPackage, includePreReleases: includePreReleases);
+
+      if (expectedPackage == null) {
+        Assert.Null(result);
+      } else {
+        Assert.Equal(expectedPackage, result.Id);
+        Assert.Equal(expectedVersion, result.Version.ToString());
+      }
+    }
+    [Theory]
+    [InlineData(true, new[] { "a", "b" }, new string[] { "2.1.0-alpha.1", "2.0.0" })]
+    [InlineData(false, new[] { "a", "b" }, new string[] { "2.0.0", "2.0.0" })]
+    public async Task GetPackageUpdatesAsync_WhenUpdatesArePending_ReturnsLatestUpdates(bool includePreReleases, string[] expectedPackageNames, string[] expectedVersions) {
+      LocalPackageInfo[] localPackages = new[] {
+        LocalPackageInfo.CreateForTests("a", "1.0.0"),
+        LocalPackageInfo.CreateForTests("b", "1.0.0"),
+        LocalPackageInfo.CreateForTests("c", "2.0.0")
+      };
+      RemotePackageInfo[] remotePackages = new[] {
+        RemotePackageInfo.CreateForTests("a", "1.0.0"),
+        RemotePackageInfo.CreateForTests("a", "2.0.0"),
+        RemotePackageInfo.CreateForTests("a", "2.1.0-alpha.1"),
+        RemotePackageInfo.CreateForTests("b", "1.0.0"),
+        RemotePackageInfo.CreateForTests("b", "1.1.0-alpha.1"),
+        RemotePackageInfo.CreateForTests("b", "2.0.0"),
+        RemotePackageInfo.CreateForTests("c", "2.0.0")
+      };
+      RemotePackageInfo[] expectedPackages = expectedPackageNames.Select((n, i) => RemotePackageInfo.CreateForTests(n, expectedVersions[i])).ToArray();
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages, remotePackages);
       IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
 
-      RemotePackageInfo result = await pm.GetPackageUpdateAsync(localPackages[0], includePreReleases: includePreReleases);
+      IEnumerable<RemotePackageInfo> result = await pm.GetPackageUpdatesAsync(includePreReleases: includePreReleases);
 
-      Assert.Equal(expectedVersion, result.Version.ToString());
+      Assert.Equal(expectedPackages.OrderBy(x => x.Id), result.OrderBy(x => x.Id));
+    }
+    [Theory]
+    [InlineData(true,  true,  new[] { "a", "b", "c", "x", "y", "z" }, new[] { "2.1.0-alpha.1", "2.0.0", "2.0.0", "2.0.0", "2.0.0", "2.0.0" }, PackageManagerStatus.OK)]
+    [InlineData(true,  false, new[] { "a", "b", "c", "x", "y", "z" }, new[] { "2.0.0",         "2.0.0", "2.0.0", "2.0.0", "2.0.0", "2.0.0" }, PackageManagerStatus.OK)]
+    [InlineData(false, true,  new[] { "a", "b", "c"                }, new[] { "2.1.0-alpha.1", "2.0.0", "2.0.0"                            }, PackageManagerStatus.InvalidPackages)]
+    [InlineData(false, false, new[] { "a", "b", "c"                }, new[] { "2.0.0"        , "2.0.0", "2.0.0"                            }, PackageManagerStatus.InvalidPackages)]
+    public async Task InstallPackageUpdatesAsync_WhenUpdatesArePending(bool installMissingDependencies, bool includePreReleases, string[] expectedPackageNames, string[] expectedVersions, PackageManagerStatus expectedStatus) {
+      LocalPackageInfo[] localPackages = new[] {
+        LocalPackageInfo.CreateForTests("a", "1.0.0"),
+        LocalPackageInfo.CreateForTests("b", "1.0.0"),
+        LocalPackageInfo.CreateForTests("c", "2.0.0", new[] { PackageDependency.CreateForTests("y", "1.0.0") })
+      };
+      RemotePackageInfo[] remotePackages = new[] {
+        RemotePackageInfo.CreateForTests("a", "1.0.0"),
+        RemotePackageInfo.CreateForTests("a", "2.0.0"),
+        RemotePackageInfo.CreateForTests("a", "2.1.0-alpha.1"),
+        RemotePackageInfo.CreateForTests("b", "1.0.0"),
+        RemotePackageInfo.CreateForTests("b", "1.1.0-alpha.1"),
+        RemotePackageInfo.CreateForTests("b", "2.0.0", new[] { PackageDependency.CreateForTests("x", "1.0.0") }),
+        RemotePackageInfo.CreateForTests("c", "2.0.0", new[] { PackageDependency.CreateForTests("y", "1.0.0") }),
+        RemotePackageInfo.CreateForTests("x", "2.0.0", new[] { PackageDependency.CreateForTests("z", "1.0.0") }),
+        RemotePackageInfo.CreateForTests("y", "2.0.0"),
+        RemotePackageInfo.CreateForTests("z", "2.0.0")
+      };
+      LocalPackageInfo[] expectedPackages = expectedPackageNames.Select((n, i) => LocalPackageInfo.CreateForTests(n, expectedVersions[i])).ToArray();
+      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages, remotePackages);
+      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
+
+      await pm.InstallPackageUpdatesAsync(installMissingDependencies: installMissingDependencies, includePreReleases: includePreReleases);
+
+      WriteInstalledPackagesToOutput(pm);
+      Assert.Equal(expectedPackages.OrderBy(x => x.Id), pm.InstalledPackages.Where(x => x.Status != PackageStatus.Outdated).OrderBy(x => x.Id));
+      Assert.Equal(expectedStatus, pm.Status);
+    }
+    #endregion
+
+    #region LoadPackageAssemblies
+    [Fact]
+    public void LoadPackageAssemblies_WithNullParameter_ThrowsArgumentNullException() {
+      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, new NuGetConnectorStub());
+
+      var e = Assert.Throws<ArgumentNullException>(() => pm.LoadPackageAssemblies(null));
+      Assert.False(string.IsNullOrEmpty(e.Message));
+      Assert.False(string.IsNullOrEmpty(e.ParamName));
+    }
+    [Theory]
+    [InlineData(PackageStatus.DependenciesMissing)]
+    [InlineData(PackageStatus.IncompatibleFramework)]
+    [InlineData(PackageStatus.IndirectDependenciesMissing)]
+    [InlineData(PackageStatus.Loaded)]
+    [InlineData(PackageStatus.Outdated)]
+    [InlineData(PackageStatus.Undefined)]
+    public void LoadPackageAssemblies_WithPackageWhereStatusIsNotOK_ThrowsArgumentException(PackageStatus packageStatus) {
+      LocalPackageInfo packageToLoad = LocalPackageInfo.CreateForTests("a", "1.0.0");
+      packageToLoad.Status = packageStatus;
+      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, new NuGetConnectorStub());
+
+      var e = Assert.Throws<ArgumentException>(() => pm.LoadPackageAssemblies(packageToLoad));
+      Assert.False(string.IsNullOrEmpty(e.Message));
+      Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
     #endregion
 

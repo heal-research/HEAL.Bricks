@@ -136,17 +136,12 @@ namespace HEAL.Bricks {
     }
 
     public void LoadPackageAssemblies(LocalPackageInfo package) {
-      Guard.Argument(package, nameof(package)).NotNull().Member(p => p.Status, s => s.NotEqual(PackageStatus.Undefined)
-                                                                                     .NotEqual(PackageStatus.DependenciesMissing)
-                                                                                     .NotEqual(PackageStatus.IndirectDependenciesMissing)
-                                                                                     .NotEqual(PackageStatus.IncompatibleFramework));
+      Guard.Argument(package, nameof(package)).NotNull().Member(p => p.Status, s => s.Equal(PackageStatus.OK));
 
-      if (package.Status != PackageStatus.Loaded) {
-        foreach (string assemblyPath in package.ReferenceItems) {
-          AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyPath);
-        }
-        package.Status = PackageStatus.Loaded;
+      foreach (string assemblyPath in package.ReferenceItems) {
+        AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyPath);
       }
+      package.Status = PackageStatus.Loaded;
     }
     public void LoadPackageAssemblies() {
       foreach (LocalPackageInfo package in InstalledPackages.Where(x => x.Status == PackageStatus.OK)) {

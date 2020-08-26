@@ -6,14 +6,15 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
 namespace HEAL.Bricks {
   internal static class TypeExtensions {
-    internal static bool IsNonDiscoverableType(this Type t) {
-      return t.GetCustomAttributes(typeof(NonDiscoverableTypeAttribute), false).Any();
+    internal static bool IsNonDiscoverableType(this Type type) {
+      if (type == null) throw new ArgumentNullException(nameof(type));
+
+      return type.GetCustomAttributes(typeof(NonDiscoverableTypeAttribute), false).Any();
     }
 
     /// <summary>
@@ -60,12 +61,15 @@ namespace HEAL.Bricks {
       }
     }
 
-    internal static bool IsSubTypeOf(this Type subType, Type baseType) {
-      if (baseType.IsAssignableFrom(subType)) return true;
+    internal static bool IsSubTypeOf(this Type type, Type baseType) {
+      if (type == null) throw new ArgumentNullException(nameof(type));
+      if (baseType == null) throw new ArgumentNullException(nameof(baseType));
+
+      if (baseType.IsAssignableFrom(type)) return true;
       if (!baseType.IsGenericType) return false;
 
-      if (RecursiveCheckGenericTypes(baseType, subType)) return true;
-      foreach (Type genericInterfaceOfSubType in subType.GetInterfaces().Where(i => i.IsGenericType)) {
+      if (RecursiveCheckGenericTypes(baseType, type)) return true;
+      foreach (Type genericInterfaceOfSubType in type.GetInterfaces().Where(i => i.IsGenericType)) {
         if (baseType.CheckGenericTypes(genericInterfaceOfSubType)) return true;
       }
 
