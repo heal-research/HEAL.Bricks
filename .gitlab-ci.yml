@@ -28,9 +28,12 @@ test:
     - docker
   dependencies:
     - build
+  artifacts:
+    reports:
+      cobertura: "**/coverage.cobertura.xml"
   script:
 #    - "dotnet test src/HEAL.Bricks.Tests  --no-build"
-    - "dotnet test src/HEAL.Bricks.XTests --no-build"
+    - "dotnet test src/HEAL.Bricks.XTests --no-build --collect:\"XPlat Code Coverage\""
 
 pack:
   stage: pack
