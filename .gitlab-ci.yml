@@ -31,8 +31,8 @@ test:
   dependencies:
     - build
   script:
-    - "dotnet test src/HEAL.Bricks.Tests --no-build"
-    - "dotnet test src/HEAL.Bricks.XTests --no-build"
+    - "dotnet test src/HEAL.Bricks.Tests"
+    - "dotnet test src/HEAL.Bricks.XTests"
 
 pack:
   stage: pack
@@ -43,7 +43,7 @@ pack:
       - nupkgs/*
   script:
     - "dotnet build src/HEAL.Bricks.PluginTypes -c Release"
-    - "dotnet build src/HEAL.Bricks -c Release"
     - "dotnet pack src/HEAL.Bricks.PluginTypes -c Release --include-symbols --output nupkgs"
+    - "dotnet build src/HEAL.Bricks -c Release"
     - "dotnet pack src/HEAL.Bricks -c Release --include-symbols --output nupkgs"
-
+    - "dotnet build-server shutdown"
