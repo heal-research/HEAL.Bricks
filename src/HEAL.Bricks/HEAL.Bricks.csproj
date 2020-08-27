@@ -13,7 +13,6 @@
     <AssemblyOriginatorKeyFile>HEAL.snk</AssemblyOriginatorKeyFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <ThisAssemblyNamespace>HEAL.Bricks</ThisAssemblyNamespace>

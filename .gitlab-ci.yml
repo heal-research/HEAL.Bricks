@@ -3,12 +3,6 @@ stages:
   - test
   - pack
   
-variables:
-  publish_debug_path: "bin/Debug/netcoreapp3.0/publish"
-  publish_release_path: "bin/Release/netcoreapp3.0/publish"
-  deploy_staging_path: "/home/gitlab-runner/$project"
-  deploy_production_path: "/home/gitlab-runner/dynstack2020"
-
 image: mcr.microsoft.com/dotnet/core/sdk:3.1
   
 build:
@@ -21,12 +15,12 @@ build:
     expire_in: 1 month
     paths:
       - "**/bin"
+      - "**/obj"
   script:
-    - "dotnet build src/HEAL.Bricks.PluginTypes"
     - "dotnet build src/HEAL.Bricks"
     - "dotnet build src/HEAL.Bricks.Tests"
     - "dotnet build src/HEAL.Bricks.XTests"
-#    - "dotnet build-server shutdown"
+    - "dotnet build-server shutdown"
 
 test:
   stage: test
@@ -35,7 +29,7 @@ test:
   dependencies:
     - build
   script:
-#    - "dotnet test src/HEAL.Bricks.Tests"
+#    - "dotnet test src/HEAL.Bricks.Tests  --no-build"
     - "dotnet test src/HEAL.Bricks.XTests --no-build"
 
 pack:
@@ -48,8 +42,6 @@ pack:
     paths:
       - nupkgs/*
   script:
-    - "dotnet build src/HEAL.Bricks.PluginTypes -c Release"
     - "dotnet pack src/HEAL.Bricks.PluginTypes -c Release --include-symbols --output nupkgs"
-    - "dotnet build src/HEAL.Bricks -c Release"
     - "dotnet pack src/HEAL.Bricks -c Release --include-symbols --output nupkgs"
-#   - "dotnet build-server shutdown"
+    - "dotnet build-server shutdown"
