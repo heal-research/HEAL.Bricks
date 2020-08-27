@@ -8,6 +8,8 @@ variables:
   publish_release_path: "bin/Release/netcoreapp3.0/publish"
   deploy_staging_path: "/home/gitlab-runner/$project"
   deploy_production_path: "/home/gitlab-runner/dynstack2020"
+
+image: mcr.microsoft.com/dotnet/core/sdk:3.1
   
 build:
   stage: build
