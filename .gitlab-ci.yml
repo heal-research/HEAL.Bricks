@@ -18,7 +18,7 @@ build:
     when: on_success
     expire_in: 1 month
     paths:
-      - "*/bin"
+      - "**/bin"
   script:
     - "dotnet build src/HEAL.Bricks.PluginTypes"
     - "dotnet build src/HEAL.Bricks"
@@ -42,6 +42,8 @@ pack:
     paths:
       - nupkgs/*
   script:
+    - "dotnet build src/HEAL.Bricks.PluginTypes -c Release"
+    - "dotnet build src/HEAL.Bricks -c Release"
     - "dotnet pack src/HEAL.Bricks.PluginTypes -c Release --include-symbols --output nupkgs"
     - "dotnet pack src/HEAL.Bricks -c Release --include-symbols --output nupkgs"
 
