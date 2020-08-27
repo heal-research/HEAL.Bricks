@@ -9,6 +9,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HEAL.Bricks.Tests", "HEAL.B
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FB1E0559-E4F5-42D4-ADAB-60A97A27B336}"
 	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		..\.gitattributes = ..\.gitattributes
+		..\.gitignore = ..\.gitignore
+		..\.gitlab-ci.yml = ..\.gitlab-ci.yml
 		.runsettings = .runsettings
 	EndProjectSection
 EndProject
@@ -24,7 +28,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HEAL.Bricks.Tests.BricksRun
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinFormsTestApp", "WinFormsTestApp\WinFormsTestApp.csproj", "{1BCA876D-7745-4A21-BC43-FFCD4DC2DA44}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HEAL.Bricks.XTests", "HEAL.Bricks.XTests\HEAL.Bricks.XTests.csproj", "{9C502284-B2EE-4C0A-8D0C-6F987F1AA265}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HEAL.Bricks.XTests", "HEAL.Bricks.XTests\HEAL.Bricks.XTests.csproj", "{9C502284-B2EE-4C0A-8D0C-6F987F1AA265}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

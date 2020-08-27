@@ -1,0 +1,5 @@
+# automatic line ending normalization
+*       text=auto
+
+# C# specific diff headers
+*.cs    diff=csharp
