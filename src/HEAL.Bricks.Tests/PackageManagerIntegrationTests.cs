@@ -17,19 +17,7 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks.Tests {
   [TestClass]
-  public class PackageManagerTests : PackageTestsBase {
-    #region TestCreate
-    [TestMethod]
-    public void TestCreate() {
-      ISettings settings;
-      ArgumentNullException argumentNullException;
-
-      settings = null;
-      argumentNullException = Assert.ThrowsException<ArgumentNullException>(() => { PackageManager.Create(settings); });
-      Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));
-    }
-    #endregion
-
+  public class PackageManagerIntegrationTests : PackageTestsBase {
     #region TestCtor
     [TestMethod]
     public void TestCtor() {

@@ -8,20 +8,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
-using AutoFixture;
-using Moq;
 using NuGet.Common;
-using NuGet.Packaging.Core;
-using NuGet.Protocol;
-using NuGet.Protocol.Core.Types;
-using NuGet.Versioning;
 using Xunit;
 using Xunit.Abstractions;
+using NuGet.Protocol.Core.Types;
 
 namespace HEAL.Bricks.XTests {
   public class NuGetConnectorUnitTests {
@@ -34,7 +26,7 @@ namespace HEAL.Bricks.XTests {
     }
 
     [Fact]
-    public void Constructor_CurrentFrameworkCorrect() {
+    public void Constructor_ReturnsInstanceWhereFrameworkIsCorrect() {
       string expectedCurrentFrameworkName = Constants.netCoreApp21FrameworkName;
 
       NuGetConnector nuGetConnector = new NuGetConnector(Enumerable.Empty<string>(), logger);
@@ -42,7 +34,7 @@ namespace HEAL.Bricks.XTests {
       Assert.Equal(expectedCurrentFrameworkName, nuGetConnector.CurrentFramework.DotNetFrameworkName);
     }
     [Fact]
-    public void CreateForTests_CurrentFrameworkCorrect() {
+    public void CreateForTests_WithFrameworkName_ReturnsInstanceWhereFrameworkIsCorrect() {
       string currentFrameworkName = Constants.netCoreApp31FrameworkName;
 
       NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(currentFrameworkName, Enumerable.Empty<string>(), logger);
@@ -50,58 +42,74 @@ namespace HEAL.Bricks.XTests {
       Assert.Equal(currentFrameworkName, nuGetConnector.CurrentFramework.DotNetFrameworkName);
     }
 
-    public static IEnumerable<PackageIdentity> CreatePackageIdentities(params (string Package, string Version)[] packages) {
-      return packages.Select(p => new PackageIdentity(p.Package, new NuGetVersion(p.Version)));
-    }
-    public static IEnumerable<IPackageSearchMetadata> CreatePackageSearchMetadata(params (string Package, string Version)[] packages) {
-      return CreatePackageIdentities(packages).Select(id => PackageSearchMetadataBuilder.FromIdentity(id).Build());
-    }
-    public static SourceRepository CreatePackageSearchMetadataSourceRepositoryMock(IEnumerable<IPackageSearchMetadata> packages) {
-      var resource = new Mock<PackageMetadataResource>();
-      resource.Setup(r => r.GetMetadataAsync(It.IsAny<PackageIdentity>(), It.IsAny<SourceCacheContext>(), It.IsAny<ILogger>(), It.IsAny<CancellationToken>()))
-        .Returns<PackageIdentity, SourceCacheContext, ILogger, CancellationToken>((id, cache, logger, token) => Task.FromResult(packages.Where(p => p.Identity.Equals(id)).FirstOrDefault()));
-
-      var repository = new Mock<SourceRepository>();
-      repository.Setup(r => r.GetResourceAsync<PackageMetadataResource>(It.IsAny<CancellationToken>())).Returns(Task.FromResult(resource.Object));
-
-      return repository.Object;
-    }
-
     [Fact]
-    public void GetPackageAsync_PackageFound() {
-      var packages = CreatePackageSearchMetadata(("package", "1.0.0"));
-      var repository = CreatePackageSearchMetadataSourceRepositoryMock(packages);
+    public async Task GetPackageAsync_WithPackageIdentity_ReturnsPackage() {
+      var a = Mock.CreatePackage("a", "1.0.0");
+      var repository = Mock.CreateSourceRepositoryMock(a);
       NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
 
-      var result = nuGetConnector.GetPackageAsync(packages.First().Identity, default).Result;
+      IPackageSearchMetadata result = await nuGetConnector.GetPackageAsync(a.Id, default);
 
-      Assert.Equal(packages.First().Identity, result.Identity);
+      Assert.Equal(a.Id, result.Identity);
     }
     [Fact]
-    public void GetPackageAsync_PackageNotFound() {
-      var packages = CreatePackageSearchMetadata(("package", "1.0.0"));
-      var repository = CreatePackageSearchMetadataSourceRepositoryMock(packages);
-      var missingId = CreatePackageIdentities(("unknown", "1.0.0"));
+    public async Task GetPackageAsync_WithUnknownPackage_ReturnsNull() {
+      var a = Mock.CreatePackage("a", "1.0.0");
+      var repository = Mock.CreateSourceRepositoryMock(a);
+      var missingId = Mock.CreatePackageIdentity("unknown", "1.0.0");
       NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
 
-      var result = nuGetConnector.GetPackageAsync(missingId.First(), default).Result;
+      IPackageSearchMetadata result = await nuGetConnector.GetPackageAsync(missingId, default);
 
       Assert.Null(result);
     }
     [Fact]
-    public void GetPackageAsync_DublicatesRemoved() {
-      var packages1 = CreatePackageSearchMetadata(("package", "1.0.0"), ("duplicate", "1.0.0"));
-      var repository1 = CreatePackageSearchMetadataSourceRepositoryMock(packages1);
-      var packages2 = CreatePackageSearchMetadata(("duplicate", "1.0.0"));
-      var repository2 = CreatePackageSearchMetadataSourceRepositoryMock(packages2);
+    public async Task GetPackageAsync_WithDuplicatedPackage_ReturnsPackage() {
+      var a = Mock.CreatePackage("a", "1.0.0");
+      var duplicate = Mock.CreatePackage("duplicate", "1.0.0");
+      var repository1 = Mock.CreateSourceRepositoryMock(a, duplicate);
+      var repository2 = Mock.CreateSourceRepositoryMock(duplicate);
       NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository1, repository2 }, logger);
 
-      var result = nuGetConnector.GetPackageAsync(packages2.First().Identity, default).Result;
+      IPackageSearchMetadata result = await nuGetConnector.GetPackageAsync(duplicate.Id, default);
 
-      Assert.Equal(packages2.First().Identity, result.Identity);
+      Assert.Equal(duplicate.Id, result.Identity);
     }
 
+    [Fact]
+    public async Task GetRemotePackageAsync_WithNameAndVersion_ReturnsPackage() {
+      var a = Mock.CreatePackage("a", "1.0.0");
+      var b = Mock.CreatePackage("b", "1.0.0");
+      var c = Mock.CreatePackage("c", "1.0.0", ("a", "1.0.0"), ("b", "1.0.0"));
+      var repository = Mock.CreateSourceRepositoryMock(a, b, c);
+      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
 
+      RemotePackageInfo result = await nuGetConnector.GetRemotePackageAsync("c", "1.0.0", default);
 
+      Assert.Equal(c.Id, result.packageIdentity);
+      Assert.Equal(c.Dependencies.OrderBy(x => x.Id), result.Dependencies.OrderBy(x => x.Id).Select(x => x.nuGetPackageDependency));
+    }
+    [Fact]
+    public async Task GetRemotePackageAsync_WithDuplicatedPackage_ReturnsPackage() {
+      var a = Mock.CreatePackage("a", "1.0.0");
+      var duplicate = Mock.CreatePackage("duplicate", "1.0.0");
+      var repository1 = Mock.CreateSourceRepositoryMock(a, duplicate);
+      var repository2 = Mock.CreateSourceRepositoryMock(duplicate);
+      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository1, repository2 }, logger);
+
+      RemotePackageInfo result = await nuGetConnector.GetRemotePackageAsync("duplicate", "1.0.0", default);
+
+      Assert.Equal(duplicate.Id, result.packageIdentity);
+    }
+    [Fact]
+    public async Task GetRemotePackageAsync_WithUnknownPackage_ReturnsNull() {
+      var a = Mock.CreatePackage("a", "1.0.0");
+      var repository = Mock.CreateSourceRepositoryMock(a);
+      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
+
+      RemotePackageInfo result = await nuGetConnector.GetRemotePackageAsync("unknown", "1.0.0", default);
+
+      Assert.Null(result);
+    }
   }
 }

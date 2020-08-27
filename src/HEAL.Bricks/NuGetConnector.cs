@@ -55,7 +55,7 @@ namespace HEAL.Bricks {
       };
     }
 
-    #region essential methods
+    #region INuGetConnector Methods
     public virtual IEnumerable<LocalPackageInfo> GetLocalPackages(string packagesPath, string bricksPackageTag) {
       IEnumerable<PackageFolderReader> packageReaders = Enumerable.Empty<PackageFolderReader>();
       try {
@@ -120,7 +120,6 @@ namespace HEAL.Bricks {
       return latestPackages.Zip(dependencyInfos, (x, y) => new RemotePackageInfo(x, y)).ToArray();
     }
     #endregion
-
 
     #region GetPackageAsync, GetPackagesAsync, SearchPackagesAsync
     public virtual async Task<IPackageSearchMetadata> GetPackageAsync(PackageIdentity identity,

@@ -24,6 +24,12 @@ namespace HEAL.Bricks.XTests {
 
     #region Create
     [Fact]
+    public void Create_WithNullParameter_ThrowsArgumentNullException() {
+      var e = Assert.Throws<ArgumentNullException>(() => PackageManager.Create(null));
+      Assert.False(string.IsNullOrEmpty(e.Message));
+      Assert.False(string.IsNullOrEmpty(e.ParamName));
+    }
+    [Fact]
     public void Create_WithSettingsWhereRepositoriesIsEmpty_ThrowsArgumentException() {
       Settings settings = new Settings();
       settings.Repositories.Clear();
