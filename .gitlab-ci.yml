@@ -11,7 +11,6 @@ build:
     - docker
   artifacts:
     name: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA"
-    when: on_success
     expire_in: 1 month
     paths:
       - "**/bin"
@@ -33,7 +32,7 @@ test:
       cobertura: "**/coverage.cobertura.xml"
   script:
 #    - "dotnet test src/HEAL.Bricks.Tests  --no-build"
-    - "dotnet test src/HEAL.Bricks.XTests --no-build --collect:\"XPlat Code Coverage\""
+    - "dotnet test src/HEAL.Bricks.XTests --collect:\"XPlat Code Coverage\""
 
 pack:
   stage: pack
