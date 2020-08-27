@@ -25,10 +25,10 @@
     <!-- <GitThisAssemblyMetadata>false</GitThisAssemblyMetadata> -->
     <ThisAssemblyNamespace>HEAL.Bricks.PluginTypes</ThisAssemblyNamespace>
     <GitDefaultBranch>master</GitDefaultBranch>
-    <!-- <GitVersionFile>GitInfo.txt</GitVersionFile> -->
+    <GitVersionFile>GitInfo.version</GitVersionFile>
     <GitInfoReportImportance>high</GitInfoReportImportance>
     <!-- <GitIgnoreBranchVersion>false</GitIgnoreBranchVersion> -->
-    <!-- <GitIgnoreTagVersion>false</GitIgnoreTagVersion> -->
+    <GitIgnoreTagVersion>true</GitIgnoreTagVersion>
   </PropertyGroup>
 
   <ItemGroup>
