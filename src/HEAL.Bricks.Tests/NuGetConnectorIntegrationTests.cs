@@ -252,7 +252,7 @@ namespace HEAL.Bricks.Tests {
 
       searchString = "PackageId:NuGet.Protocol";
       includePreReleases = true;
-      expectedPackages = new[] { "NuGet.Protocol.5.8.0-preview.1" };
+      expectedPackages = new[] { "NuGet.Protocol.5.8.0-preview.2.6776" };
       foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, 0, int.MaxValue, default)).Select(x => x.Package.Identity.ToString()).ToArray();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
 

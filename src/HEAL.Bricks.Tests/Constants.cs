@@ -35,7 +35,7 @@ namespace HEAL.Bricks.Tests {
     public const string nameNuGetVersioning = "NuGet.Versioning";
     public const string versionNuGetVersioning = "5.7.0";
     public const string nameVersionNuGetVersioning = nameNuGetVersioning + "." + versionNuGetVersioning;
-    public const string versionPreReleaseNuGetVersioning = "5.8.0-preview.1";
+    public const string versionPreReleaseNuGetVersioning = "5.8.0-preview.2.6776";
     public const string nameVersionPreReleaseNuGetVersioning = nameNuGetVersioning + "." + versionPreReleaseNuGetVersioning;
 
     // nupkg-files of test packages
