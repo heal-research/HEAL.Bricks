@@ -1,27 +1,17 @@
 {
-  "version": "0.1.1-alpha.{height}",
-  "semVer1NumericIdentifierPadding": 4, // optional. Use when your -prerelease includes numeric identifiers and need semver1 support.
+  "$schema": "https://raw.githubusercontent.com/dotnet/Nerdbank.GitVersioning/master/src/NerdBank.GitVersioning/version.schema.json",
+  "version": "0.2-pre",
   "nugetPackageVersion": {
-     "semVer": 2 // optional. Set to either 1 or 2 to control how the NuGet package version string is generated. Default is 1.
+    "semVer": 1
   },
+  "pathFilters": [ "." ],
   "publicReleaseRefSpec": [
-    "^refs/heads/master$", // we release out of master
-    "^refs/tags/v\\d+\\.\\d+" // we also release tags starting with vN.N
+    "^refs/heads/master$",
+    "^refs/tags/v\\d+\\.\\d+"
   ],
-  "cloudBuild": {
-    "setVersionVariables": true,
-    "buildNumber": {
-      "enabled": false,
-      "includeCommitId": {
-        "when": "nonPublicReleaseOnly",
-        "where": "buildMetadata"
-      }
-    }
-  },
-  "release" : {
-    "branchName" : "v{version}",
-    "versionIncrement" : "minor",
-    "firstUnstableTag" : "alpha"
-  },
-  "inherit": false // optional. Set to true in secondary version.json files used to tweak settings for subsets of projects.
+  "release": {
+    "branchName": "v{version}",
+    "versionIncrement": "minor",
+    "firstUnstableTag": "alpha"
+  }
 }
