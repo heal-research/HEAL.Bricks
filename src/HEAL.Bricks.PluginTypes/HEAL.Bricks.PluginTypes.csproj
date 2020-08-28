@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" InitialTargets="SetVersion">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -19,20 +19,8 @@
     <AssemblyOriginatorKeyFile>HEAL.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <!-- <GitSkipCache>false</GitSkipCache> -->
-    <GitThisAssembly>true</GitThisAssembly>
-    <!-- <GitThisAssemblyMetadata>false</GitThisAssemblyMetadata> -->
-    <ThisAssemblyNamespace>HEAL.Bricks.PluginTypes</ThisAssemblyNamespace>
-    <GitDefaultBranch>master</GitDefaultBranch>
-    <GitVersionFile>GitInfo.version</GitVersionFile>
-    <GitInfoReportImportance>high</GitInfoReportImportance>
-    <!-- <GitIgnoreBranchVersion>false</GitIgnoreBranchVersion> -->
-    <GitIgnoreTagVersion>true</GitIgnoreTagVersion>
-  </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="GitInfo" Version="2.0.31">
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.2.31">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -41,13 +29,5 @@
   <ItemGroup>
     <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="" />
   </ItemGroup>
-
-  <Target Name="SetVersion" DependsOnTargets="GitVersion" Condition="'$(GitInfoImported)' == 'true' And '$(ExcludeRestorePackageImports)' != 'true'">
-    <PropertyGroup>
-      <Version Condition="'$(GitSemVerLabel)' != ''">$(GitBaseVersionMajor).$(GitBaseVersionMinor).$(GitBaseVersionPatch)$(GitSemVerDashLabel).$(GitCommits)+$(GitCommit)</Version>
-      <Version Condition="'$(GitSemVerLabel)' == ''">$(GitBaseVersionMajor).$(GitBaseVersionMinor).$(GitBaseVersionPatch)+$(GitCommit)</Version>
-      <PackageVersion>$(Version)</PackageVersion>
-    </PropertyGroup>
-  </Target>
 
 </Project>
