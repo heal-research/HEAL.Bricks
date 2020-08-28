@@ -32,7 +32,7 @@ test:
       cobertura: "**/coverage.cobertura.xml"
   script:
 #    - "dotnet test src/HEAL.Bricks.Tests  --no-build"
-    - dotnet test src/HEAL.Bricks.XTests --collect:\"XPlat Code Coverage\"
+    - dotnet test src/HEAL.Bricks.XTests --collect:"XPlat Code Coverage"
 
 deploy:
   stage: deploy
