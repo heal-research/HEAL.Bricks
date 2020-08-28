@@ -5,55 +5,83 @@
  */
 #endregion
 
-using HEAL.Attic;
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
-  [StorableType("612F98AF-E254-4C5E-BD41-75B4F1D9B96D")]
-  public class ApplicationRunner : Runner {
-    /// <summary>
-    /// Arguments for the StartApplication.
-    /// </summary>
-    [Storable]
-    public ICommandLineArgument[] Args { get; set; }
+  [Serializable]
+  public sealed class ApplicationRunner : PackageManagerProcessRunner {
+    public ApplicationInfo ApplicationInfo { get; }
+    public ICommandLineArgument[] Arguments { get; }
 
-    /// <summary>
-    /// The application which should run in child process.
-    /// </summary>
-    public IApplication StartApplication {
-      get {
-        lock (locker) {
-          if (application == null)
-            application = (IApplication)new ProtoBufSerializer().Deserialize(serializedStartApplication);
-          return application;
-        }
-      }
-      set {
-        lock (locker) {
-          serializedStartApplication = new ProtoBufSerializer().Serialize(value);
-          application = value;
-        }
+    public ApplicationRunner(ISettings settings, ApplicationInfo applicationInfo, ICommandLineArgument[] arguments = null, IProcessRunnerStartInfo startInfo = null) : base(settings, startInfo ?? new NetCoreEntryAssemblyStartInfo()) {
+      ApplicationInfo = applicationInfo;
+      Arguments = arguments;
+      if (applicationInfo.Kind == ApplicationKind.Console) {
+        ProcessRunnerStartInfo.CommunicationMode = CommunicationMode.StdInOut;
       }
     }
-    // Encapsulated application is necessary, because it is not possible to 
-    // instantly deserialize the application, before all assemblies are loaded.
-    [Storable]
-    private byte[] serializedStartApplication = new byte[0];
 
-    // cache application to prevent new instances every get call of StartApplication
-    private IApplication application;
-    private object locker = new object();
+    protected override async Task ExecuteOnClientAsync(IPackageManager packageManager, CancellationToken cancellationToken) {
+      ITypeDiscoverer typeDiscoverer = TypeDiscoverer.Create();
+      Type applicationType = typeDiscoverer.GetTypes(typeof(IApplication)).Where(x => x.FullName == ApplicationInfo.TypeName).SingleOrDefault();
+      
+      if (applicationType == null) {
+        throw new InvalidOperationException($"Cannot find application {ApplicationInfo.Name}.");
+      }
 
-    protected override void Execute() {
-      StartApplication.Run(Args);
+      IApplication application = Activator.CreateInstance(applicationType) as IApplication;
+      await application.RunAsync(Arguments, cancellationToken);
     }
 
-    protected override void OnRunnerMessage(RunnerMessage message) {
-      if (message is PauseRunnerMessage)
-        StartApplication.OnPause();
-      else if (message is ResumeRunnerMessage)
-        StartApplication.OnResume();
-      else if (message is CancelRunnerMessage)
-        StartApplication.OnCancel();
+    protected override async Task ExecuteOnHostAsync(CancellationToken cancellationToken) {
+      if (ApplicationInfo.Kind == ApplicationKind.Console) {
+        Task reader = Task.Run(() => {
+          int ch = process.StandardOutput.Read();
+          while ((ch != -1) && !cancellationToken.IsCancellationRequested) {
+            Console.Write((char)ch);
+            ch = process.StandardOutput.Read();
+          }
+        }, cancellationToken);
+
+        //// alternative code for writer -> polling from console
+        //// TODO: decide which version to use
+        //Task writer = Task.Run(() => {
+        //  while (Status == RunnerStatus.Running) {
+        //    if (Console.KeyAvailable) {
+        //      string s = Console.ReadLine();
+        //      process.StandardInput.WriteLine(s);
+        //    } else {
+        //      while (!Console.KeyAvailable && (Status == RunnerStatus.Running)) {
+        //        Task.Delay(250).Wait();
+        //      }
+        //    }
+        //  }
+        //}, cancellationToken);
+
+        Task writer = Task.Run(() => {
+          string s = Console.ReadLine();
+          while ((s != null) && !cancellationToken.IsCancellationRequested) {
+            process.StandardInput.WriteLine(s);
+            s = Console.ReadLine();
+          }
+        }, cancellationToken);
+
+        await reader;
+
+        // not needed if writer polls
+        TextReader stdIn = Console.In;
+        Console.SetIn(new StringReader(""));
+        Console.WriteLine($"Application {ApplicationInfo.Name} terminated. Press ENTER to continue.");
+
+        await writer;
+
+        // not needed if writer polls
+        Console.SetIn(stdIn);
+      }
     }
   }
 }

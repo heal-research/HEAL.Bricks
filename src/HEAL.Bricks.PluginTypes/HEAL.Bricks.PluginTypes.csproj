@@ -2,34 +2,28 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>HEAL.Bricks</RootNamespace>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Authors>Heuristic and Evolutionary Algorithms Laboratory (HEAL) and Contributors</Authors>
     <Company>University of Applied Sciences Upper Austria</Company>
-    <Description>HEAL.Bricks is a plug-in framework for .NET. It discovers, loads, and executes plug-ins and supports execution isolation in separate processes or Docker containers.</Description>
+    <Product>HEAL.Bricks</Product>
     <Copyright>(c) Heuristic and Evolutionary Algorithms Laboratory (HEAL)</Copyright>
+    <Description>HEAL.Bricks is a plug-in framework for .NET. It discovers, loads, and executes plug-ins and supports execution isolation in separate processes or Docker containers.</Description>
     <PackageProjectUrl>https://github.com/HeuristicLab/HEAL.Bricks</PackageProjectUrl>
     <RepositoryUrl>https://github.com/HeuristicLab/HEAL.Bricks.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>HEAL.snk</AssemblyOriginatorKeyFile>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <ThisAssemblyNamespace>HEAL.Bricks</ThisAssemblyNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dawn.Guard" Version="1.12.0" />
     <PackageReference Include="Nerdbank.GitVersioning" Version="3.2.31">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="NuGet.Resolver" Version="5.4.0" />
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\HEAL.Bricks.PluginTypes\HEAL.Bricks.PluginTypes.csproj" />
   </ItemGroup>
 
   <ItemGroup>

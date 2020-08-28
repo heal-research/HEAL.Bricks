@@ -1,0 +1,19 @@
+PluginA 0.1.0-alpha.1  -> Bricks.PluginTypes 0.1.0-alpha.9
+PluginA 0.1.0-alpha.2  -> Bricks.PluginTypes 0.1.0-alpha.9
+PluginA 0.1.0          -> Bricks.PluginTypes 0.1.0-alpha.9
+PluginA 0.2.0-alpha.1  -> Bricks.PluginTypes 0.1.0-alpha.9
+PluginA 0.2.0          -> Bricks.PluginTypes 0.1.0-alpha.9
+PluginA 0.2.1          -> Bricks.PluginTypes 0.1.0-alpha.9
+PluginA 0.3.0-alpha.1  -> Bricks.PluginTypes 0.1.0-alpha.9
+PluginA 0.3.0-beta.1   -> Bricks.PluginTypes 0.1.0-alpha.9
+PluginA 0.3.0          -> Bricks.PluginTypes 0.1.0-alpha.9
+
+PluginB 0.1.0-alpha.1  -> PluginA 0.1.0
+PluginB 0.1.0-alpha.2  -> PluginA 0.1.0
+PluginB 0.1.0          -> PluginA 0.1.0
+PluginB 0.2.0-alpha.1  -> PluginA 0.1.0
+PluginB 0.2.0          -> PluginA 0.2.0
+PluginB 0.3.0-alpha.1  -> PluginA 0.2.1
+PluginB 0.3.0-alpha.2  -> PluginA 0.3.0-beta.1
+PluginB 0.3.0          -> PluginA 0.3.0
+PluginB 0.3.1          -> PluginA 0.3.0
