@@ -15,13 +15,13 @@ namespace HEAL.Bricks.Tests {
 
     // package repositories
     public const string publicNuGetRepository = "https://api.nuget.org/v3/index.json";
-    public const string localPackagesRelativePath = @"TestPackageSources\local";
-    public const string localPackagesCacheRelativePath = @"TestPackageSources\cache";
-    public const string remoteOfficialRepositoryRelativePath = @"TestPackageSources\remote";
-    public const string remoteDevRepositoryRelativePath = @"TestPackageSources\remote_dev";
+    public const string localPackagesRelativePath = @"TestPackageSources/local";
+    public const string localPackagesCacheRelativePath = @"TestPackageSources/cache";
+    public const string remoteOfficialRepositoryRelativePath = @"TestPackageSources/remote";
+    public const string remoteDevRepositoryRelativePath = @"TestPackageSources/remote_dev";
 
     // HEAL.Bricks package
-    public const string pathBricksPluginTypes = @"TestPlugins\HEAL.Bricks.PluginTypes.0.1.0-alpha.9.nupkg";
+    public const string pathBricksPluginTypes = @"TestPlugins/HEAL.Bricks.PluginTypes.0.1.0-alpha.9.nupkg";
     public const string nameBricksPluginTypes = "HEAL.Bricks.PluginTypes";
     public const string versionBricksPluginTypes = "0.1.0-alpha.9";
     public const string nameVersionBricksPluginTypes = nameBricksPluginTypes + "." + versionBricksPluginTypes;
@@ -39,25 +39,25 @@ namespace HEAL.Bricks.Tests {
     public const string nameVersionPreReleaseNuGetVersioning = nameNuGetVersioning + "." + versionPreReleaseNuGetVersioning;
 
     // nupkg-files of test packages
-    public const string pathPluginA_010_alpha1 = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.1.0-alpha.1.nupkg";
-    public const string pathPluginA_010_alpha2 = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.1.0-alpha.2.nupkg";
-    public const string pathPluginA_010        = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.1.0.nupkg";
-    public const string pathPluginA_020_alpha1 = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.2.0-alpha.1.nupkg";
-    public const string pathPluginA_020        = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.2.0.nupkg";
-    public const string pathPluginA_021        = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.2.1.nupkg";
-    public const string pathPluginA_030_alpha1 = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.3.0-alpha.1.nupkg";
-    public const string pathPluginA_030_beta1  = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.3.0-beta.1.nupkg";
-    public const string pathPluginA_030        = @"TestPlugins\HEAL.Bricks.Tests.PluginA.0.3.0.nupkg";
-    public const string pathPluginB_010_alpha1 = @"TestPlugins\HEAL.Bricks.Tests.PluginB.0.1.0-alpha.1.nupkg";
-    public const string pathPluginB_010_alpha2 = @"TestPlugins\HEAL.Bricks.Tests.PluginB.0.1.0-alpha.2.nupkg";
-    public const string pathPluginB_010        = @"TestPlugins\HEAL.Bricks.Tests.PluginB.0.1.0.nupkg";
-    public const string pathPluginB_020_alpha1 = @"TestPlugins\HEAL.Bricks.Tests.PluginB.0.2.0-alpha.1.nupkg";
-    public const string pathPluginB_020        = @"TestPlugins\HEAL.Bricks.Tests.PluginB.0.2.0.nupkg";
-    public const string pathPluginB_030_alpha1 = @"TestPlugins\HEAL.Bricks.Tests.PluginB.0.3.0-alpha.1.nupkg";
-    public const string pathPluginB_030_alpha2 = @"TestPlugins\HEAL.Bricks.Tests.PluginB.0.3.0-alpha.2.nupkg";
-    public const string pathPluginB_030        = @"TestPlugins\HEAL.Bricks.Tests.PluginB.0.3.0.nupkg";
-    public const string pathPluginB_031        = @"TestPlugins\HEAL.Bricks.Tests.PluginB.0.3.1.nupkg";
-    public const string pathEchoApp_100        = @"TestPlugins\HEAL.Bricks.Tests.EchoApplication.1.0.0.nupkg";
+    public const string pathPluginA_010_alpha1 = @"TestPlugins/HEAL.Bricks.Tests.PluginA.0.1.0-alpha.1.nupkg";
+    public const string pathPluginA_010_alpha2 = @"TestPlugins/HEAL.Bricks.Tests.PluginA.0.1.0-alpha.2.nupkg";
+    public const string pathPluginA_010        = @"TestPlugins/HEAL.Bricks.Tests.PluginA.0.1.0.nupkg";
+    public const string pathPluginA_020_alpha1 = @"TestPlugins/HEAL.Bricks.Tests.PluginA.0.2.0-alpha.1.nupkg";
+    public const string pathPluginA_020        = @"TestPlugins/HEAL.Bricks.Tests.PluginA.0.2.0.nupkg";
+    public const string pathPluginA_021        = @"TestPlugins/HEAL.Bricks.Tests.PluginA.0.2.1.nupkg";
+    public const string pathPluginA_030_alpha1 = @"TestPlugins/HEAL.Bricks.Tests.PluginA.0.3.0-alpha.1.nupkg";
+    public const string pathPluginA_030_beta1  = @"TestPlugins/HEAL.Bricks.Tests.PluginA.0.3.0-beta.1.nupkg";
+    public const string pathPluginA_030        = @"TestPlugins/HEAL.Bricks.Tests.PluginA.0.3.0.nupkg";
+    public const string pathPluginB_010_alpha1 = @"TestPlugins/HEAL.Bricks.Tests.PluginB.0.1.0-alpha.1.nupkg";
+    public const string pathPluginB_010_alpha2 = @"TestPlugins/HEAL.Bricks.Tests.PluginB.0.1.0-alpha.2.nupkg";
+    public const string pathPluginB_010        = @"TestPlugins/HEAL.Bricks.Tests.PluginB.0.1.0.nupkg";
+    public const string pathPluginB_020_alpha1 = @"TestPlugins/HEAL.Bricks.Tests.PluginB.0.2.0-alpha.1.nupkg";
+    public const string pathPluginB_020        = @"TestPlugins/HEAL.Bricks.Tests.PluginB.0.2.0.nupkg";
+    public const string pathPluginB_030_alpha1 = @"TestPlugins/HEAL.Bricks.Tests.PluginB.0.3.0-alpha.1.nupkg";
+    public const string pathPluginB_030_alpha2 = @"TestPlugins/HEAL.Bricks.Tests.PluginB.0.3.0-alpha.2.nupkg";
+    public const string pathPluginB_030        = @"TestPlugins/HEAL.Bricks.Tests.PluginB.0.3.0.nupkg";
+    public const string pathPluginB_031        = @"TestPlugins/HEAL.Bricks.Tests.PluginB.0.3.1.nupkg";
+    public const string pathEchoApp_100        = @"TestPlugins/HEAL.Bricks.Tests.EchoApplication.1.0.0.nupkg";
 
     // names of test packages
     public const string nameInvalid = "HEAL.Bricks.Tests.InvalidPluginName";

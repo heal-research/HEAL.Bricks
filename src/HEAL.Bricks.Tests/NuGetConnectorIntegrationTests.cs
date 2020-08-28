@@ -890,8 +890,8 @@ namespace HEAL.Bricks.Tests {
     [TestMethod]
     public async Task TestGetPackageDownloaderAsync() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: false);
-      string remoteOfficialRepository = RemoteOfficialRepositoryAbsolutePath;
-      string remoteDevRepository = RemoteDevRepositoryAbsolutePath;
+      string remoteOfficialRepository = RemoteOfficialRepositoryAbsolutePath.Replace(@"\", "/");
+      string remoteDevRepository = RemoteDevRepositoryAbsolutePath.Replace(@"\", "/");
 
       PackageIdentity package;
       IPackageDownloader foundPackageDownloader;
@@ -900,28 +900,28 @@ namespace HEAL.Bricks.Tests {
       using (foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default)) {
         Assert.IsNotNull(foundPackageDownloader);
         Assert.AreEqual(package, await foundPackageDownloader.CoreReader.GetIdentityAsync(default));
-        Assert.AreEqual(remoteOfficialRepository, foundPackageDownloader.Source);
+        Assert.AreEqual(remoteOfficialRepository, foundPackageDownloader.Source.Replace(@"\", "/"));
       }
 
       package = CreatePackageIdentity(Constants.namePluginA, Constants.version010);
       using (foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default)) {
         Assert.IsNotNull(foundPackageDownloader);
         Assert.AreEqual(package, await foundPackageDownloader.CoreReader.GetIdentityAsync(default));
-        Assert.AreEqual(remoteOfficialRepository, foundPackageDownloader.Source);
+        Assert.AreEqual(remoteOfficialRepository, foundPackageDownloader.Source.Replace(@"\", "/"));
       }
 
       package = CreatePackageIdentity(Constants.namePluginA, Constants.version030_beta1);
       using (foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default)) {
         Assert.IsNotNull(foundPackageDownloader);
         Assert.AreEqual(package, await foundPackageDownloader.CoreReader.GetIdentityAsync(default));
-        Assert.AreEqual(remoteDevRepository, foundPackageDownloader.Source);
+        Assert.AreEqual(remoteDevRepository, foundPackageDownloader.Source.Replace(@"\", "/"));
       }
 
       package = CreatePackageIdentity(Constants.namePluginA, Constants.version030);
       using (foundPackageDownloader = await nuGetConnector.GetPackageDownloaderAsync(package, default)) {
         Assert.IsNotNull(foundPackageDownloader);
         Assert.AreEqual(package, await foundPackageDownloader.CoreReader.GetIdentityAsync(default));
-        Assert.AreEqual(remoteDevRepository, foundPackageDownloader.Source);
+        Assert.AreEqual(remoteDevRepository, foundPackageDownloader.Source.Replace(@"\", "/"));
       }
 
       package = CreatePackageIdentity(Constants.namePluginA, Constants.version000);
