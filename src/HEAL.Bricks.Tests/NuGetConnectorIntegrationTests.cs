@@ -453,7 +453,7 @@ namespace HEAL.Bricks.Tests {
       sw.Restart();
       foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(dependency, getDependenciesRecursively, default)).ToArray();
       sw.Stop();
-      CollectionAssert.AreEqual(expectedPackages, foundPackages);
+      CollectionAssert.AreEqual(expectedPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray(), foundPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray());
       for (int i = 0; i < foundPackages.Length; i++) {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
@@ -497,7 +497,7 @@ namespace HEAL.Bricks.Tests {
       sw.Restart();
       foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(dependency, getDependenciesRecursively, default)).ToArray();
       sw.Stop();
-      CollectionAssert.AreEqual(expectedPackages, foundPackages);
+      CollectionAssert.AreEqual(expectedPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray(), foundPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray());
       for (int i = 0; i < foundPackages.Length; i++) {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
@@ -547,7 +547,7 @@ namespace HEAL.Bricks.Tests {
       sw.Restart();
       foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(dependency, getDependenciesRecursively, default)).ToArray();
       sw.Stop();
-      CollectionAssert.AreEqual(expectedPackages, foundPackages);
+      CollectionAssert.AreEqual(expectedPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray(), foundPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray());
       for (int i = 0; i < foundPackages.Length; i++) {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
@@ -586,7 +586,7 @@ namespace HEAL.Bricks.Tests {
       sw.Restart();
       foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(dependencies, getDependenciesRecursively, default)).ToArray();
       sw.Stop();
-      CollectionAssert.AreEqual(expectedPackages, foundPackages);
+      CollectionAssert.AreEqual(expectedPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray(), foundPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray());
       for (int i = 0; i < foundPackages.Length; i++) {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
@@ -631,7 +631,7 @@ namespace HEAL.Bricks.Tests {
       sw.Restart();
       foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(dependencies, getDependenciesRecursively, default)).ToArray();
       sw.Stop();
-      CollectionAssert.AreEqual(expectedPackages, foundPackages);
+      CollectionAssert.AreEqual(expectedPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray(), foundPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray());
       for (int i = 0; i < foundPackages.Length; i++) {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
