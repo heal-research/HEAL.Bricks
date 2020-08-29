@@ -308,10 +308,9 @@ namespace HEAL.Bricks.Tests {
       sw.Restart();
       foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, getDependenciesRecursively, default)).ToArray();
       sw.Stop();
-      CollectionAssert.AreEqual(expectedPackages, foundPackages);
-      for (int i = 0; i < foundPackages.Length; i++) {
-        foundDependencies = foundPackages[i].Dependencies.ToArray();
-        CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
+      CollectionAssert.AreEqual(expectedPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray(), foundPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray());
+      foreach (var (Expected, Found) in expectedPackages.Zip(expectedDependencies).OrderBy(x => x.First.Id).ThenBy(x => x.First.Version).Zip(foundPackages.OrderBy(x => x.Id).ThenBy(x => x.Version))) {
+        CollectionAssert.AreEqual(Expected.Second.ToArray(), Found.Dependencies.ToArray(), NuGetPackageDependencyComparer.Default);
       }
       TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
@@ -334,10 +333,9 @@ namespace HEAL.Bricks.Tests {
       sw.Restart();
       foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, getDependenciesRecursively, default)).ToArray();
       sw.Stop();
-      CollectionAssert.AreEqual(expectedPackages, foundPackages);
-      for (int i = 0; i < foundPackages.Length; i++) {
-        foundDependencies = foundPackages[i].Dependencies.ToArray();
-        CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
+      CollectionAssert.AreEqual(expectedPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray(), foundPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray());
+      foreach (var (Expected, Found) in expectedPackages.Zip(expectedDependencies).OrderBy(x => x.First.Id).ThenBy(x => x.First.Version).Zip(foundPackages.OrderBy(x => x.Id).ThenBy(x => x.Version))) {
+        CollectionAssert.AreEqual(Expected.Second.ToArray(), Found.Dependencies.ToArray(), NuGetPackageDependencyComparer.Default);
       }
       TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
@@ -356,10 +354,9 @@ namespace HEAL.Bricks.Tests {
       sw.Restart();
       foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(package, getDependenciesRecursively, default)).ToArray();
       sw.Stop();
-      CollectionAssert.AreEqual(expectedPackages, foundPackages);
-      for (int i = 0; i < foundPackages.Length; i++) {
-        foundDependencies = foundPackages[i].Dependencies.ToArray();
-        CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
+      CollectionAssert.AreEqual(expectedPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray(), foundPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray());
+      foreach (var (Expected, Found) in expectedPackages.Zip(expectedDependencies).OrderBy(x => x.First.Id).ThenBy(x => x.First.Version).Zip(foundPackages.OrderBy(x => x.Id).ThenBy(x => x.Version))) {
+        CollectionAssert.AreEqual(Expected.Second.ToArray(), Found.Dependencies.ToArray(), NuGetPackageDependencyComparer.Default);
       }
       TestContext.WriteLine($"{(getDependenciesRecursively ? "Recursive" : "Non-recursive")} dependency resolution of {package}");
       TestContext.WriteLine("Duration: " + sw.ElapsedMilliseconds);
