@@ -419,6 +419,14 @@ namespace HEAL.Bricks.Tests {
       sw.Restart();
       foundPackages = (await nuGetConnector.GetPackageDependenciesAsync(packages, getDependenciesRecursively, default)).ToArray();
       sw.Stop();
+
+      TestContext.WriteLine("EXPECTED");
+      foreach (var pkg in expectedPackages) TestContext.WriteLine(pkg.ToString());
+      TestContext.WriteLine("FOUND");
+      foreach (var pkg in foundPackages) TestContext.WriteLine(pkg.ToString());
+
+
+
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
       for (int i = 0; i < foundPackages.Length; i++) {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
