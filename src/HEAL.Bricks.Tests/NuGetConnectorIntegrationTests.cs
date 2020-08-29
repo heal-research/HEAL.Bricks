@@ -425,9 +425,7 @@ namespace HEAL.Bricks.Tests {
       TestContext.WriteLine("FOUND");
       foreach (var pkg in foundPackages) TestContext.WriteLine(pkg.ToString());
 
-
-
-      CollectionAssert.AreEqual(expectedPackages, foundPackages);
+      CollectionAssert.AreEqual(expectedPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray(), foundPackages.OrderBy(x => x.Id).ThenBy(x => x.Version).ToArray());
       for (int i = 0; i < foundPackages.Length; i++) {
         foundDependencies = foundPackages[i].Dependencies.ToArray();
         CollectionAssert.AreEqual(expectedDependencies[i], foundDependencies, NuGetPackageDependencyComparer.Default);
