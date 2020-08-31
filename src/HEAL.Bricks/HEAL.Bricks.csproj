@@ -4,18 +4,19 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>Heuristic and Evolutionary Algorithms Laboratory (HEAL) and Contributors</Authors>
     <Company>University of Applied Sciences Upper Austria</Company>
+    <Product>HEAL.Bricks</Product>
     <Description>HEAL.Bricks is a plug-in framework for .NET. It discovers, loads, and executes plug-ins and supports execution isolation in separate processes or Docker containers.</Description>
     <Copyright>(c) Heuristic and Evolutionary Algorithms Laboratory (HEAL)</Copyright>
     <PackageProjectUrl>https://github.com/HeuristicLab/HEAL.Bricks</PackageProjectUrl>
     <RepositoryUrl>https://github.com/HeuristicLab/HEAL.Bricks.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>HEAL.snk</AssemblyOriginatorKeyFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>HEAL.snk</AssemblyOriginatorKeyFile>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <ThisAssemblyNamespace>HEAL.Bricks</ThisAssemblyNamespace>
+    <RootNamespace>HEAL.Bricks</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

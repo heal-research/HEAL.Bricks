@@ -14,6 +14,8 @@ using NuGet.Versioning;
 using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
+using System;
+using System.Runtime.InteropServices;
 
 namespace HEAL.Bricks.Tests {
   [TestClass]
@@ -74,6 +76,25 @@ namespace HEAL.Bricks.Tests {
     }
     protected string RemoteDevRepositoryAbsolutePath {
       get { return Path.Combine(TestExecutionPath, Constants.remoteDevRepositoryRelativePath); }
+    }
+    protected string DotnetExeAbsolutePath {
+      get {
+        return Platform switch
+        {
+          Platform.Windows => Constants.dotnetExeWindowsPath,
+          Platform.Linux => Constants.dotnetExeLinuxPath,
+          _ => throw new PlatformNotSupportedException()
+        };
+      }
+    }
+    protected Platform Platform {
+      get {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return Platform.Windows;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return Platform.Linux;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) return Platform.OSX;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD)) return Platform.FreeBSD;
+        return Platform.Unknown;
+      }
     }
 
     [AssemblyInitialize]

@@ -9,6 +9,14 @@ using System.IO;
 using System.Reflection;
 
 namespace HEAL.Bricks.Tests {
+  public enum Platform {
+    Unknown,
+    Windows,
+    Linux,
+    OSX,
+    FreeBSD
+  }
+
   public class Constants {
     // deployment path
     public const string testPackageSourcesRelativePath = @"TestPackageSources";
@@ -19,6 +27,11 @@ namespace HEAL.Bricks.Tests {
     public const string localPackagesCacheRelativePath = @"TestPackageSources/cache";
     public const string remoteOfficialRepositoryRelativePath = @"TestPackageSources/remote";
     public const string remoteDevRepositoryRelativePath = @"TestPackageSources/remote_dev";
+
+    // dotnet.exe paths
+    public const string dotnetExeWindowsPath = @"C:\Program Files\dotnet\dotnet.exe";
+    public const string dotnetExeLinuxPath = "/usr/bin/dotnet";
+
 
     // HEAL.Bricks package
     public const string pathBricksPluginTypes = @"TestPlugins/HEAL.Bricks.PluginTypes.0.1.0-alpha.9.nupkg";

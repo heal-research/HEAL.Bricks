@@ -92,8 +92,8 @@ namespace HEAL.Bricks.Tests {
 
     #region Helpers
     private IProcessRunnerStartInfo CreateBricksRunnerStartInfo() {
-      string runnerPath = Path.Combine(TestDeploymentPath, "HEAL.Bricks.Tests.BricksRunner.exe");
-      return new GenericProgramStartInfo(runnerPath);
+      string runnerPath = Path.Combine(TestDeploymentPath, "HEAL.Bricks.Tests.BricksRunner.dll");
+      return new GenericProgramStartInfo(DotnetExeAbsolutePath, "\"" + runnerPath + "\"");
     }
     #endregion
   }
