@@ -32,4 +32,13 @@
     <ProjectReference Include="..\HEAL.Bricks\HEAL.Bricks.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="HEAL.Bricks.Tests.BricksRunner.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="HEAL.Bricks.Tests.BricksRunner.runtimeconfig.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

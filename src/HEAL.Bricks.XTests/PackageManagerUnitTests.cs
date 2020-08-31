@@ -179,14 +179,14 @@ namespace HEAL.Bricks.XTests {
     [InlineData("c", new string[] { "abc", "c" })]
     [InlineData("x", new string[] { })]
     public async Task SearchRemotePackagesAsync_WithSearchString_ReturnsFoundPackages(string searchString, string[] expectedPackageNames) {
-      RemotePackageInfo[] localPackages = new[] {
+      RemotePackageInfo[] remotePackages = new[] {
         RemotePackageInfo.CreateForTests("a", "1.0.0"),
         RemotePackageInfo.CreateForTests("ab", "1.0.0"),
         RemotePackageInfo.CreateForTests("abc", "1.0.0"),
         RemotePackageInfo.CreateForTests("b", "1.0.0"),
         RemotePackageInfo.CreateForTests("c", "1.0.0")
       };
-      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages);
+      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(remotePackages);
       IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
 
       IEnumerable<string> result = (await pm.SearchRemotePackagesAsync(searchString, 0, 10)).Select(x => x.Package.Id);
@@ -209,12 +209,12 @@ namespace HEAL.Bricks.XTests {
     [InlineData("x", "1.0.0", null, null)]
     [InlineData("c", "2.0.0", null, null)]
     public async Task GetRemotePackageAsync_WithPackageAndVersion_ReturnsPackage(string packageId, string version, string expectedPackageId, string expectedVersion) {
-      RemotePackageInfo[] localPackages = new[] {
+      RemotePackageInfo[] remotePackages = new[] {
         RemotePackageInfo.CreateForTests("a", "1.0.0"),
         RemotePackageInfo.CreateForTests("b", "1.0.0"),
         RemotePackageInfo.CreateForTests("c", "1.0.0")
       };
-      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages);
+      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(remotePackages);
       IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
 
       RemotePackageInfo result = await pm.GetRemotePackageAsync(packageId, version);
@@ -251,13 +251,13 @@ namespace HEAL.Bricks.XTests {
     [InlineData("a", false, "a", new string[] { "1.0.0", "2.0.0" })]
     [InlineData("x", false, null, null)]
     public async Task GetRemotePackagesAsync_WithPackage_ReturnsPackages(string packageId, bool includePreReleases, string expectedPackageId, string[] expectedVersions) {
-      RemotePackageInfo[] localPackages = new[] {
+      RemotePackageInfo[] remotePackages = new[] {
         RemotePackageInfo.CreateForTests("a", "1.0.0"),
         RemotePackageInfo.CreateForTests("a", "2.0.0-alpha.1"),
         RemotePackageInfo.CreateForTests("a", "2.0.0"),
         RemotePackageInfo.CreateForTests("b", "1.0.0"),
       };
-      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages);
+      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(remotePackages);
       IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
 
       IEnumerable<RemotePackageInfo> result = await pm.GetRemotePackagesAsync(packageId, includePreReleases);
