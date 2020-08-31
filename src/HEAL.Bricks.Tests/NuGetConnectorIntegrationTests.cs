@@ -294,7 +294,6 @@ namespace HEAL.Bricks.Tests {
       PackageIdentity[] expectedPackages;
       NuGetPackageDependency[][] expectedDependencies;
       SourcePackageDependencyInfo[] foundPackages;
-      NuGetPackageDependency[] foundDependencies;
       PackageIdentityComparer packageIdentityComparer = PackageIdentityComparer.Default;
       Stopwatch sw = new Stopwatch();
 
