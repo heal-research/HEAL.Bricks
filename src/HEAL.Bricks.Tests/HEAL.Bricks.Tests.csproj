@@ -41,9 +41,6 @@
     <None Update="HEAL.Bricks.Tests.BricksRunner.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="HEAL.Bricks.Tests.BricksRunner.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="HEAL.Bricks.Tests.BricksRunner.runtimeconfig.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
