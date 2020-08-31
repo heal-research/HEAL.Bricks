@@ -23,14 +23,6 @@ namespace HEAL.Bricks {
     }
     public virtual string Arguments { get; set; }
     public virtual CommunicationMode CommunicationMode { get; set; }
-    // TODO: reconsider if it is really a good idea to provide using alternative user accounts
-    //       maybe we do not need this, as we provide other ways of isolation (e.g. docker)
-    public virtual string UserName { get; set; }
-    public virtual string UserDomain { get; set; }
-    // TODO: to discuss
-    // we do not use SecureString to store a user password here, as SecureString is not recommended anymore (see https://github.com/dotnet/platform-compat/blob/master/docs/DE0001.md)
-    // we expect that the used user account has strongly restricted privileges, therefore storing the password in clear text is not that critical (???)
-    public virtual string UserPassword { get; set; }
 
     public ProcessRunnerStartInfo(string programPath, string arguments = null, CommunicationMode communicationMode = CommunicationMode.AnonymousPipes) {
       ProgramPath = programPath;

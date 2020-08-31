@@ -19,34 +19,19 @@ namespace HEAL.Bricks.Tests {
       ProcessRunnerStartInfo processRunnerStartInfo;
       string programPath = "programPath";
       string arguments = "arguments";
-      string userName = "userName";
-      string userDomain = "userDomain";
-      string userPassword = "userPassword";
       ArgumentNullException argumentNullException;
       ArgumentException argumentException;
 
       processRunnerStartInfo = new ProcessRunnerStartInfo(programPath);
       Assert.AreEqual(programPath, processRunnerStartInfo.ProgramPath);
       Assert.IsNull(processRunnerStartInfo.Arguments);
-      Assert.IsNull(processRunnerStartInfo.UserName);
-      Assert.IsNull(processRunnerStartInfo.UserDomain);
-      Assert.IsNull(processRunnerStartInfo.UserPassword);
 
       processRunnerStartInfo.Arguments = arguments;
-      processRunnerStartInfo.UserName = userName;
-      processRunnerStartInfo.UserDomain = userDomain;
-      processRunnerStartInfo.UserPassword = userPassword;
       Assert.AreEqual(arguments, processRunnerStartInfo.Arguments);
-      Assert.AreEqual(userName, processRunnerStartInfo.UserName);
-      Assert.AreEqual(userDomain, processRunnerStartInfo.UserDomain);
-      Assert.AreEqual(userPassword, processRunnerStartInfo.UserPassword);
 
       processRunnerStartInfo = new ProcessRunnerStartInfo(programPath, arguments);
       Assert.AreEqual(programPath, processRunnerStartInfo.ProgramPath);
       Assert.AreEqual(arguments, processRunnerStartInfo.Arguments);
-      Assert.IsNull(processRunnerStartInfo.UserName);
-      Assert.IsNull(processRunnerStartInfo.UserDomain);
-      Assert.IsNull(processRunnerStartInfo.UserPassword);
 
       argumentNullException = Assert.ThrowsException<ArgumentNullException>(() => processRunnerStartInfo.ProgramPath = null);
       Assert.IsFalse(string.IsNullOrEmpty(argumentNullException.ParamName));

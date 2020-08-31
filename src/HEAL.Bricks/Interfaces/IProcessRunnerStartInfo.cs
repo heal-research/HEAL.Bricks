@@ -10,8 +10,5 @@ namespace HEAL.Bricks {
     string ProgramPath { get; set; }
     string Arguments { get; set; }
     CommunicationMode CommunicationMode { get; set; }
-    string UserName { get; set; }
-    string UserDomain { get; set; }
-    string UserPassword { get; set; }
   }
 }
