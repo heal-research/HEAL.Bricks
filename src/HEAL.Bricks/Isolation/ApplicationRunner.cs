@@ -6,6 +6,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -13,11 +14,11 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   [Serializable]
-  public sealed class ApplicationRunner : PackageManagerProcessRunner {
+  public sealed class ApplicationRunner : PackageLoaderProcessRunner {
     public ApplicationInfo ApplicationInfo { get; }
     public ICommandLineArgument[] Arguments { get; }
 
-    public ApplicationRunner(ISettings settings, ApplicationInfo applicationInfo, ICommandLineArgument[] arguments = null, IProcessRunnerStartInfo startInfo = null) : base(settings, startInfo ?? new NetCoreEntryAssemblyStartInfo()) {
+    public ApplicationRunner(IEnumerable<PackageLoadInfo> packages, ApplicationInfo applicationInfo, ICommandLineArgument[] arguments = null, IProcessRunnerStartInfo startInfo = null) : base(packages, startInfo ?? new NetCoreEntryAssemblyStartInfo()) {
       ApplicationInfo = applicationInfo;
       Arguments = arguments;
       if (applicationInfo.Kind == ApplicationKind.Console) {
@@ -25,7 +26,8 @@ namespace HEAL.Bricks {
       }
     }
 
-    protected override async Task ExecuteOnClientAsync(IPackageManager packageManager, CancellationToken cancellationToken) {
+    protected override async Task ExecuteOnClientAsync(CancellationToken cancellationToken) {
+      await base.ExecuteOnClientAsync(cancellationToken);
       ITypeDiscoverer typeDiscoverer = TypeDiscoverer.Create();
       Type applicationType = typeDiscoverer.GetTypes(typeof(IApplication)).Where(x => x.FullName == ApplicationInfo.TypeName).SingleOrDefault();
       

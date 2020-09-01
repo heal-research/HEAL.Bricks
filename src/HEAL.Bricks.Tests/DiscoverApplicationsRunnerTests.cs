@@ -28,7 +28,7 @@ namespace HEAL.Bricks.Tests {
       await pm.InstallMissingDependenciesAsync();
 
       IProcessRunnerStartInfo startInfo = CreateBricksRunnerStartInfo();
-      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pm.Settings, startInfo);
+      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pm.GetPackageLoadInfos(), startInfo);
       ApplicationInfo[] app = (await discoverApplicationsRunner.GetApplicationsAsync());
     }
 

@@ -135,18 +135,13 @@ namespace HEAL.Bricks {
       }
     }
 
-    public void LoadPackageAssemblies(LocalPackageInfo package) {
+    public PackageLoadInfo GetPackageLoadInfo(LocalPackageInfo package) {
       Guard.Argument(package, nameof(package)).NotNull().Member(p => p.Status, s => s.Equal(PackageStatus.OK));
 
-      foreach (string assemblyPath in package.ReferenceItems) {
-        AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyPath);
-      }
-      package.Status = PackageStatus.Loaded;
+      return new PackageLoadInfo(package);
     }
-    public void LoadPackageAssemblies() {
-      foreach (LocalPackageInfo package in InstalledPackages.Where(x => x.Status == PackageStatus.OK)) {
-        LoadPackageAssemblies(package);
-      }
+    public IEnumerable<PackageLoadInfo> GetPackageLoadInfos() {
+      return InstalledPackages.Where(x => x.Status == PackageStatus.OK).Select(x => GetPackageLoadInfo(x)).ToArray();
     }
 
     #region Logging

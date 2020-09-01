@@ -35,8 +35,8 @@ namespace HEAL.Bricks {
     
     Task InstallPackageUpdatesAsync(bool installMissingDependencies = true, bool includePreReleases = false, CancellationToken cancellationToken = default);
 
-    void LoadPackageAssemblies(LocalPackageInfo package);
-    void LoadPackageAssemblies();
+    PackageLoadInfo GetPackageLoadInfo(LocalPackageInfo package);
+    IEnumerable<PackageLoadInfo> GetPackageLoadInfos();
 
     bool LoggingEnabled { get; }
     void EnableLogging(bool logDebugInfo = false);

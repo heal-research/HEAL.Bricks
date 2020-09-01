@@ -12,7 +12,6 @@ namespace HEAL.Bricks {
     DependenciesMissing,
     IndirectDependenciesMissing,
     IncompatibleFramework,
-    Loaded,
     Undefined
   }
   public enum PackageDependencyStatus {

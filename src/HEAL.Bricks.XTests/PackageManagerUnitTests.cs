@@ -681,12 +681,25 @@ namespace HEAL.Bricks.XTests {
     }
     #endregion
 
-    #region LoadPackageAssemblies
+    #region GetPackageLoadInfo, GetPackageLoadInfos
     [Fact]
-    public void LoadPackageAssemblies_WithNullParameter_ThrowsArgumentNullException() {
+    public void GetPackageLoadInfo_WithPackage_ReturnsPackageLoadInfo() {
+      LocalPackageInfo[] localPackages = new[] {
+        LocalPackageInfo.CreateForTests("a", "1.0.0", referenceItems: new[] { "path/to/assemblyA1", "path/to/assemblyA1" })
+      };
+      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, new NuGetConnectorStub(localPackages));
+
+      PackageLoadInfo result = pm.GetPackageLoadInfo(localPackages[0]);
+
+      Assert.Equal(localPackages[0].Id, result.Id);
+      Assert.Equal(localPackages[0].Version.ToString(), result.Version);
+      Assert.Equal(localPackages[0].ReferenceItems, result.AssemblyPaths);
+    }
+    [Fact]
+    public void GetPackageLoadInfo_WithNullParameter_ThrowsArgumentNullException() {
       IPackageManager pm = PackageManager.CreateForTests(Settings.Default, new NuGetConnectorStub());
 
-      var e = Assert.Throws<ArgumentNullException>(() => pm.LoadPackageAssemblies(null));
+      var e = Assert.Throws<ArgumentNullException>(() => pm.GetPackageLoadInfo(null));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
@@ -694,17 +707,48 @@ namespace HEAL.Bricks.XTests {
     [InlineData(PackageStatus.DependenciesMissing)]
     [InlineData(PackageStatus.IncompatibleFramework)]
     [InlineData(PackageStatus.IndirectDependenciesMissing)]
-    [InlineData(PackageStatus.Loaded)]
     [InlineData(PackageStatus.Outdated)]
     [InlineData(PackageStatus.Undefined)]
-    public void LoadPackageAssemblies_WithPackageWhereStatusIsNotOK_ThrowsArgumentException(PackageStatus packageStatus) {
+    public void GetPackageLoadInfo_WithPackageWhereStatusIsNotOK_ThrowsArgumentException(PackageStatus packageStatus) {
       LocalPackageInfo packageToLoad = LocalPackageInfo.CreateForTests("a", "1.0.0");
       packageToLoad.Status = packageStatus;
       IPackageManager pm = PackageManager.CreateForTests(Settings.Default, new NuGetConnectorStub());
 
-      var e = Assert.Throws<ArgumentException>(() => pm.LoadPackageAssemblies(packageToLoad));
+      var e = Assert.Throws<ArgumentException>(() => pm.GetPackageLoadInfo(packageToLoad));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
+    }
+    [Fact]
+    public void GetPackageLoadInfos_ReturnsPackageLoadInfos() {
+      LocalPackageInfo[] localPackages = new[] {
+        LocalPackageInfo.CreateForTests("a", "1.0.0", referenceItems: new[] { "path/to/assemblyA1", "path/to/assemblyA2" }),
+        LocalPackageInfo.CreateForTests("b", "1.0.0", referenceItems: new[] { "path/to/assemblyB1", "path/to/assemblyB2" }),
+        LocalPackageInfo.CreateForTests("c", "1.0.0", referenceItems: new[] { "path/to/assemblyC1", "path/to/assemblyC2" }, frameworkNotSupported: true)
+      };
+      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, new NuGetConnectorStub(localPackages));
+
+      IEnumerable<PackageLoadInfo> result = pm.GetPackageLoadInfos();
+
+      Assert.Collection(result.OrderBy(x => x.Id),
+        first => {
+          Assert.Equal(localPackages[0].Id, first.Id);
+          Assert.Equal(localPackages[0].Version.ToString(), first.Version);
+          Assert.Equal(localPackages[0].ReferenceItems, first.AssemblyPaths);
+        },
+        second => {
+          Assert.Equal(localPackages[1].Id, second.Id);
+          Assert.Equal(localPackages[1].Version.ToString(), second.Version);
+          Assert.Equal(localPackages[1].ReferenceItems, second.AssemblyPaths);
+        }
+      );
+    }
+    [Fact]
+    public void GetPackageLoadInfos_WhenNoPackagesAvailable_ReturnsEmpty() {
+      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, new NuGetConnectorStub());
+
+      IEnumerable<PackageLoadInfo> result = pm.GetPackageLoadInfos();
+
+      Assert.Empty(result);
     }
     #endregion
 

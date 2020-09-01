@@ -13,18 +13,19 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   [Serializable]
-  public sealed class DiscoverApplicationsRunner : PackageManagerProcessRunner {
+  public sealed class DiscoverApplicationsRunner : PackageLoaderProcessRunner {
     [NonSerialized]
     private ApplicationInfo[] applicationInfos;
 
-    public DiscoverApplicationsRunner(ISettings settings, IProcessRunnerStartInfo startInfo = null) : base(settings, startInfo ?? new NetCoreEntryAssemblyStartInfo()) { }
+    public DiscoverApplicationsRunner(IEnumerable<PackageLoadInfo> packages, IProcessRunnerStartInfo startInfo = null) : base(packages, startInfo ?? new NetCoreEntryAssemblyStartInfo()) { }
 
     public async Task<ApplicationInfo[]> GetApplicationsAsync(CancellationToken cancellationToken = default) {
       if (Status == RunnerStatus.Created) await RunAsync(cancellationToken);
       return applicationInfos;
     }
 
-    protected override async Task ExecuteOnClientAsync(IPackageManager packageManager, CancellationToken cancellationToken) {
+    protected override async Task ExecuteOnClientAsync(CancellationToken cancellationToken) {
+      await base.ExecuteOnClientAsync(cancellationToken);
       ITypeDiscoverer typeDiscoverer = TypeDiscoverer.Create();
       IEnumerable<IApplication> applications = typeDiscoverer.GetInstances<IApplication>();
       ApplicationInfo[] applicationInfos = applications.Select(x => new ApplicationInfo(x)).OrderBy(x => x.Name).ToArray();

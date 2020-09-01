@@ -22,7 +22,7 @@ namespace TestApp {
       Directory.CreateDirectory(settings.PackagesCachePath);
       IPackageManager pm = PackageManager.Create(settings);
 
-      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pm.Settings);
+      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pm.GetPackageLoadInfos());
       ApplicationInfo[] applications = await discoverApplicationsRunner.GetApplicationsAsync();
 
       if (applications.Length == 0) {
@@ -39,7 +39,7 @@ namespace TestApp {
         index = int.TryParse(Console.ReadLine(), out index) ? index - 1 : -1;
 
         if (index != -1) {
-          ApplicationRunner applicationRunner = new ApplicationRunner(pm.Settings, applications[index]);
+          ApplicationRunner applicationRunner = new ApplicationRunner(pm.GetPackageLoadInfos(), applications[index]);
           await applicationRunner.RunAsync();
         }
       } while (index != -1);

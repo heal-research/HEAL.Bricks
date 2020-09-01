@@ -487,20 +487,20 @@ namespace HEAL.Bricks.Tests {
     }
     #endregion
 
-    #region TestLoadPackageAssemblies
+    #region TestGetPackageLoadInfos
     [TestMethod]
-    public void TestLoadPackageAssemblies() {
+    public void TestGetPackageLoadInfos() {
       NuGetConnector nuGetConnector = CreateNuGetConnector(includePublicNuGetRepository: true);
       IPackageManager pm = PackageManager.CreateForTests(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       LocalPackageInfo package;
 
       package = pm.InstalledPackages.Where(x => x.Id == Constants.nameBricksPluginTypes).Single();
-      pm.LoadPackageAssemblies(package);
-      Assert.IsTrue(package.Status == PackageStatus.Loaded);
 
-      pm.InstallMissingDependenciesAsync().Wait();
-      pm.LoadPackageAssemblies();
-      Assert.IsTrue(pm.InstalledPackages.All(x => (x.Status == PackageStatus.Loaded) || (x.Status == PackageStatus.Outdated)));
+      PackageLoadInfo result = pm.GetPackageLoadInfo(package);
+
+      Assert.AreEqual(package.Id, result.Id);
+      Assert.AreEqual(package.Version.ToString(), result.Version);
+      CollectionAssert.AreEqual(package.ReferenceItems.ToArray(), result.AssemblyPaths.ToArray());
 
       WriteLogToTestContextAndClear();
     }

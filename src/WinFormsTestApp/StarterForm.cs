@@ -29,7 +29,7 @@ namespace WinFormsTestApp {
       Directory.CreateDirectory(settings.PackagesCachePath);
       pm = PackageManager.Create(settings);
 
-      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pm.Settings);
+      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pm.GetPackageLoadInfos());
       applications = await discoverApplicationsRunner.GetApplicationsAsync();
 
       foreach (ApplicationInfo application in applications) {
@@ -42,7 +42,7 @@ namespace WinFormsTestApp {
 
     private async void startButton_Click(object sender, EventArgs e) {
       ApplicationInfo app = appsListView.SelectedItems[0].Tag as ApplicationInfo;
-      ApplicationRunner appRunner = new ApplicationRunner(settings, app);
+      ApplicationRunner appRunner = new ApplicationRunner(pm.GetPackageLoadInfos(), app);
       await appRunner.RunAsync();
     }
   }
