@@ -19,7 +19,7 @@ namespace HEAL.Bricks {
       LoadPackageAssemblies(Enumerable.Repeat(package, 1));
     }
     public static void LoadPackageAssemblies(IEnumerable<PackageLoadInfo> packages) {
-      Guard.Argument(packages, nameof(packages)).NotNull().NotEmpty().DoesNotContainNull();
+      Guard.Argument(packages, nameof(packages)).NotNull().DoesNotContainNull();
 
       foreach (PackageLoadInfo package in packages) {
         foreach (string assemblyPath in package.AssemblyPaths) {

@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 namespace HEAL.Bricks.XTests {
   public class Constants {
     // OS platform and dotnet.exe paths
-    public Platform Platform {
+    public static Platform Platform {
       get {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return Platform.Windows;
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return Platform.Linux;
@@ -23,7 +23,7 @@ namespace HEAL.Bricks.XTests {
 
     public const string dotnetExeWindowsPath = @"C:\Program Files\dotnet\dotnet.exe";
     public const string dotnetExeLinuxPath = "/usr/bin/dotnet";
-    public string DotnetExePath {
+    public static string DotnetExePath {
       get {
         return Platform switch
         {

@@ -9,6 +9,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -46,7 +47,7 @@ namespace HEAL.Bricks {
           RedirectStandardInput = ProcessRunnerStartInfo.CommunicationMode == CommunicationMode.StdInOut,
           CreateNoWindow = true,
           ErrorDialog = true,
-          WorkingDirectory = Path.GetDirectoryName(ProcessRunnerStartInfo.ProgramPath)
+          WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
         },
         EnableRaisingEvents = true
       };

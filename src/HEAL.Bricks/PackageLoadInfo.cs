@@ -13,6 +13,9 @@ using System.Linq;
 namespace HEAL.Bricks {
   [Serializable]
   public sealed class PackageLoadInfo {
+    internal static PackageLoadInfo CreateForTests(string id, string version, params string[] assemblyPaths) {
+      return new PackageLoadInfo(id, version, assemblyPaths);
+    }
     public string Id { get; }
     public string Version { get; }
 
@@ -27,6 +30,12 @@ namespace HEAL.Bricks {
       Id = package.Id;
       Version = package.Version.ToString();
       assemblyPaths = package.ReferenceItems?.ToArray() ?? Array.Empty<string>();
+    }
+    private PackageLoadInfo(string id, string version, string[] assemblyPaths) {
+      // required for unit tests
+      Id = id;
+      Version = version;
+      this.assemblyPaths = assemblyPaths;
     }
   }
 }

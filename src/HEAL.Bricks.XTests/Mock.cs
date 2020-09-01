@@ -7,14 +7,11 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using NuGet.Common;
 using NuGet.Frameworks;
-using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 using NuGet.Protocol.Core.Types;
