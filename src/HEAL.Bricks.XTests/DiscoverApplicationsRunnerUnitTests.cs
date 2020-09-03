@@ -19,10 +19,10 @@ namespace HEAL.Bricks.XTests {
         PackageLoadInfo.CreateForTests("a", "1.0.0", Path.Combine(GetWorkingDir(), "HEAL.Bricks.XTests.dll"))
       };
       IApplication expectedApplication = new DummyApplication();
-      IProcessRunnerStartInfo startInfo = new GenericProgramStartInfo(Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll");
-      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(packageLoadInfos, startInfo);
+      IChannel channel = new AnonymousPipesProcessChannel(Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestRunner");
+      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(packageLoadInfos);
 
-      ApplicationInfo[] result = await discoverApplicationsRunner.GetApplicationsAsync();
+      ApplicationInfo[] result = await discoverApplicationsRunner.GetApplicationsAsync(channel);
 
       Assert.Collection(result,
         x => {
@@ -36,10 +36,10 @@ namespace HEAL.Bricks.XTests {
 
     [Fact]
     public async Task GetApplicationsAsync_WhenNoApplicationsAvailable_ReturnsEmpty() {
-      IProcessRunnerStartInfo startInfo = new GenericProgramStartInfo(Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll");
-      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(Enumerable.Empty<PackageLoadInfo>(), startInfo);
+      IChannel channel = new AnonymousPipesProcessChannel(Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestRunner");
+      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(Enumerable.Empty<PackageLoadInfo>());
 
-      ApplicationInfo[] result = await discoverApplicationsRunner.GetApplicationsAsync();
+      ApplicationInfo[] result = await discoverApplicationsRunner.GetApplicationsAsync(channel);
 
       Assert.Empty(result);
     }

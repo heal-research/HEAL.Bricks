@@ -5,9 +5,8 @@
  */
 #endregion
 
+using System;
+
 namespace HEAL.Bricks {
-  public enum CommunicationMode {
-    AnonymousPipes,
-    StdInOut
-  }
+  public interface IMessage { }
 }

@@ -5,6 +5,7 @@
  */
 #endregion
 
+using Dawn;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,15 +14,17 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   [Serializable]
-  public abstract class PackageLoaderProcessRunner : ProcessRunner {
+  public abstract class PackageLoaderRunner : Runner {
     private readonly PackageLoadInfo[] packageLoadInfos;
     public IEnumerable<PackageLoadInfo> PackageLoadInfos => packageLoadInfos;
 
-    protected PackageLoaderProcessRunner(IEnumerable<PackageLoadInfo> packages, IProcessRunnerStartInfo startInfo) : base(startInfo) {
+    protected PackageLoaderRunner(IEnumerable<PackageLoadInfo> packages) {
+      Guard.Argument(packages, nameof(packages)).NotNull();
+
       packageLoadInfos = packages.ToArray();
     }
 
-    protected override Task ExecuteOnClientAsync(CancellationToken cancellationToken) {
+    protected override Task ExecuteOnClientAsync(IChannel channel, CancellationToken cancellationToken) {
       PackageLoader.LoadPackageAssemblies(packageLoadInfos);
       return Task.CompletedTask;
     }

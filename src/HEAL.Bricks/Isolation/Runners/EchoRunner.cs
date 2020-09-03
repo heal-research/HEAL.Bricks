@@ -17,30 +17,28 @@ namespace HEAL.Bricks {
     [NonSerialized]
     private readonly BlockingCollection<string> responses = new BlockingCollection<string>();
 
-    public EchoRunner(IProcessRunnerStartInfo startInfo = null) : base(startInfo ?? new NetCoreEntryAssemblyStartInfo()) { }
-
-    protected override async Task ProcessRunnerMessageOnClientAsync(IRunnerMessage message, CancellationToken cancellationToken) {
+    protected override async Task ProcessRunnerMessageOnClientAsync(IMessage message, IChannel channel, CancellationToken cancellationToken) {
       switch (message) {
         case CancelRunnerMessage _:
           break;
-        case RunnerTextMessage textMessage:
-          await SendMessageAsync(new RunnerTextMessage("ECHO: " + textMessage.Data), cancellationToken);
+        case TextMessage textMessage:
+          await channel.SendMessageAsync(new TextMessage("ECHO: " + textMessage.Data), cancellationToken);
           break;
         default:
-          await SendExceptionAsync(new InvalidOperationException($"Cannot process message {message.GetType().Name}."), cancellationToken);
+          await channel.SendMessageAsync(new ExceptionMessage(new InvalidOperationException($"Cannot process message {message.GetType().Name}.")), cancellationToken);
           break;
       }
     }
 
-    protected override Task ProcessRunnerMessageOnHostAsync(IRunnerMessage message, CancellationToken cancellationToken) {
+    protected override Task ProcessRunnerMessageOnHostAsync(IMessage message, IChannel channel, CancellationToken cancellationToken) {
       switch (message) {
         case RunnerStoppedMessage _:
           responses.CompleteAdding();
           break;
-        case RunnerTextMessage textMessage:
+        case TextMessage textMessage:
           responses.Add(textMessage.Data);
           break;
-        case RunnerExceptionMessage exceptionMessage:
+        case ExceptionMessage exceptionMessage:
           throw exceptionMessage.Data;
         default:
           throw new InvalidOperationException($"Cannot process message {message.GetType().Name}.");
@@ -48,9 +46,9 @@ namespace HEAL.Bricks {
       return Task.CompletedTask;
     }
 
-    public async Task SendAsync(string text, CancellationToken cancellationToken = default) {
+    public async Task SendAsync(string text, IChannel channel, CancellationToken cancellationToken = default) {
       try {
-        await SendMessageAsync(new RunnerTextMessage(text), cancellationToken);
+        await channel.SendMessageAsync(new TextMessage(text), cancellationToken);
       }
       catch (OperationCanceledException) { }
     }

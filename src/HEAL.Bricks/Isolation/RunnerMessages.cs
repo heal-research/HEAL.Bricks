@@ -5,6 +5,7 @@
  */
 #endregion
 
+using Dawn;
 using System;
 using System.IO;
 using System.Runtime.Serialization;
@@ -12,47 +13,55 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 namespace HEAL.Bricks {
   [Serializable]
-  public class RunnerMessage : IRunnerMessage { }
+  public class Message : IMessage { }
 
   [Serializable]
-  public class RunnerDataMessage<T> : RunnerMessage {
-    public T Data { get; set; }
-    public RunnerDataMessage() => Data = default;
-    public RunnerDataMessage(T data) => Data = data;
+  public class DataMessage<T> : Message {
+    public T Data { get; }
+    public DataMessage() => Data = default;
+    public DataMessage(T data) => Data = data;
   }
 
   [Serializable]
-  public class StartRunnerMessage : RunnerDataMessage<Runner> {
-    public StartRunnerMessage(Runner runner) : base(runner) { }
+  public class StartRunnerMessage : DataMessage<Runner> {
+    public StartRunnerMessage(Runner runner) : base(runner) {
+      Guard.Argument(runner, nameof(runner)).NotNull();
+    }
   }
 
   [Serializable]
-  public class SuspendRunnerMessage : RunnerMessage { }
+  public class SuspendRunnerMessage : Message { }
 
   [Serializable]
-  public class ResumeRunnerMessage : RunnerMessage { }
+  public class ResumeRunnerMessage : Message { }
 
   [Serializable]
-  public class CancelRunnerMessage : RunnerMessage { }
+  public class CancelRunnerMessage : Message { }
 
   [Serializable]
-  public class RunnerStartedMessage : RunnerMessage { }
+  public class RunnerStartedMessage : Message { }
 
   [Serializable]
-  public class RunnerStoppedMessage : RunnerMessage { }
+  public class RunnerStoppedMessage : Message { }
 
   [Serializable]
-  public class RunnerExceptionMessage : RunnerDataMessage<Exception> {
-    public RunnerExceptionMessage(Exception exception) : base(exception) { }
+  public class ExceptionMessage : DataMessage<Exception> {
+    public ExceptionMessage(Exception exception) : base(exception) {
+      Guard.Argument(exception, nameof(exception)).NotNull();
+    }
   }
 
   [Serializable]
-  public class RunnerTextMessage : RunnerDataMessage<string> {
-    public RunnerTextMessage(string text) : base(text) { }
+  public class TextMessage : DataMessage<string> {
+    public TextMessage(string text) : base(text) {
+      Guard.Argument(text, nameof(text)).NotNull();
+    }
   }
 
   [Serializable]
-  public class DiscoveredApplicationsMessage : RunnerDataMessage<ApplicationInfo[]> {
-    public DiscoveredApplicationsMessage(ApplicationInfo[] applicationInfos) : base(applicationInfos) { }
+  public class DiscoveredApplicationsMessage : DataMessage<ApplicationInfo[]> {
+    public DiscoveredApplicationsMessage(ApplicationInfo[] applicationInfos) : base(applicationInfos) {
+      Guard.Argument(applicationInfos, nameof(applicationInfos)).NotNull();
+    }
   }
 }

@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using HEAL.Bricks;
@@ -22,8 +23,9 @@ namespace TestApp {
       Directory.CreateDirectory(settings.PackagesCachePath);
       IPackageManager pm = PackageManager.Create(settings);
 
+      IChannel channel = new AnonymousPipesProcessChannel("dotnet", "\"" + Assembly.GetEntryAssembly().Location + "\"");
       DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pm.GetPackageLoadInfos());
-      ApplicationInfo[] applications = await discoverApplicationsRunner.GetApplicationsAsync();
+      ApplicationInfo[] applications = await discoverApplicationsRunner.GetApplicationsAsync(channel);
 
       if (applications.Length == 0) {
         Console.WriteLine("No applications found.");

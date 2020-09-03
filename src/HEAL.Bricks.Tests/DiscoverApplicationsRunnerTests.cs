@@ -27,16 +27,9 @@ namespace HEAL.Bricks.Tests {
       IPackageManager pm = PackageManager.CreateForTests(CreateSettings(includePublicNuGetRepository: true), nuGetConnector);
       await pm.InstallMissingDependenciesAsync();
 
-      IProcessRunnerStartInfo startInfo = CreateBricksRunnerStartInfo();
-      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pm.GetPackageLoadInfos(), startInfo);
-      ApplicationInfo[] app = (await discoverApplicationsRunner.GetApplicationsAsync());
+      IChannel channel = new AnonymousPipesProcessChannel(DotnetExeAbsolutePath, "\"" + Path.Combine(TestDeploymentPath, "HEAL.Bricks.Tests.BricksRunner.dll") + "\"" + " --TestRunner");
+      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pm.GetPackageLoadInfos());
+      ApplicationInfo[] app = (await discoverApplicationsRunner.GetApplicationsAsync(channel));
     }
-
-    #region Helpers
-    private IProcessRunnerStartInfo CreateBricksRunnerStartInfo() {
-      string runnerPath = Path.Combine(TestDeploymentPath, "HEAL.Bricks.Tests.BricksRunner.dll");
-      return new GenericProgramStartInfo(DotnetExeAbsolutePath, "\"" + runnerPath + "\"");
-    }
-    #endregion
   }
 }
