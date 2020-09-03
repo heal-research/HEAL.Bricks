@@ -141,7 +141,7 @@ namespace HEAL.Bricks.XTests {
       TextMessage request = new TextMessage("TestMessage");
       TextMessage response;
 
-      using(AnonymousPipesProcessChannel channel = new AnonymousPipesProcessChannel("dotnet.exe", "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel")) {
+      using(AnonymousPipesProcessChannel channel = new AnonymousPipesProcessChannel("dotnet", "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel")) {
         channel.Open();
         await channel.SendMessageAsync(request);
         response = await channel.ReceiveMessageAsync<TextMessage>();
