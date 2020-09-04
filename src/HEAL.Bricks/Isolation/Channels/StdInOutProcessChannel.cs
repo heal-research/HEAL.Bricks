@@ -7,9 +7,13 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 
 namespace HEAL.Bricks {
   public sealed class StdInOutProcessChannel : ProcessChannel {
+    internal StreamWriter StandardInput => process.StandardInput;
+    internal StreamReader StandardOutput => process.StandardOutput;
+
     public StdInOutProcessChannel(string programPath, string arguments = null) : base(programPath, arguments) { }
     private StdInOutProcessChannel() {
       // used to create a new channel on the client-side

@@ -21,6 +21,14 @@ namespace HEAL.Bricks.XTests {
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
     [Theory]
+    [InlineData("")]
+    [InlineData("--SomeArgument")]
+    [InlineData("--ChannelTyp")]
+    public void CreateFromCLIArguments_WithoutChannelTypeArgument_ReturnsNull(params string[] arguments) {
+      var result = ProcessChannel.CreateFromCLIArguments(arguments);
+      Assert.Null(result);
+    }
+    [Theory]
     [InlineData("--ChannelType")]
     [InlineData("--ChannelType=")]
     [InlineData("--ChannelType=InvalidType")]

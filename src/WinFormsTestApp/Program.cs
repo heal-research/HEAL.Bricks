@@ -16,8 +16,9 @@ namespace WinFormsTestApp {
       Application.EnableVisualStyles();
       Application.SetCompatibleTextRenderingDefault(false);
 
-      if (Runner.ParseArguments(args, out CommunicationMode communicationMode, out string inputConnection, out string outputConnection)) {
-        Runner.ReceiveAndExecuteRunnerAsync(communicationMode, inputConnection, outputConnection).Wait();
+      IChannel channel = ProcessChannel.CreateFromCLIArguments(args);
+      if (channel != null) {
+        Runner.ReceiveAndExecuteAsync(channel).Wait();
         return;
       }
 

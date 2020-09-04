@@ -33,10 +33,12 @@ namespace HEAL.Bricks {
     public async Task RunAsync(IChannel channel, CancellationToken cancellationToken = default) {
       Guard.Argument(channel, nameof(channel)).NotNull();
 
+
       try {
         channel.Open();
         channel.SendMessageAsync(new StartRunnerMessage(this), cancellationToken).Wait(cancellationToken);
         channel.ReceiveMessageAsync<RunnerStartedMessage>(cancellationToken).Wait(cancellationToken);
+        cancellationToken.Register(() => channel.Close());
         await ExecuteOnHostAsync(channel, cancellationToken);
       }
       finally {

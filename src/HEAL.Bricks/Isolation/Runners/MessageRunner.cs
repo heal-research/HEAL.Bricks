@@ -30,7 +30,13 @@ namespace HEAL.Bricks {
 
     protected sealed override async Task ExecuteOnHostAsync(IChannel channel, CancellationToken cancellationToken) {
       while (!cancellationToken.IsCancellationRequested) {
-        IMessage message = await channel.ReceiveMessageAsync(cancellationToken);
+        IMessage message = null;
+        try {
+          message = await channel.ReceiveMessageAsync(cancellationToken);
+        }
+        catch (Exception e) {
+          if (!cancellationToken.IsCancellationRequested) throw e;
+        }
         switch (message) {
           case null:
             return;

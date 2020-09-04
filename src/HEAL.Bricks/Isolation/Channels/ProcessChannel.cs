@@ -19,21 +19,23 @@ using System.Threading.Tasks;
 namespace HEAL.Bricks {
   public abstract class ProcessChannel : IChannel, IDisposable {
     private static int CancelMessageTimeoutBeforeKill => 2000;
-    public static string ChannelTypeArgument => "--ChannelType=";
+    public static string ChannelTypeArgument => "--ChannelType";
 
     public static ProcessChannel CreateFromCLIArguments(string[] arguments) {
-      Guard.Argument(arguments, nameof(arguments)).NotNull().Require(arguments.Any(x => x.StartsWith(ChannelTypeArgument)));
+      Guard.Argument(arguments, nameof(arguments)).NotNull();
 
       ProcessChannel channel = null;
-      try {
-        string channelTypeName = arguments.Where(x => x.StartsWith(ChannelTypeArgument)).Select(x => x.Split('=')[1]).Single();
-        Type channelType = Type.GetType(channelTypeName);
-        channel = (ProcessChannel)Activator.CreateInstance(channelType, nonPublic: true);
+      if (arguments.Any(x => x.StartsWith(ChannelTypeArgument))) {
+        try {
+          string channelTypeName = arguments.Where(x => x.StartsWith(ChannelTypeArgument)).Select(x => x.Split('=')[1]).Single();
+          Type channelType = Type.GetType(channelTypeName);
+          channel = (ProcessChannel)Activator.CreateInstance(channelType, nonPublic: true);
+        }
+        catch (Exception e) {
+          throw new ArgumentException("Cannot create instance of channel type.", nameof(arguments), e);
+        }
+        channel.ReadCLIArguments(arguments);
       }
-      catch (Exception e) {
-        throw new ArgumentException("Cannot create instance of channel type.", nameof(arguments), e);
-      }
-      channel.ReadCLIArguments(arguments);
       return channel;
     }
 
@@ -105,7 +107,7 @@ namespace HEAL.Bricks {
     protected virtual ProcessStartInfo CreateProcessStartInfo() {
       return new ProcessStartInfo {
         FileName = programPath,
-        Arguments = arguments + " " + ChannelTypeArgument + this.GetType().FullName,
+        Arguments = arguments + " " + ChannelTypeArgument + "=" + this.GetType().FullName,
         UseShellExecute = false,
         CreateNoWindow = true,
         ErrorDialog = true,

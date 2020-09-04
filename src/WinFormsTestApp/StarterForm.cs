@@ -44,8 +44,9 @@ namespace WinFormsTestApp {
 
     private async void startButton_Click(object sender, EventArgs e) {
       ApplicationInfo app = appsListView.SelectedItems[0].Tag as ApplicationInfo;
+      IChannel channel = new AnonymousPipesProcessChannel("dotnet", "\"" + Assembly.GetEntryAssembly().Location + "\"");
       ApplicationRunner appRunner = new ApplicationRunner(pm.GetPackageLoadInfos(), app);
-      await appRunner.RunAsync();
+      await appRunner.RunAsync(channel);
     }
   }
 }
