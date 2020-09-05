@@ -56,5 +56,11 @@ namespace HEAL.Bricks {
       anonymousPipeInputStream.DisposeLocalCopyOfClientHandle();
       inputStream = anonymousPipeInputStream;
     }
+
+    protected override void DisposeMembers() {
+      base.DisposeMembers();
+      anonymousPipeInputStream = null;
+      anonymousPipeOutputStream = null;
+    }
   }
 }

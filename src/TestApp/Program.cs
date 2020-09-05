@@ -24,9 +24,10 @@ namespace TestApp {
       Directory.CreateDirectory(settings.PackagesCachePath);
       IPackageManager pm = PackageManager.Create(settings);
 
+      ApplicationInfo[] applications;
       channel = new AnonymousPipesProcessChannel("dotnet", "\"" + Assembly.GetEntryAssembly().Location + "\"");
       DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pm.GetPackageLoadInfos());
-      ApplicationInfo[] applications = await discoverApplicationsRunner.GetApplicationsAsync(channel);
+      applications = await discoverApplicationsRunner.GetApplicationsAsync(channel);
 
       if (applications.Length == 0) {
         Console.WriteLine("No applications found.");

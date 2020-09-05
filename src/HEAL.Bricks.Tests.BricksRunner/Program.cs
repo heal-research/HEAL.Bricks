@@ -12,9 +12,9 @@ using System.Threading.Tasks;
 namespace HEAL.Bricks.Tests.BricksRunner {
   class Program {
     static async Task Main(string[] args) {
-      IChannel channel = ProcessChannel.CreateFromCLIArguments(args) ?? throw new ArgumentException("Cannot retrieve channel from CLI arguments.", nameof(args));
 
       if (args.Any(x => x == "--TestChannel")) {
+        using ProcessChannel channel = ProcessChannel.CreateFromCLIArguments(args) ?? throw new ArgumentException("Cannot retrieve channel from CLI arguments.", nameof(args));
         IMessage message = await channel.ReceiveMessageAsync();
         while (!(message is CancelRunnerMessage)) {
           await channel.SendMessageAsync(message);
@@ -22,6 +22,7 @@ namespace HEAL.Bricks.Tests.BricksRunner {
         }
       }
       else if (args.Any(x => x == "--TestRunner")) {
+        IChannel channel = ProcessChannel.CreateFromCLIArguments(args) ?? throw new ArgumentException("Cannot retrieve channel from CLI arguments.", nameof(args));
         await Runner.ReceiveAndExecuteAsync(channel);
       }
       else if (args.Any(x => x == "--TestNotResponsive")) {

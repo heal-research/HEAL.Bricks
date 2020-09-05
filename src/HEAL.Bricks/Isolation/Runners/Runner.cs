@@ -28,11 +28,13 @@ namespace HEAL.Bricks {
       catch (Exception e) {
         channel.SendMessageAsync(new ExceptionMessage(e), cancellationToken).Wait(cancellationToken);
       }
+      finally {
+        channel.Close();
+      }
     }
 
     public async Task RunAsync(IChannel channel, CancellationToken cancellationToken = default) {
       Guard.Argument(channel, nameof(channel)).NotNull();
-
 
       try {
         channel.Open();

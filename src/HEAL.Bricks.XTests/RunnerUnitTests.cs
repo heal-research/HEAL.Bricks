@@ -13,17 +13,5 @@ using System.IO;
 
 namespace HEAL.Bricks.XTests {
   public class RunnerUnitTests {
-    [Fact]
-    public async Task TestAnonPipes() {
-      var channel = new AnonymousPipesProcessChannel(Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestRunner");
-      var runner = new DemoRunner();
-      await runner.RunAsync(channel);
-    }
-    [Fact]
-    public async Task TestStdInOut() {
-      var channel = new StdInOutProcessChannel(Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestRunner");
-      var runner = new DemoRunner();
-      await runner.RunAsync(channel);
-    }
   }
 }

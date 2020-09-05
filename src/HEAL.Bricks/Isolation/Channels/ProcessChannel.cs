@@ -11,14 +11,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
-  public abstract class ProcessChannel : IChannel, IDisposable {
-    private static int CancelMessageTimeoutBeforeKill => 2000;
+  public abstract class ProcessChannel : StreamChannel {
     public static string ChannelTypeArgument => "--ChannelType";
 
     public static ProcessChannel CreateFromCLIArguments(string[] arguments) {
@@ -41,8 +36,7 @@ namespace HEAL.Bricks {
 
     private readonly string programPath, arguments;
 
-    protected Process process;
-    protected Stream outputStream, inputStream;
+    protected Process process = null;
 
     public ProcessChannel(string programPath, string arguments = null) {
       this.programPath = Guard.Argument(programPath, nameof(programPath)).NotNull().NotEmpty().NotWhiteSpace();
@@ -50,9 +44,8 @@ namespace HEAL.Bricks {
     }
     protected ProcessChannel() { }
 
-    public void Open() {
-      Guard.Operation(process == null);
-
+    public override void Open() {
+      base.Open();
       process = new Process {
         StartInfo = CreateProcessStartInfo(),
         EnableRaisingEvents = true
@@ -60,47 +53,18 @@ namespace HEAL.Bricks {
       process.Start();
       PostStartActions();
     }
-    public void Close() {
-      Guard.Operation(process != null);
-
+    protected override void DisposeMembers() {
       try {
-        if (!process.HasExited) {
-          SendMessageAsync(new CancelRunnerMessage()).Wait();
-          if (!process.WaitForExit(CancelMessageTimeoutBeforeKill)) {
-            process.Kill();
-            process.WaitForExit();
-          }
+        if ((process != null) && !process.HasExited) {
+          process.Kill();
+          process.WaitForExit();
         }
       }
       finally {
-        outputStream?.Close();
-        inputStream?.Close();
-        process?.Close();
+        process?.Dispose();
+        process = null;
       }
-    }
-
-    public async Task SendMessageAsync(IMessage message, CancellationToken cancellationToken = default) {
-      Guard.Argument(message, nameof(message)).NotNull();
-      Guard.Operation((outputStream != null) && outputStream.CanWrite);
-
-      await Task.Run(() => {
-        cancellationToken.ThrowIfCancellationRequested();
-        IFormatter serializer = new BinaryFormatter();
-        serializer.Serialize(outputStream, message);
-        outputStream.Flush();
-      }, cancellationToken).ConfigureAwait(false);
-    }
-    public async Task<IMessage> ReceiveMessageAsync(CancellationToken cancellationToken = default) => await ReceiveMessageAsync<IMessage>(cancellationToken);
-    public async Task<T> ReceiveMessageAsync<T>(CancellationToken cancellationToken = default) where T : IMessage {
-      Guard.Operation((inputStream != null) && inputStream.CanRead);
-
-      return await Task.Run<T>(() => {
-        cancellationToken.ThrowIfCancellationRequested();
-        IFormatter serializer = new BinaryFormatter();
-        object message = serializer.Deserialize(inputStream);
-        T t = (T)message;
-        return t;
-      }, cancellationToken).ConfigureAwait(false);
+      base.DisposeMembers();
     }
 
     protected virtual void ReadCLIArguments(string[] arguments) { }
@@ -115,21 +79,5 @@ namespace HEAL.Bricks {
       };
     }
     protected virtual void PostStartActions() { }
-
-    #region Dispose
-    private bool disposedValue;
-    protected virtual void Dispose(bool disposing) {
-      if (!disposedValue) {
-        if (disposing) {
-          Close();
-        }
-        disposedValue = true;
-      }
-    }
-    void IDisposable.Dispose() {
-      Dispose(disposing: true);
-      GC.SuppressFinalize(this);
-    }
-    #endregion
   }
 }

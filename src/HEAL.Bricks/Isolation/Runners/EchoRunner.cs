@@ -61,5 +61,12 @@ namespace HEAL.Bricks {
       catch (OperationCanceledException) { }
       return null;
     }
+
+    public async Task SendCancel(IChannel channel, CancellationToken cancellationToken = default) {
+      try {
+        await channel.SendMessageAsync(new CancelRunnerMessage(), cancellationToken);
+      }
+      catch (OperationCanceledException) { }
+    }
   }
 }
