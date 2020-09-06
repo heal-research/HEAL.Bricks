@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -55,7 +53,7 @@ namespace TestApp {
 
       channel = new AnonymousPipesProcessChannel("dotnet", "\"" + Assembly.GetEntryAssembly().Location + "\"");
       EchoRunner echoRunner = new EchoRunner();
-      var t = echoRunner.RunAsync(channel, token);
+      Task done = echoRunner.RunAsync(channel, token);
 
       int i = 0;
       while (!token.IsCancellationRequested) {
@@ -69,7 +67,7 @@ namespace TestApp {
         Console.WriteLine(message);
         Console.WriteLine("... done");
       }
-      await t;
+      try { await done; } catch { }
 
       Console.WriteLine("Done.");
     }

@@ -7,7 +7,6 @@
 
 using Xunit;
 using System;
-using System.ComponentModel;
 
 namespace HEAL.Bricks.XTests {
   public class AnonymousPipesProcessChannelUnitTests {
@@ -19,13 +18,6 @@ namespace HEAL.Bricks.XTests {
       var e = Assert.Throws(expectedExceptionType, () => new AnonymousPipesProcessChannel(programPath));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty((e as ArgumentException).ParamName));
-    }
-
-    [Fact]
-    public void Open_WhenProgramNotFound_ThrowsWin32Exception() {
-      AnonymousPipesProcessChannel channel = new AnonymousPipesProcessChannel("program");
-
-      Assert.Throws<Win32Exception>(() => channel.Open());
     }
   }
 }

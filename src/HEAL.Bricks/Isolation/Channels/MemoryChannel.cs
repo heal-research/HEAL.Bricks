@@ -14,15 +14,18 @@ using System.Threading.Tasks;
 namespace HEAL.Bricks {
   public class MemoryChannel : IChannel {
     protected BlockingCollection<IMessage> inputQueue = null, outputQueue = null;
-    private readonly Action<MemoryChannel> clientCode;
+    private readonly bool hostChannel = false;
+    private readonly Action<MemoryChannel, CancellationToken> clientCode;
+    private CancellationTokenSource clientCTS;
 
-    public MemoryChannel(Action<MemoryChannel> clientCode) {
+    public MemoryChannel(Action<MemoryChannel, CancellationToken> clientCode) {
       Guard.Argument(clientCode, nameof(clientCode)).NotNull();
+      this.hostChannel = true;
       this.clientCode = clientCode;
     }
     protected MemoryChannel() { }
 
-    public virtual void Open() {
+    public virtual void Open(out Task channelTerminated, CancellationToken cancellationToken = default) {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Operation((inputQueue == null) && (outputQueue == null));
 
@@ -33,7 +36,10 @@ namespace HEAL.Bricks {
         inputQueue = outputQueue,
         outputQueue = inputQueue
       };
-      Task.Run(() => clientCode(clientChannel));
+      clientCTS = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+      CancellationToken clientToken = clientCTS.Token;
+
+      channelTerminated = Task.Run(() => { clientCode(clientChannel, clientToken); }, clientToken);
     }
     public void Close() {
       Guard.Operation(((inputQueue != null) && (outputQueue != null)) || ObjectIsDisposed);
@@ -57,12 +63,14 @@ namespace HEAL.Bricks {
     }
 
     protected virtual void DisposeMembers() {
-      inputQueue?.CompleteAdding();
-      outputQueue?.CompleteAdding();
-      inputQueue?.Dispose();
-      outputQueue?.Dispose();
-      inputQueue = null;
-      outputQueue = null;
+      if (hostChannel) {
+        outputQueue?.Dispose();
+        outputQueue = null;
+        inputQueue?.Dispose();
+        inputQueue = null;
+        clientCTS?.Cancel();
+        clientCTS?.Dispose();
+      }
     }
 
     #region Dispose

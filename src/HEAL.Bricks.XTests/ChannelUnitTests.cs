@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Xunit;
 using System;
 using System.ComponentModel;
+using System.Threading;
 
 namespace HEAL.Bricks.XTests {
   public class ChannelUnitTests {
@@ -17,20 +18,19 @@ namespace HEAL.Bricks.XTests {
     [InlineData(typeof(AnonymousPipesProcessChannel))]
     [InlineData(typeof(StdInOutProcessChannel))]
     public void Open_WhenProgramNotFound_ThrowsWin32Exception(Type channelType) {
-      IChannel channel = CreateChannel(channelType, "program", "", null);
+      IChannel channel = TestHelpers.CreateChannel(channelType, "program", "", null);
 
-      Assert.Throws<Win32Exception>(() => channel.Open());
+      Assert.Throws<Win32Exception>(() => channel.Open(out Task clientTerminated));
     }
-
     [Theory]
     [InlineData(typeof(AnonymousPipesProcessChannel))]
     [InlineData(typeof(StdInOutProcessChannel))]
     [InlineData(typeof(MemoryChannel))]
     public void Open_WhenChannelIsOpened_ThrowsInvalidOperationException(Type channelType) {
-      IChannel channel = CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestChannelAsync);
-      channel.Open();
+      IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
+      channel.Open(out Task clientTerminated);
 
-      var e = Assert.Throws<InvalidOperationException>(() => channel.Open());
+      var e = Assert.Throws<InvalidOperationException>(() => channel.Open(out Task clientTerminated));
       Assert.False(string.IsNullOrEmpty(e.Message));
     }
     [Theory]
@@ -38,11 +38,25 @@ namespace HEAL.Bricks.XTests {
     [InlineData(typeof(StdInOutProcessChannel))]
     [InlineData(typeof(MemoryChannel))]
     public void Open_WhenChannelIsClosed_ThrowsObjectDisposedException(Type channelType) {
-      IChannel channel = CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestChannelAsync);
-      channel.Open();
+      IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
+      channel.Open(out Task clientTerminated);
       channel.Close();
+      try { clientTerminated.Wait(); } catch { }
 
-      var e = Assert.Throws<ObjectDisposedException>(() => channel.Open());
+      var e = Assert.Throws<ObjectDisposedException>(() => channel.Open(out Task clientTerminated));
+      Assert.False(string.IsNullOrEmpty(e.Message));
+    }
+    [Theory]
+    [InlineData(typeof(AnonymousPipesProcessChannel))]
+    [InlineData(typeof(StdInOutProcessChannel))]
+    [InlineData(typeof(MemoryChannel))]
+    public void Open_WithCancellation_ThrowsAggregateException(Type channelType) {
+      IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
+      CancellationTokenSource cts = new CancellationTokenSource();
+      channel.Open(out Task clientTerminated, cts.Token);
+      cts.Cancel();
+
+      var e = Assert.Throws<AggregateException>(() => clientTerminated.Wait());
       Assert.False(string.IsNullOrEmpty(e.Message));
     }
     #endregion
@@ -53,7 +67,7 @@ namespace HEAL.Bricks.XTests {
     [InlineData(typeof(StdInOutProcessChannel))]
     [InlineData(typeof(MemoryChannel))]
     public void Close_WhenChannelNotOpened_ThrowsInvalidOperationException(Type channelType) {
-      IChannel channel = CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestChannelAsync);
+      IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
 
       var e = Assert.Throws<InvalidOperationException>(() => channel.Close());
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -63,36 +77,36 @@ namespace HEAL.Bricks.XTests {
     [InlineData(typeof(StdInOutProcessChannel))]
     [InlineData(typeof(MemoryChannel))]
     public void Close_WhenChannelIsClosed(Type channelType) {
-      IChannel channel = CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestChannelAsync);
-      channel.Open();
+      IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
+      channel.Open(out Task clientTerminated);
       channel.Close();
-      channel.Close();
-    }
-    [Theory]
-    [InlineData(typeof(AnonymousPipesProcessChannel))]
-    [InlineData(typeof(StdInOutProcessChannel))]
-    [InlineData(typeof(MemoryChannel))]
-    public void Close_WhenClientIsResponsive(Type channelType) {
-      IChannel channel = CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestChannelAsync);
-      channel.Open();
+      try { clientTerminated.Wait(); } catch { }
+      
       channel.Close();
     }
     [Theory]
     [InlineData(typeof(AnonymousPipesProcessChannel))]
     [InlineData(typeof(StdInOutProcessChannel))]
     [InlineData(typeof(MemoryChannel))]
-    public void Close_WhenClientIsNotResponsive(Type channelType) {
-      IChannel channel = CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestNotResponsive", TestNotResponsiveAsync);
-      channel.Open();
+    public void Close_WhenClientIsRunning_ThrowsAggregateException(Type channelType) {
+      IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
+      channel.Open(out Task clientTerminated);
+      
       channel.Close();
+
+      var e = Assert.Throws<AggregateException>(() => clientTerminated.Wait());
+      Assert.False(string.IsNullOrEmpty(e.Message));
     }
     [Theory]
     [InlineData(typeof(AnonymousPipesProcessChannel))]
     [InlineData(typeof(StdInOutProcessChannel))]
     [InlineData(typeof(MemoryChannel))]
     public void Close_WhenClientExited(Type channelType) {
-      IChannel channel = CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestImmediateExit", TestImmediateExitAsync);
-      channel.Open();
+      IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
+      channel.Open(out Task clientTerminated);
+      channel.SendMessageAsync(new CancelRunnerMessage()).Wait();
+      clientTerminated.Wait();
+
       channel.Close();
     }
     #endregion
@@ -103,7 +117,7 @@ namespace HEAL.Bricks.XTests {
     [InlineData(typeof(StdInOutProcessChannel))]
     [InlineData(typeof(MemoryChannel))]
     public async Task SendMessageAsync_WithNullParameter_ThrowsArgumentNullException(Type channelType) {
-      IChannel channel = CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestChannelAsync);
+      IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
 
       var e = await Assert.ThrowsAsync<ArgumentNullException>(() => channel.SendMessageAsync(null));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -115,7 +129,7 @@ namespace HEAL.Bricks.XTests {
     [InlineData(typeof(MemoryChannel))]
     public async Task SendMessageAsync_WhenChannelNotOpened_ThrowsInvalidOperationException(Type channelType) {
       TextMessage message = new TextMessage("TestMessage");
-      IChannel channel = CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestChannelAsync);
+      IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
 
       var e = await Assert.ThrowsAsync<InvalidOperationException>(() => channel.SendMessageAsync(message));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -126,9 +140,10 @@ namespace HEAL.Bricks.XTests {
     [InlineData(typeof(MemoryChannel))]
     public async Task SendMessageAsync_WhenChannelIsClosed_ThrowsObjectDisposedException(Type channelType) {
       TextMessage message = new TextMessage("TestMessage");
-      IChannel channel = CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestChannelAsync);
-      channel.Open();
+      IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
+      channel.Open(out Task clientTerminated);
       channel.Close();
+      try { await clientTerminated; } catch { }
 
       var e = await Assert.ThrowsAsync<ObjectDisposedException>(() => channel.SendMessageAsync(message));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -141,7 +156,7 @@ namespace HEAL.Bricks.XTests {
     [InlineData(typeof(StdInOutProcessChannel))]
     [InlineData(typeof(MemoryChannel))]
     public async Task ReceiveMessageAsync_WhenChannelNotOpened_ThrowsInvalidOperationException(Type channelType) {
-      IChannel channel = CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestChannelAsync);
+      IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
 
       var e = await Assert.ThrowsAsync<InvalidOperationException>(() => channel.ReceiveMessageAsync());
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -151,9 +166,10 @@ namespace HEAL.Bricks.XTests {
     [InlineData(typeof(StdInOutProcessChannel))]
     [InlineData(typeof(MemoryChannel))]
     public async Task ReceiveMessageAsync_WhenChannelIsClosed_ThrowsObjectDisposedException(Type channelType) {
-      IChannel channel = CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestChannelAsync);
-      channel.Open();
+      IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
+      channel.Open(out Task clientTerminated);
       channel.Close();
+      try { await clientTerminated; } catch { }
 
       var e = await Assert.ThrowsAsync<ObjectDisposedException>(() => channel.ReceiveMessageAsync());
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -169,40 +185,15 @@ namespace HEAL.Bricks.XTests {
       TextMessage request = new TextMessage("TestMessage");
       TextMessage response;
 
-      using (IChannel channel = CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestChannelAsync)) {
-        channel.Open();
+      using (IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync)) {
+        channel.Open(out Task clientTerminated);
         await channel.SendMessageAsync(request);
         response = await channel.ReceiveMessageAsync<TextMessage>();
+        await channel.SendMessageAsync(new CancelRunnerMessage());
+        await clientTerminated;
       }
 
       Assert.Equal(request.Data, response.Data);
-    }
-    #endregion
-
-    #region Helpers
-    private static IChannel CreateChannel(Type channelType, string programPath, string arguments, Func<IChannel, Task> testCode) {
-      if (typeof(ProcessChannel).IsAssignableFrom(channelType)) {
-        return Activator.CreateInstance(channelType, programPath, arguments) as IChannel;
-      }
-      else if (typeof(MemoryChannel).IsAssignableFrom(channelType)) {
-        return Activator.CreateInstance(channelType, new Action<MemoryChannel>(async channel => await testCode(channel))) as MemoryChannel;
-      }
-      else {
-        return Activator.CreateInstance(channelType) as IChannel;
-      }
-    }
-    private static async Task TestChannelAsync(IChannel channel) {
-      IMessage message = await channel.ReceiveMessageAsync();
-      while (!(message is CancelRunnerMessage)) {
-        await channel.SendMessageAsync(message);
-        message = await channel.ReceiveMessageAsync();
-      }
-    }
-    private static Task TestNotResponsiveAsync(IChannel channel) {
-      while (true) { }
-    }
-    private static Task TestImmediateExitAsync(IChannel channel) {
-      return Task.CompletedTask;
     }
     #endregion
   }

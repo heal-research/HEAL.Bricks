@@ -17,9 +17,10 @@ namespace HEAL.Bricks {
   public abstract class StreamChannel : IChannel {
     protected Stream inputStream = null, outputStream = null;
 
-    public virtual void Open() {
+    public virtual void Open(out Task channelTerminated, CancellationToken cancellationToken = default) {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Operation((inputStream == null) && (outputStream == null));
+      channelTerminated = null;
     }
     public void Close() {
       Guard.Operation(((inputStream != null) && (outputStream != null)) || ObjectIsDisposed);
@@ -54,10 +55,10 @@ namespace HEAL.Bricks {
     }
 
     protected virtual void DisposeMembers() {
-      inputStream?.Dispose();
       outputStream?.Dispose();
-      inputStream = null;
       outputStream = null;
+      inputStream?.Dispose();
+      inputStream = null;
     }
 
     #region Dispose

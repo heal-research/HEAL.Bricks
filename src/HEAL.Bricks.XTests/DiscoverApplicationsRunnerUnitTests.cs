@@ -8,23 +8,20 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
-using System.Reflection;
 using System.IO;
 using System;
-using System.Threading.Channels;
 
 namespace HEAL.Bricks.XTests {
   public class DiscoverApplicationsRunnerUnitTests {
     [Theory]
     [InlineData(typeof(AnonymousPipesProcessChannel))]
     [InlineData(typeof(StdInOutProcessChannel))]
-    [InlineData(typeof(MemoryChannel))]
     public async Task GetApplicationsAsync_ReturnsApplications(Type channelType) {
       PackageLoadInfo[] packageLoadInfos = new[] {
-        PackageLoadInfo.CreateForTests("a", "1.0.0", Path.Combine(GetWorkingDir(), "HEAL.Bricks.XTests.dll"))
+        PackageLoadInfo.CreateForTests("a", "1.0.0", Path.Combine(TestHelpers.GetWorkingDir(), "HEAL.Bricks.XTests.dll"))
       };
       IApplication expectedApplication = new DummyApplication();
-      IChannel channel = CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestRunner");
+      IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestRunner", TestHelpers.TestRunnerAsync);
       DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(packageLoadInfos);
 
       ApplicationInfo[] result = await discoverApplicationsRunner.GetApplicationsAsync(channel);
@@ -39,30 +36,35 @@ namespace HEAL.Bricks.XTests {
       );
     }
 
-    [Fact]
-    public async Task GetApplicationsAsync_WhenNoApplicationsAvailable_ReturnsEmpty() {
-      IChannel channel = new AnonymousPipesProcessChannel(Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestRunner");
+    [Theory]
+    [InlineData(typeof(MemoryChannel))]
+    public async Task GetApplicationsAsync_WithMemoryChannel_ReturnsApplications(Type channelType) {
+      IApplication expectedApplication = new DummyApplication();
+      IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestRunner", TestHelpers.TestRunnerAsync);
+      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(Enumerable.Empty<PackageLoadInfo>());
+
+      ApplicationInfo[] result = await discoverApplicationsRunner.GetApplicationsAsync(channel);
+
+      Assert.Collection(result,
+        x => {
+          Assert.Equal(expectedApplication.Name, x.Name);
+          Assert.Equal(expectedApplication.Description, x.Description);
+          Assert.Equal(expectedApplication.Kind, x.Kind);
+          Assert.Equal(expectedApplication.GetType().FullName, x.TypeName);
+        }
+      );
+    }
+
+    [Theory]
+    [InlineData(typeof(AnonymousPipesProcessChannel))]
+    [InlineData(typeof(StdInOutProcessChannel))]
+    public async Task GetApplicationsAsync_WhenNoApplicationsAvailable_ReturnsEmpty(Type channelType) {
+      IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestRunner", TestHelpers.TestRunnerAsync);
       DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(Enumerable.Empty<PackageLoadInfo>());
 
       ApplicationInfo[] result = await discoverApplicationsRunner.GetApplicationsAsync(channel);
 
       Assert.Empty(result);
     }
-
-    #region Helpers
-    private static string GetWorkingDir() {
-      return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-    }
-    private static IChannel CreateChannel(Type channelType, string programPath, string arguments) {
-      if (typeof(ProcessChannel).IsAssignableFrom(channelType)) {
-        return Activator.CreateInstance(channelType, programPath, arguments) as IChannel;
-      } else if (typeof(MemoryChannel).IsAssignableFrom(channelType)) {
-        return Activator.CreateInstance(channelType, new Action<MemoryChannel>(async channel => await Runner.ReceiveAndExecuteAsync(channel))) as MemoryChannel;
-      }
-      else {
-        return Activator.CreateInstance(channelType) as IChannel;
-      }
-    }
-    #endregion
   }
 }

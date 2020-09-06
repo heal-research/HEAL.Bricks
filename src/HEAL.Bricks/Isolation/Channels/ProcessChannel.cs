@@ -11,6 +11,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public abstract class ProcessChannel : StreamChannel {
@@ -44,15 +46,27 @@ namespace HEAL.Bricks {
     }
     protected ProcessChannel() { }
 
-    public override void Open() {
-      base.Open();
+    public override void Open(out Task channelTerminated, CancellationToken cancellationToken = default) {
+      base.Open(out channelTerminated, cancellationToken);
       process = new Process {
         StartInfo = CreateProcessStartInfo(),
         EnableRaisingEvents = true
       };
+      var tcs = new TaskCompletionSource<int>();
+      process.Exited += (s, e) => {
+        Process p = s as Process;
+        if (p.ExitCode == 0) {
+          tcs.SetResult(0);
+        } else {
+          tcs.SetException(new Exception($"Process terminated with exit code {p.ExitCode}."));
+        }
+      };
+      cancellationToken.Register(() => { Close(); });
       process.Start();
       PostStartActions();
+      channelTerminated = tcs.Task;
     }
+
     protected override void DisposeMembers() {
       try {
         if ((process != null) && !process.HasExited) {

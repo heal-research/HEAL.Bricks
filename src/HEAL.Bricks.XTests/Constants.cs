@@ -9,6 +9,14 @@ using System;
 using System.Runtime.InteropServices;
 
 namespace HEAL.Bricks.XTests {
+  public enum Platform {
+    Unknown,
+    Windows,
+    Linux,
+    OSX,
+    FreeBSD
+  }
+
   public class Constants {
     // OS platform and dotnet.exe paths
     public static Platform Platform {

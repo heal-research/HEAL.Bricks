@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public interface IChannel : IDisposable {
-    void Open();
+    void Open(out Task channelTerminated, CancellationToken cancellationToken = default);
     void Close();
 
     Task SendMessageAsync(IMessage message, CancellationToken cancellationToken = default);
