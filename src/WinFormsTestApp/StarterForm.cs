@@ -13,28 +13,23 @@ using HEAL.Bricks;
 
 namespace WinFormsTestApp {
   public partial class StarterForm : Form {
-    private Settings settings;
-    private IPackageManager pm;
-    private ApplicationInfo[] applications;
+    private IApplicationManager am;
 
     public StarterForm() {
       InitializeComponent();
     }
 
     private async void StarterForm_Load(object sender, EventArgs e) {
-      settings = new Settings() {
-        PackageTag = "HEALBricksPlugin"
+      Settings settings = new Settings() {
+        PackageTag = "HEALBricksPlugin",
+        Isolation = Isolation.AnonymousPipes
       };
       settings.Repositories.Add(@"C:\# Daten\NuGet");
       Directory.CreateDirectory(settings.PackagesPath);
       Directory.CreateDirectory(settings.PackagesCachePath);
-      pm = PackageManager.Create(settings);
+      am = await ApplicationManager.CreateAsync(settings);
 
-      IChannel channel = new AnonymousPipesProcessChannel("dotnet", "\"" + Assembly.GetEntryAssembly().Location + "\"");
-      DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(pm.GetPackageLoadInfos());
-      applications = await discoverApplicationsRunner.GetApplicationsAsync(channel);
-
-      foreach (ApplicationInfo application in applications) {
+      foreach (ApplicationInfo application in am.InstalledApplications) {
         appsListView.Items.Add(new ListViewItem(application.ToString()) { Tag = application });
       }
 
@@ -44,9 +39,7 @@ namespace WinFormsTestApp {
 
     private async void startButton_Click(object sender, EventArgs e) {
       ApplicationInfo app = appsListView.SelectedItems[0].Tag as ApplicationInfo;
-      IChannel channel = new AnonymousPipesProcessChannel("dotnet", "\"" + Assembly.GetEntryAssembly().Location + "\"");
-      ApplicationRunner appRunner = new ApplicationRunner(pm.GetPackageLoadInfos(), app);
-      await appRunner.RunAsync(channel);
+      await am.RunAsync(app);
     }
   }
 }

@@ -22,6 +22,11 @@ namespace HEAL.Bricks.XTests {
       RuleFor(settings => settings.AppPath).NotEmpty().Must(p => Path.IsPathRooted(p)).WithMessage($"'{nameof(ISettings.AppPath)}' must be an absolute path.");
       RuleFor(settings => settings.PackagesPath).NotEmpty().Must(p => Path.IsPathRooted(p)).WithMessage($"'{nameof(ISettings.PackagesPath)}' must be an absolute path.");
       RuleFor(settings => settings.PackagesCachePath).NotEmpty().Must(p => Path.IsPathRooted(p)).WithMessage($"'{nameof(ISettings.PackagesCachePath)}' must be an absolute path.");
+      RuleFor(settings => settings.Isolation).IsInEnum();
+      RuleFor(settings => settings.DotnetCommand).NotEmpty();
+      RuleFor(settings => settings.DockerCommand).NotEmpty();
+      RuleFor(settings => settings.DockerImage).NotEmpty();
+      RuleFor(settings => settings.StarterAssembly).NotEmpty().Must(p => !Path.IsPathRooted(p)).WithMessage($"'{nameof(ISettings.StarterAssembly)}' must be a relative path.");
     }
   }
 }

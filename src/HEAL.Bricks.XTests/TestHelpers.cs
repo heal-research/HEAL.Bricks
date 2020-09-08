@@ -30,7 +30,7 @@ namespace HEAL.Bricks.XTests {
     }
     public static async Task TestChannelAsync(IChannel channel, CancellationToken cancellationToken) {
       IMessage message = await channel.ReceiveMessageAsync(cancellationToken);
-      while (!(message is CancelRunnerMessage) && !cancellationToken.IsCancellationRequested) {
+      while (!(message is CancelMessage) && !cancellationToken.IsCancellationRequested) {
         await channel.SendMessageAsync(message, cancellationToken);
         message = await channel.ReceiveMessageAsync(cancellationToken);
       }

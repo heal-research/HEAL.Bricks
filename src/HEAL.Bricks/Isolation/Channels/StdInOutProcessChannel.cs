@@ -6,16 +6,11 @@
 #endregion
 
 using System;
-using System.Diagnostics;
-using System.IO;
 
 namespace HEAL.Bricks {
-  public sealed class StdInOutProcessChannel : ProcessChannel {
-    internal StreamWriter StandardInput => process.StandardInput;
-    internal StreamReader StandardOutput => process.StandardOutput;
-
+  public class StdInOutProcessChannel : ProcessChannel {
     public StdInOutProcessChannel(string programPath, string arguments = null) : base(programPath, arguments) { }
-    private StdInOutProcessChannel() {
+    protected StdInOutProcessChannel() {
       // used to create a new channel on the client-side
     }
 
@@ -24,13 +19,6 @@ namespace HEAL.Bricks {
       inputStream = Console.OpenStandardInput();
       outputStream = Console.OpenStandardOutput();
     }
-    protected override ProcessStartInfo CreateProcessStartInfo() {
-      ProcessStartInfo startInfo = base.CreateProcessStartInfo();
-      startInfo.RedirectStandardInput = true;
-      startInfo.RedirectStandardOutput = true;
-      return startInfo;
-    }
-
     protected override void PostStartActions() {
       base.PostStartActions();
       outputStream = process.StandardInput.BaseStream;

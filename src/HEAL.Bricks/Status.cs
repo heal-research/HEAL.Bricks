@@ -24,12 +24,9 @@ namespace HEAL.Bricks {
     InvalidPackages,
     Undefined
   }
-  public enum RunnerStatus {
-    Created,
-    Starting,
-    Running,
+  public enum ApplicationStatus {
     Stopped,
-    Canceled,
+    Running,
     Faulted
   }
 }

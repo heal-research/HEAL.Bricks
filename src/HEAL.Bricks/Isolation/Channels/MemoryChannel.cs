@@ -47,7 +47,7 @@ namespace HEAL.Bricks {
       GC.SuppressFinalize(this);
     }
 
-    public virtual Task SendMessageAsync(IMessage message, CancellationToken cancellationToken = default) {
+    public Task SendMessageAsync(IMessage message, CancellationToken cancellationToken = default) {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Argument(message, nameof(message)).NotNull();
       Guard.Operation(outputQueue != null);

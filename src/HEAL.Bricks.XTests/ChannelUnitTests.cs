@@ -104,7 +104,7 @@ namespace HEAL.Bricks.XTests {
     public void Close_WhenClientExited(Type channelType) {
       IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
       channel.Open(out Task clientTerminated);
-      channel.SendMessageAsync(new CancelRunnerMessage()).Wait();
+      channel.SendMessageAsync(new CancelMessage()).Wait();
       clientTerminated.Wait();
 
       channel.Close();
@@ -189,7 +189,7 @@ namespace HEAL.Bricks.XTests {
         channel.Open(out Task clientTerminated);
         await channel.SendMessageAsync(request);
         response = await channel.ReceiveMessageAsync<TextMessage>();
-        await channel.SendMessageAsync(new CancelRunnerMessage());
+        await channel.SendMessageAsync(new CancelMessage());
         await clientTerminated;
       }
 

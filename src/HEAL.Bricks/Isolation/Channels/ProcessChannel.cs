@@ -17,6 +17,9 @@ using System.Threading.Tasks;
 namespace HEAL.Bricks {
   public abstract class ProcessChannel : StreamChannel {
     public static string ChannelTypeArgument => "--ChannelType";
+    
+    internal StreamWriter StandardInput => process?.StandardInput;
+    internal StreamReader StandardOutput => process?.StandardOutput;
 
     public static ProcessChannel CreateFromCLIArguments(string[] arguments) {
       Guard.Argument(arguments, nameof(arguments)).NotNull();
@@ -58,7 +61,7 @@ namespace HEAL.Bricks {
         if (p.ExitCode == 0) {
           tcs.SetResult(0);
         } else {
-          tcs.SetException(new Exception($"Process terminated with exit code {p.ExitCode}."));
+          tcs.SetException(new Exception($"Process terminated with exit code {p.ExitCode}." + Environment.NewLine + p.StandardError.ReadToEnd()));
         }
       };
       cancellationToken.Register(() => { Close(); });
@@ -88,9 +91,11 @@ namespace HEAL.Bricks {
         Arguments = arguments + " " + ChannelTypeArgument + "=" + this.GetType().FullName,
         UseShellExecute = false,
         CreateNoWindow = true,
-        ErrorDialog = true,
-        WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-      };
+        WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+        RedirectStandardInput = true,
+        RedirectStandardOutput = true,
+        RedirectStandardError = true
+    };
     }
     protected virtual void PostStartActions() { }
   }

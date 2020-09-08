@@ -12,14 +12,14 @@ using System.IO.Pipes;
 using System.Linq;
 
 namespace HEAL.Bricks {
-  public sealed class AnonymousPipesProcessChannel : ProcessChannel {
+  public class AnonymousPipesProcessChannel : ProcessChannel {
     public static string InputConnectionArgument => "--InputConnection=";
     public static string OutputConnectionArgument => "--OutputConnection=";
 
     private AnonymousPipeServerStream anonymousPipeOutputStream, anonymousPipeInputStream;
 
     public AnonymousPipesProcessChannel(string programPath, string arguments = null) : base(programPath, arguments) { }
-    private AnonymousPipesProcessChannel() {
+    protected AnonymousPipesProcessChannel() {
       // used to create a new channel on the client-side
     }
 

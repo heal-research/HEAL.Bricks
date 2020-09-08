@@ -16,10 +16,11 @@ namespace WinFormsTestApp {
       Application.EnableVisualStyles();
       Application.SetCompatibleTextRenderingDefault(false);
 
-      IChannel channel = ProcessChannel.CreateFromCLIArguments(args);
-      if (channel != null) {
-        Runner.ReceiveAndExecuteAsync(channel).Wait();
-        return;
+      using (IChannel channel = ProcessChannel.CreateFromCLIArguments(args)) {
+        if (channel != null) {
+          Runner.ReceiveAndExecuteAsync(channel).Wait();
+          return;
+        }
       }
 
       Application.Run(new StarterForm());

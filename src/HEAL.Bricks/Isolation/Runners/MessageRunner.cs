@@ -18,7 +18,7 @@ namespace HEAL.Bricks {
         switch (message) {
           case null:
             return;
-          case CancelRunnerMessage _:
+          case CancelMessage _:
             await ProcessRunnerMessageOnClientAsync(message, channel, cancellationToken);
             return;
           default:

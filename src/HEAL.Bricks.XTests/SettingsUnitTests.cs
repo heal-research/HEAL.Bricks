@@ -153,6 +153,147 @@ namespace HEAL.Bricks.XTests {
     }
     #endregion
 
+    #region Isolation
+    [Fact]
+    public void Isolation_SetValue_Succeeds() {
+      Isolation isolation = Isolation.Docker;
+      Settings settings = new Settings();
+
+      settings.Isolation = isolation;
+
+      Assert.Equal(isolation, settings.Isolation);
+    }
+    #endregion
+
+    #region DotnetCommand
+    [Fact]
+    public void DotnetCommand_SetString_Succeeds() {
+      string path = "path/to/dotnet.exe";
+      Settings settings = new Settings();
+
+      settings.DotnetCommand = path;
+
+      Assert.Equal(path, settings.DotnetCommand);
+    }
+    [Fact]
+    public void DotnetCommand_SetNull_ThrowsArgumentNullException() {
+      Settings settings = new Settings();
+
+      var e = Assert.Throws<ArgumentNullException>(() => settings.DotnetCommand = null);
+      Assert.False(string.IsNullOrEmpty(e.Message));
+      Assert.False(string.IsNullOrEmpty(e.ParamName));
+    }
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void DotnetCommand_SetEmptyString_ThrowsArgumentException(string command) {
+      Settings settings = new Settings();
+
+      var e = Assert.Throws<ArgumentException>(() => settings.DotnetCommand = command);
+      Assert.False(string.IsNullOrEmpty(e.Message));
+      Assert.False(string.IsNullOrEmpty(e.ParamName));
+    }
+    #endregion
+
+    #region DockerCommand
+    [Fact]
+    public void DockerCommand_SetString_Succeeds() {
+      string path = "path/to/docker.exe";
+      Settings settings = new Settings();
+
+      settings.DockerCommand = path;
+
+      Assert.Equal(path, settings.DockerCommand);
+    }
+    [Fact]
+    public void DockerCommand_SetNull_ThrowsArgumentNullException() {
+      Settings settings = new Settings();
+
+      var e = Assert.Throws<ArgumentNullException>(() => settings.DockerCommand = null);
+      Assert.False(string.IsNullOrEmpty(e.Message));
+      Assert.False(string.IsNullOrEmpty(e.ParamName));
+    }
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void DockerCommand_SetEmptyString_ThrowsArgumentException(string command) {
+      Settings settings = new Settings();
+
+      var e = Assert.Throws<ArgumentException>(() => settings.DockerCommand = command);
+      Assert.False(string.IsNullOrEmpty(e.Message));
+      Assert.False(string.IsNullOrEmpty(e.ParamName));
+    }
+    #endregion
+
+    #region DockerImage
+    [Fact]
+    public void DockerImage_SetString_Succeeds() {
+      string image = "my.dockerimage.com/url/image:1.0";
+      Settings settings = new Settings();
+
+      settings.DockerImage = image;
+
+      Assert.Equal(image, settings.DockerImage);
+    }
+    [Fact]
+    public void DockerImage_SetNull_ThrowsArgumentNullException() {
+      Settings settings = new Settings();
+
+      var e = Assert.Throws<ArgumentNullException>(() => settings.DockerImage = null);
+      Assert.False(string.IsNullOrEmpty(e.Message));
+      Assert.False(string.IsNullOrEmpty(e.ParamName));
+    }
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void DockerImage_SetEmptyString_ThrowsArgumentException(string command) {
+      Settings settings = new Settings();
+
+      var e = Assert.Throws<ArgumentException>(() => settings.DockerImage = command);
+      Assert.False(string.IsNullOrEmpty(e.Message));
+      Assert.False(string.IsNullOrEmpty(e.ParamName));
+    }
+    #endregion
+
+    #region StarterAssembly
+    [Fact]
+    public void StarterAssembly_SetRelativePath_Succeeds() {
+      string path = "relative/path";
+      Settings settings = new Settings();
+
+      settings.StarterAssembly = path;
+
+      Assert.Equal(path, settings.StarterAssembly);
+    }
+    [Fact]
+    public void StarterAssembly_SetNull_ThrowsArgumentNullException() {
+      Settings settings = new Settings();
+
+      var e = Assert.Throws<ArgumentNullException>(() => settings.StarterAssembly = null);
+      Assert.False(string.IsNullOrEmpty(e.Message));
+      Assert.False(string.IsNullOrEmpty(e.ParamName));
+    }
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void StarterAssembly_SetEmptyString_ThrowsArgumentException(string path) {
+      Settings settings = new Settings();
+
+      var e = Assert.Throws<ArgumentException>(() => settings.StarterAssembly = path);
+      Assert.False(string.IsNullOrEmpty(e.Message));
+      Assert.False(string.IsNullOrEmpty(e.ParamName));
+    }
+    [Fact]
+    public void StarterAssembly_SetAbsolutePath_ThrowsArgumentException() {
+      string path = "C:/absolute/path";
+      Settings settings = new Settings();
+
+      var e = Assert.Throws<ArgumentException>(() => settings.StarterAssembly = path);
+      Assert.False(string.IsNullOrEmpty(e.Message));
+      Assert.False(string.IsNullOrEmpty(e.ParamName));
+    }
+    #endregion
+
     #region SetAppPath
     [Fact]
     public void SetAppPath_WithAbsolutePath_Succeeds() {

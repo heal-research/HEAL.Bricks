@@ -6,9 +6,10 @@
 #endregion
 
 namespace HEAL.Bricks {
-  public enum IsolationMode {
+  public enum Isolation {
     None,
-    Process,
+    AnonymousPipes,
+    StdInOut,
     Docker
   }
 }

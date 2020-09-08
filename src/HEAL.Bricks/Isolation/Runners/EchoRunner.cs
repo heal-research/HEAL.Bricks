@@ -19,7 +19,7 @@ namespace HEAL.Bricks {
 
     protected override async Task ProcessRunnerMessageOnClientAsync(IMessage message, IChannel channel, CancellationToken cancellationToken) {
       switch (message) {
-        case CancelRunnerMessage _:
+        case CancelMessage _:
           break;
         case TextMessage textMessage:
           await channel.SendMessageAsync(new TextMessage("ECHO: " + textMessage.Data), cancellationToken);
@@ -64,7 +64,7 @@ namespace HEAL.Bricks {
 
     public async Task SendCancel(IChannel channel, CancellationToken cancellationToken = default) {
       try {
-        await channel.SendMessageAsync(new CancelRunnerMessage(), cancellationToken);
+        await channel.SendMessageAsync(new CancelMessage(), cancellationToken);
       }
       catch (OperationCanceledException) { }
     }

@@ -14,5 +14,10 @@ namespace HEAL.Bricks {
     string AppPath { get; }
     string PackagesPath { get; }
     string PackagesCachePath { get; }
+    Isolation Isolation { get; }
+    string DotnetCommand { get; }
+    string DockerCommand { get; }
+    string DockerImage { get; }
+    string StarterAssembly { get; }
   }
 }

@@ -15,7 +15,7 @@ namespace HEAL.Bricks.Tests.BricksRunner {
       if (args.Any(x => x == "--TestChannel")) {
         using ProcessChannel channel = ProcessChannel.CreateFromCLIArguments(args) ?? throw new ArgumentException("Cannot retrieve channel from CLI arguments.", nameof(args));
         IMessage message = await channel.ReceiveMessageAsync();
-        while (!(message is CancelRunnerMessage)) {
+        while (!(message is CancelMessage)) {
           await channel.SendMessageAsync(message);
           message = await channel.ReceiveMessageAsync();
         }

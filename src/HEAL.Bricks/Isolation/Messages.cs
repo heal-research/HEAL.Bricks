@@ -7,9 +7,6 @@
 
 using Dawn;
 using System;
-using System.IO;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
 
 namespace HEAL.Bricks {
   [Serializable]
@@ -36,7 +33,7 @@ namespace HEAL.Bricks {
   public class ResumeRunnerMessage : Message { }
 
   [Serializable]
-  public class CancelRunnerMessage : Message { }
+  public class CancelMessage : Message { }
 
   [Serializable]
   public class RunnerStartedMessage : Message { }

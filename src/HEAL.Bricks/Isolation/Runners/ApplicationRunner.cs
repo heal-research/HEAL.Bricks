@@ -39,12 +39,14 @@ namespace HEAL.Bricks {
 
     protected override async Task ExecuteOnHostAsync(IChannel channel, CancellationToken cancellationToken) {
       if (ApplicationInfo.Kind == ApplicationKind.Console) {
-        StdInOutProcessChannel stdInOutChannel = Guard.Argument(channel, nameof(channel)).Cast<StdInOutProcessChannel>();
+        if (channel is MemoryChannel) return;
+
+        ProcessChannel processChannel = Guard.Argument(channel, nameof(channel)).Cast<ProcessChannel>();
         Task reader = Task.Run(() => {
-          int ch = stdInOutChannel.StandardOutput.Read();
+          int ch = processChannel.StandardOutput.Read();
           while ((ch != -1) && !cancellationToken.IsCancellationRequested) {
             Console.Write((char)ch);
-            ch = stdInOutChannel.StandardOutput.Read();
+            ch = processChannel.StandardOutput.Read();
           }
         }, cancellationToken);
 
@@ -66,7 +68,7 @@ namespace HEAL.Bricks {
         Task writer = Task.Run(() => {
           string s = Console.ReadLine();
           while ((s != null) && !cancellationToken.IsCancellationRequested) {
-            stdInOutChannel.StandardInput.WriteLine(s);
+            processChannel.StandardInput.WriteLine(s);
             s = Console.ReadLine();
           }
         }, cancellationToken);

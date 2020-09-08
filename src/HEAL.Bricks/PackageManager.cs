@@ -11,24 +11,21 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public sealed class PackageManager : IPackageManager {
     public static IPackageManager Create(ISettings settings) {
-      Guard.Argument(settings, nameof(settings)).NotNull().Member(s => s.PackageTag, t => t.NotNull().NotWhiteSpace())
-                                                          .Member(s => s.Repositories, r => r.NotNull().NotEmpty().Require(r.Value.All(x => !string.IsNullOrWhiteSpace(x))))
-                                                          .Member(s => s.AppPath, p => p.NotNull().NotWhiteSpace().AbsolutePath())
-                                                          .Member(s => s.PackagesPath, p => p.NotNull().NotWhiteSpace().AbsolutePath())
-                                                          .Member(s => s.PackagesCachePath, p => p.NotNull().NotWhiteSpace().AbsolutePath());
+      Guard.Argument(settings, nameof(settings)).NotNull().Member(s => s.PackageTag, x => x.NotNull().NotEmpty().NotWhiteSpace())
+                                                          .Member(s => s.Repositories, x => x.NotNull().NotEmpty().Require(x.Value.All(y => !string.IsNullOrWhiteSpace(y))))
+                                                          .Member(s => s.PackagesPath, x => x.NotNull().NotEmpty().NotWhiteSpace().AbsolutePath())
+                                                          .Member(s => s.PackagesCachePath, x => x.NotNull().NotEmpty().NotWhiteSpace().AbsolutePath());
       return new PackageManager(settings);
     }
     internal static IPackageManager CreateForTests(ISettings settings, INuGetConnector nuGetConnector) {
       return new PackageManager(settings, nuGetConnector);
     }
-
 
     private readonly INuGetConnector nuGetConnector;
     private ILogger logger = NuGetLogger.NoLogger;
