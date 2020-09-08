@@ -7,70 +7,78 @@
 
 using Dawn;
 using System;
-using System.Collections.Concurrent;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public class MemoryChannel : IChannel {
-    protected BlockingCollection<IMessage> inputQueue = null, outputQueue = null;
-    private readonly bool hostChannel = false;
+    private Channel<IMessage> channel = null;
+    protected ChannelReader<IMessage> input = null;
+    protected ChannelWriter<IMessage> output = null;
     private readonly Action<MemoryChannel, CancellationToken> clientCode;
     private CancellationTokenSource clientCTS;
 
     public MemoryChannel(Action<MemoryChannel, CancellationToken> clientCode) {
       Guard.Argument(clientCode, nameof(clientCode)).NotNull();
-      this.hostChannel = true;
       this.clientCode = clientCode;
     }
-    protected MemoryChannel() { }
+    protected MemoryChannel(ChannelReader<IMessage> input) {
+      // used to create a new channel on the client-side
+      channel = Channel.CreateUnbounded<IMessage>(new UnboundedChannelOptions {
+        SingleReader = true,
+        SingleWriter = true
+      });
+      output = channel.Writer;
+      this.input = input;
+    }
 
     public virtual void Open(out Task channelTerminated, CancellationToken cancellationToken = default) {
       Guard.Disposal(ObjectIsDisposed);
-      Guard.Operation((inputQueue == null) && (outputQueue == null));
+      Guard.Operation((channel == null) && (input == null) && (output == null));
 
-      inputQueue = new BlockingCollection<IMessage>();
-      outputQueue = new BlockingCollection<IMessage>();
+      channel = Channel.CreateUnbounded<IMessage>(new UnboundedChannelOptions {
+        SingleReader = true,
+        SingleWriter = true
+      });
+      output = channel.Writer;
+      MemoryChannel client = new MemoryChannel(channel.Reader);
+      input = client.channel.Reader;
 
-      MemoryChannel clientChannel = new MemoryChannel {
-        inputQueue = outputQueue,
-        outputQueue = inputQueue
-      };
       clientCTS = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
       CancellationToken clientToken = clientCTS.Token;
 
-      channelTerminated = Task.Run(() => { clientCode(clientChannel, clientToken); }, clientToken);
+      channelTerminated = Task.Run(() => { clientCode(client, clientToken); }, clientToken);
     }
     public void Close() {
-      Guard.Operation(((inputQueue != null) && (outputQueue != null)) || ObjectIsDisposed);
+      Guard.Operation(((channel != null) && (output != null)) || ObjectIsDisposed);
       Dispose(disposing: true);
       GC.SuppressFinalize(this);
     }
 
-    public Task SendMessageAsync(IMessage message, CancellationToken cancellationToken = default) {
+    public async Task SendMessageAsync(IMessage message, CancellationToken cancellationToken = default) {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Argument(message, nameof(message)).NotNull();
-      Guard.Operation(outputQueue != null);
-      outputQueue.Add(message, cancellationToken);
-      return Task.CompletedTask;
+      Guard.Operation(output != null);
+
+      await output.WriteAsync(message, cancellationToken);
     }
 
     public Task<IMessage> ReceiveMessageAsync(CancellationToken cancellationToken = default) => ReceiveMessageAsync<IMessage>(cancellationToken);
-    public Task<T> ReceiveMessageAsync<T>(CancellationToken cancellationToken = default) where T : class, IMessage {
+    public async Task<T> ReceiveMessageAsync<T>(CancellationToken cancellationToken = default) where T : class, IMessage {
       Guard.Disposal(ObjectIsDisposed);
-      Guard.Operation(inputQueue != null);
-      return Task.FromResult(inputQueue.Take(cancellationToken) as T);
+      Guard.Operation(input != null);
+
+      return await input.ReadAsync(cancellationToken) as T;
     }
 
     protected virtual void DisposeMembers() {
-      if (hostChannel) {
-        outputQueue?.Dispose();
-        outputQueue = null;
-        inputQueue?.Dispose();
-        inputQueue = null;
-        clientCTS?.Cancel();
-        clientCTS?.Dispose();
-      }
+      clientCTS?.Cancel();
+      clientCTS?.Dispose();
+      output?.Complete();
+      output = null;
+      input = null;
+      channel = null;
     }
 
     #region Dispose

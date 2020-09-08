@@ -17,7 +17,7 @@ namespace TestApp {
 
       Settings settings = new Settings() {
         PackageTag = "HEALBricksPlugin",
-        Isolation = Isolation.None
+        Isolation = Isolation.AnonymousPipes
       };
       settings.Repositories.Add(@"C:\# Daten\NuGet");
       Directory.CreateDirectory(settings.PackagesPath);
