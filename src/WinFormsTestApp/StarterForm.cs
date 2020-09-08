@@ -21,7 +21,6 @@ namespace WinFormsTestApp {
 
     private async void StarterForm_Load(object sender, EventArgs e) {
       Settings settings = new Settings() {
-        PackageTag = "HEALBricksPlugin",
         Isolation = Isolation.AnonymousPipes
       };
       settings.Repositories.Add(@"C:\# Daten\NuGet");

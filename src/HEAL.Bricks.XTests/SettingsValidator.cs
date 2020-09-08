@@ -16,7 +16,6 @@ namespace HEAL.Bricks.XTests {
     }
 
     public SettingsValidator() {
-      RuleFor(settings => settings.PackageTag).NotEmpty();
       RuleFor(settings => settings.Repositories).NotEmpty();
       RuleForEach(settings => settings.Repositories).NotEmpty();
       RuleFor(settings => settings.AppPath).NotEmpty().Must(p => Path.IsPathRooted(p)).WithMessage($"'{nameof(ISettings.AppPath)}' must be an absolute path.");

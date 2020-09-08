@@ -9,7 +9,6 @@ using System.Collections.Generic;
 
 namespace HEAL.Bricks {
   public interface ISettings {
-    string PackageTag { get; }
     IEnumerable<string> Repositories { get; }
     string AppPath { get; }
     string PackagesPath { get; }

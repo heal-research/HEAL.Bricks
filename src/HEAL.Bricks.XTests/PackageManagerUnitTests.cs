@@ -56,13 +56,12 @@ namespace HEAL.Bricks.XTests {
     [Fact]
     public void CreateForTests_ReturnsInstanceWhereStatusIsOK() {
       ISettings settings = new Settings() {
-        PackagesPath = Path.GetTempPath(),
-        PackageTag = "testPackageTag"
+        PackagesPath = Path.GetTempPath()
       };
       LocalPackageInfo[] packages = new[] {
         LocalPackageInfo.CreateForTests("a", "1.0.0")
       };
-      Mock<INuGetConnector> nuGetConnectorMock = Mock.Of<INuGetConnector>().GetLocalPackages(settings.PackagesPath, settings.PackageTag, packages);
+      Mock<INuGetConnector> nuGetConnectorMock = Mock.Of<INuGetConnector>().GetLocalPackages(settings.PackagesPath, packages);
 
       IPackageManager pm = PackageManager.CreateForTests(settings, nuGetConnectorMock.Object);
 

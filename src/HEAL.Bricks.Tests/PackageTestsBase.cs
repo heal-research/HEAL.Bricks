@@ -128,7 +128,6 @@ namespace HEAL.Bricks.Tests {
     private protected ISettings CreateSettings(bool includePublicNuGetRepository = false) {
       Settings settings = new Settings();
       settings.SetAppPath(TestExecutionPath);
-      settings.PackageTag = "HEALBricksPlugin";
       settings.PackagesPath = Constants.localPackagesRelativePath;
       settings.PackagesCachePath = Constants.localPackagesCacheRelativePath;
       settings.Repositories.Clear();

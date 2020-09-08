@@ -16,15 +16,15 @@ using System.Net.NetworkInformation;
 
 namespace HEAL.Bricks {
   public sealed class LocalPackageInfo : PackageInfo, IEquatable<LocalPackageInfo>, IComparable<LocalPackageInfo> {
-    internal static LocalPackageInfo CreateForTests(string id, string version, IEnumerable<PackageDependency> dependencies = null, bool isBricksPackage = true, string packagePath = null, IEnumerable<string> referenceItems = null, bool frameworkNotSupported = false) {
-      LocalPackageInfo lpi = new LocalPackageInfo(id, version, isBricksPackage, packagePath, referenceItems) {
+    internal static LocalPackageInfo CreateForTests(string id, string version, IEnumerable<PackageDependency> dependencies = null, string packagePath = null, IEnumerable<string> referenceItems = null, bool frameworkNotSupported = false) {
+      LocalPackageInfo lpi = new LocalPackageInfo(id, version, packagePath, referenceItems) {
         Dependencies = dependencies ?? Enumerable.Empty<PackageDependency>(),
         status = frameworkNotSupported ? PackageStatus.IncompatibleFramework : PackageStatus.Undefined
       };
       return lpi;
     }
-    internal static LocalPackageInfo CreateForTestsFromRemotePackageInfo(RemotePackageInfo package, bool isBricksPackage = true, string packagePath = null, IEnumerable<string> referenceItems = null, bool frameworkNotSupported = false) {
-      LocalPackageInfo lpi = new LocalPackageInfo(package.Id, package.Version.ToString(), isBricksPackage, packagePath, referenceItems) {
+    internal static LocalPackageInfo CreateForTestsFromRemotePackageInfo(RemotePackageInfo package, string packagePath = null, IEnumerable<string> referenceItems = null, bool frameworkNotSupported = false) {
+      LocalPackageInfo lpi = new LocalPackageInfo(package.Id, package.Version.ToString(), packagePath, referenceItems) {
         Dependencies = package.Dependencies,
         status = frameworkNotSupported ? PackageStatus.IncompatibleFramework : PackageStatus.Undefined
       };
@@ -35,7 +35,6 @@ namespace HEAL.Bricks {
     private PackageStatus status = PackageStatus.Undefined;
 
     public string Description => nuspecReader?.GetDescription();
-    public bool IsBricksPackage { get; }
     public string PackagePath { get; }
     public IEnumerable<string> ReferenceItems { get; }
     public PackageStatus Status {
@@ -45,21 +44,19 @@ namespace HEAL.Bricks {
       }
     } 
 
-    internal LocalPackageInfo(PackageFolderReader packageReader, NuGetFramework currentFramework, string packageTag = "") : base(packageReader?.GetIdentity()) {
+    internal LocalPackageInfo(PackageFolderReader packageReader, NuGetFramework currentFramework) : base(packageReader?.GetIdentity()) {
       Guard.Argument(packageReader, nameof(packageReader)).NotNull().Member(p => p.NuspecReader, n => n.NotNull());
       Guard.Argument(currentFramework, nameof(currentFramework)).NotNull();
 
       nuspecReader = packageReader.NuspecReader;
       Dependencies = NuGetFrameworkUtility.GetNearest(nuspecReader.GetDependencyGroups(), currentFramework).Packages.Select(x => new PackageDependency(x)).ToArray();
-      IsBricksPackage = !string.IsNullOrEmpty(packageTag) && nuspecReader.GetTags().Contains(packageTag);
       PackagePath = System.IO.Path.GetDirectoryName(packageReader.GetNuspecFile());
       ReferenceItems = NuGetFrameworkUtility.GetNearest(packageReader.GetReferenceItems(), currentFramework).Items.Select(x => Path.Combine(PackagePath, x)).ToArray();
       bool frameworkNotSupported = new FrameworkReducer().GetNearest(currentFramework, packageReader.GetSupportedFrameworks()) == null;
       status = frameworkNotSupported ? PackageStatus.IncompatibleFramework : PackageStatus.Undefined;
     }
-    private LocalPackageInfo(string id, string version, bool isBricksPackage, string packagePath, IEnumerable<string> referenceItems) : base(id, version) {
+    private LocalPackageInfo(string id, string version, string packagePath, IEnumerable<string> referenceItems) : base(id, version) {
       // required for unit tests
-      IsBricksPackage = isBricksPackage;
       PackagePath = packagePath;
       ReferenceItems = referenceItems;
     }

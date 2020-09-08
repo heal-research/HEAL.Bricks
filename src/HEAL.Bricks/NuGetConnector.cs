@@ -56,11 +56,11 @@ namespace HEAL.Bricks {
     }
 
     #region INuGetConnector Methods
-    public virtual IEnumerable<LocalPackageInfo> GetLocalPackages(string packagesPath, string bricksPackageTag) {
+    public virtual IEnumerable<LocalPackageInfo> GetLocalPackages(string packagesPath) {
       IEnumerable<PackageFolderReader> packageReaders = Enumerable.Empty<PackageFolderReader>();
       try {
         packageReaders = GetInstalledPackages(packagesPath);
-        return packageReaders.Select(x => new LocalPackageInfo(x, CurrentFramework, bricksPackageTag)).ToArray();
+        return packageReaders.Select(x => new LocalPackageInfo(x, CurrentFramework)).ToArray();
       }
       finally {
         foreach (PackageFolderReader packageReader in packageReaders) packageReader.Dispose();
@@ -95,7 +95,7 @@ namespace HEAL.Bricks {
     public virtual async Task<IEnumerable<RemotePackageInfo>> GetMissingDependenciesAsync(IEnumerable<LocalPackageInfo> packages, CancellationToken ct) {
       IEnumerable<PackageIdentity> localPackages = packages.Select(x => x.nuspecReader.GetIdentity());
       IEnumerable<SourcePackageDependencyInfo> allDependencies = await GetPackageDependenciesAsync(localPackages, true, ct);
-      IEnumerable<LocalPackageInfo> latestVersionOfInstalledPackages = packages.Where(x => x.IsBricksPackage).GroupBy(x => x.Id).Select(x => x.OrderByDescending(y => y, PackageInfoIdentityComparer.Default).First());
+      IEnumerable<LocalPackageInfo> latestVersionOfInstalledPackages = packages.GroupBy(x => x.Id).Select(x => x.OrderByDescending(y => y, PackageInfoIdentityComparer.Default).First());
       IEnumerable<PackageIdentity> installedPackages = latestVersionOfInstalledPackages.Select(x => x.nuspecReader.GetIdentity());
 
       IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = ResolveDependencies(Enumerable.Empty<string>(), installedPackages, allDependencies, ct, out bool resolveSucceeded);

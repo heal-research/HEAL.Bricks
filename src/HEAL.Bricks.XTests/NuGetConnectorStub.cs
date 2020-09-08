@@ -30,7 +30,7 @@ namespace HEAL.Bricks.XTests {
       this.remotePackages.AddRange(remotePackages);
     }
 
-    public IEnumerable<LocalPackageInfo> GetLocalPackages(string packagesPath, string bricksPackageTag) {
+    public IEnumerable<LocalPackageInfo> GetLocalPackages(string packagesPath) {
       return localPackages;
     }
 
@@ -87,7 +87,7 @@ namespace HEAL.Bricks.XTests {
     public Task<IEnumerable<RemotePackageInfo>> GetPackageUpdatesAsync(IEnumerable<LocalPackageInfo> packages, bool includePreReleases, CancellationToken ct) {
       List<RemotePackageInfo> updates = new List<RemotePackageInfo>();
       foreach (var package in packages) {
-        RemotePackageInfo update = remotePackages.Where(x => (x.Id == package.Id) && (x.Version.CompareTo(package.Version) > 0) && (includePreReleases ? true : !x.Version.IsPrerelease))
+        RemotePackageInfo update = remotePackages.Where(x => (x.Id == package.Id) && (x.Version.CompareTo(package.Version) > 0) && (includePreReleases || !x.Version.IsPrerelease))
                                                  .OrderByDescending(x => x.Version).FirstOrDefault();
         if (update != null) updates.Add(update);
       }

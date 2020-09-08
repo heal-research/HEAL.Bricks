@@ -47,36 +47,6 @@ namespace HEAL.Bricks.XTests {
     }
     #endregion
 
-    #region PackageTag
-    [Fact]
-    public void PackageTag_SetString_Succeeds() {
-      string tag = "MyTestPackageTag";
-      Settings settings = new Settings();
-
-      settings.PackageTag = tag;
-
-      Assert.Equal(tag, settings.PackageTag);
-    }
-    [Fact]
-    public void PackageTag_SetNull_ThrowsArgumentNullException() {
-      Settings settings = new Settings();
-
-      var e = Assert.Throws<ArgumentNullException>(() => settings.PackageTag = null);
-      Assert.False(string.IsNullOrEmpty(e.Message));
-      Assert.False(string.IsNullOrEmpty(e.ParamName));
-    }
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void PackageTag_SetEmptyString_ThrowsArgumentException(string tag) {
-      Settings settings = new Settings();
-
-      var e = Assert.Throws<ArgumentException>(() => settings.PackageTag = tag);
-      Assert.False(string.IsNullOrEmpty(e.Message));
-      Assert.False(string.IsNullOrEmpty(e.ParamName));
-    }
-    #endregion
-
     #region Repositories
     [Fact]
     public void Repositories_AddRepository_Succeeds() {

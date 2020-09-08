@@ -14,7 +14,7 @@ namespace HEAL.Bricks {
   internal interface INuGetConnector {
     NuGetFramework CurrentFramework { get; }
 
-    IEnumerable<LocalPackageInfo> GetLocalPackages(string packagesPath, string bricksPackageTag);
+    IEnumerable<LocalPackageInfo> GetLocalPackages(string packagesPath);
 
     Task<RemotePackageInfo> GetRemotePackageAsync(string packageId, string version, CancellationToken ct);
 

@@ -17,7 +17,6 @@ namespace HEAL.Bricks {
     public static string PublicNuGetRepository => "https://api.nuget.org/v3/index.json";
     public static Settings Default { get; } = new Settings();
 
-    private string packageTag;
     private string packagesPath;
     private string packagesCachePath;
     private string dotnetCommand;
@@ -25,10 +24,6 @@ namespace HEAL.Bricks {
     private string dockerImage;
     private string starterAssembly;
 
-    public string PackageTag {
-      get { return packageTag; }
-      set { packageTag = Guard.Argument(value, nameof(PackageTag)).NotNull().NotWhiteSpace(); }
-    }
     IEnumerable<string> ISettings.Repositories => Repositories;
     public List<string> Repositories { get; }
     public string AppPath { get; private set; }
@@ -63,7 +58,6 @@ namespace HEAL.Bricks {
     }
 
     public Settings() {
-      PackageTag = "HEALBricksPlugin";
       Repositories = new List<string>(new[] { PublicNuGetRepository });
       AppPath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
       PackagesPath = "packages";

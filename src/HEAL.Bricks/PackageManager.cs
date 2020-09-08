@@ -17,8 +17,7 @@ using System.Threading.Tasks;
 namespace HEAL.Bricks {
   public sealed class PackageManager : IPackageManager {
     public static IPackageManager Create(ISettings settings) {
-      Guard.Argument(settings, nameof(settings)).NotNull().Member(s => s.PackageTag, x => x.NotNull().NotEmpty().NotWhiteSpace())
-                                                          .Member(s => s.Repositories, x => x.NotNull().NotEmpty().Require(x.Value.All(y => !string.IsNullOrWhiteSpace(y))))
+      Guard.Argument(settings, nameof(settings)).NotNull().Member(s => s.Repositories, x => x.NotNull().NotEmpty().Require(x.Value.All(y => !string.IsNullOrWhiteSpace(y))))
                                                           .Member(s => s.PackagesPath, x => x.NotNull().NotEmpty().NotWhiteSpace().AbsolutePath())
                                                           .Member(s => s.PackagesCachePath, x => x.NotNull().NotEmpty().NotWhiteSpace().AbsolutePath());
       return new PackageManager(settings);
@@ -47,7 +46,7 @@ namespace HEAL.Bricks {
     }
 
     private void Initialize() {
-      IEnumerable<LocalPackageInfo> installedPackages = nuGetConnector.GetLocalPackages(Settings.PackagesPath, Settings.PackageTag).ToArray();
+      IEnumerable<LocalPackageInfo> installedPackages = nuGetConnector.GetLocalPackages(Settings.PackagesPath).ToArray();
       SetPackageAndDependencyStatus(installedPackages);
       Status = GetPackageManagerStatus(installedPackages);
       InstalledPackages = installedPackages;
