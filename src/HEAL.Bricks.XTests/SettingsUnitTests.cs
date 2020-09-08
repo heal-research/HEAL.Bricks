@@ -285,7 +285,13 @@ namespace HEAL.Bricks.XTests {
     }
     [Fact]
     public void StarterAssembly_SetAbsolutePath_ThrowsArgumentException() {
-      string path = "C:/absolute/path";
+      string path = Constants.Platform switch {
+        Platform.Windows => "C:/absolute/path",
+        Platform.Linux =>   "/absolute/path",
+        Platform.OSX =>     "/absolute/path",
+        Platform.FreeBSD => "/absolute/path",
+        _ => throw new NotSupportedException($"Platform {Constants.Platform} is not supported.")
+      };
       Settings settings = new Settings();
 
       var e = Assert.Throws<ArgumentException>(() => settings.StarterAssembly = path);
