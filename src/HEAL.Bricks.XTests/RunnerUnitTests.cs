@@ -12,6 +12,7 @@ using System.Reflection;
 using System.IO;
 
 namespace HEAL.Bricks.XTests {
+  [Trait("Category", "Unit")]
   public class RunnerUnitTests {
   }
 }

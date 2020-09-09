@@ -26,7 +26,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="NuGet.Resolver" Version="5.4.0" />
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
     <PackageReference Include="System.Threading.Channels" Version="4.7.1" />
   </ItemGroup>
 

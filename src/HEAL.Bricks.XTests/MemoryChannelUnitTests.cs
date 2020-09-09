@@ -9,6 +9,7 @@ using Xunit;
 using System;
 
 namespace HEAL.Bricks.XTests {
+  [Trait("Category", "Unit")]
   public class MemoryChannelUnitTests {
     [Fact]
     public void Constructor_WithParameterIsNull_ThrowsArgumentNullException() {

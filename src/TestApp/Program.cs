@@ -23,6 +23,12 @@ namespace TestApp {
       Directory.CreateDirectory(settings.PackagesCachePath);
       IApplicationManager am = ApplicationManager.Create(settings);
 
+      var pkg = am.PackageManager.GetRemotePackageAsync("HEAL.Bricks.OrApp", "1.0.0").Result;
+      am.PackageManager.InstallRemotePackageAsync(pkg).Wait();
+//      am.PackageManager.InstallMissingDependenciesAsync().Wait();
+
+
+
       if (am.InstalledApplications.Count() == 0) {
         Console.WriteLine("No applications found.");
         return;

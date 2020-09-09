@@ -13,6 +13,7 @@ using Xunit.Abstractions;
 using NuGet.Protocol.Core.Types;
 
 namespace HEAL.Bricks.XTests {
+  [Trait("Category", "Unit")]
   public class NuGetConnectorUnitTests {
     private readonly ITestOutputHelper output;
     private readonly ILogger logger;

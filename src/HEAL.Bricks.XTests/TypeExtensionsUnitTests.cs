@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using Xunit;
 
 namespace HEAL.Bricks.XTests {
+  [Trait("Category", "Unit")]
   public class TypeExtensionsUnitTests {
     #region Type Definitions
     private class DiscoverableType { }

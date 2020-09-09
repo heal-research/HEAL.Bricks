@@ -12,6 +12,7 @@ using System.IO;
 using System;
 
 namespace HEAL.Bricks.XTests {
+  [Trait("Category", "Unit")]
   public class DiscoverApplicationsRunnerUnitTests {
     [Theory]
     [InlineData(typeof(AnonymousPipesProcessChannel))]

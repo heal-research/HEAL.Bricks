@@ -9,7 +9,8 @@ using Dawn;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Loader;
+using System.Reflection;
+//using System.Runtime.Loader;
 
 namespace HEAL.Bricks {
   public static class PackageLoader {
@@ -23,7 +24,8 @@ namespace HEAL.Bricks {
 
       foreach (PackageLoadInfo package in packages) {
         foreach (string assemblyPath in package.AssemblyPaths) {
-          AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyPath);
+//          AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyPath);
+          Assembly.LoadFrom(assemblyPath);
         }
       }
     }

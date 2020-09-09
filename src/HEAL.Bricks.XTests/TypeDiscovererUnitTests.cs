@@ -12,6 +12,7 @@ using System.Reflection;
 using Xunit;
 
 namespace HEAL.Bricks.XTests {
+  [Trait("Category", "Unit")]
   public class TypeDiscovererUnitTests {
     #region Type Definitions
     public interface I1 { }

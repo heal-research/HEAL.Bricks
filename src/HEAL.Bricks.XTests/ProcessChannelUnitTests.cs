@@ -9,6 +9,7 @@ using Xunit;
 using System;
 
 namespace HEAL.Bricks.XTests {
+  [Trait("Category", "Unit")]
   public class ProcessChannelUnitTests {
     [Fact]
     public void ChannelTypeArgument_IsNotNullOrEmptyOrWhiteSpace() {

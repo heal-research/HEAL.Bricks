@@ -10,6 +10,7 @@ using System.IO;
 using Xunit;
 
 namespace HEAL.Bricks.XTests {
+  [Trait("Category", "Unit")]
   public class SettingsUnitTests {
     #region PublicNuGetRepository
     [Fact]
