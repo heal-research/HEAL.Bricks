@@ -34,10 +34,10 @@
 
   <ItemGroup>
     <None Update="HEAL.Bricks.Tests.BricksRunner.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="HEAL.Bricks.Tests.BricksRunner.runtimeconfig.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

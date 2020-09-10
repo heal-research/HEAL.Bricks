@@ -49,7 +49,7 @@ namespace HEAL.Bricks {
       Guard.Argument(currentFramework, nameof(currentFramework)).NotNull();
 
       nuspecReader = packageReader.NuspecReader;
-      Dependencies = NuGetFrameworkUtility.GetNearest(nuspecReader.GetDependencyGroups(), currentFramework).Packages.Select(x => new PackageDependency(x)).ToArray();
+      Dependencies = NuGetFrameworkUtility.GetNearest(nuspecReader.GetDependencyGroups(), currentFramework)?.Packages.Select(x => new PackageDependency(x)).ToArray();
       PackagePath = System.IO.Path.GetDirectoryName(packageReader.GetNuspecFile());
       ReferenceItems = NuGetFrameworkUtility.GetNearest(packageReader.GetReferenceItems(), currentFramework)?.Items.Select(x => Path.Combine(PackagePath, x)).ToArray();
       bool frameworkNotSupported = new FrameworkReducer().GetNearest(currentFramework, packageReader.GetSupportedFrameworks()) == null;

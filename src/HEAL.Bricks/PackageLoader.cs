@@ -24,7 +24,6 @@ namespace HEAL.Bricks {
 
       foreach (PackageLoadInfo package in packages) {
         foreach (string assemblyPath in package.AssemblyPaths) {
-//          AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyPath);
           Assembly.LoadFrom(assemblyPath);
         }
       }
