@@ -96,44 +96,19 @@ namespace HEAL.Bricks.XTests {
     }
     #endregion
 
-    #region RemoveInstalledPackage, RemoveInstalledPackages
+    #region RemoveInstalledPackage
     [Theory]
-    [InlineData("a", PackageManagerStatus.InvalidPackages)]
-    [InlineData("c", PackageManagerStatus.OK)]
-    public void RemoveInstalledPackage_WithInstalledPackage(string packageNameToRemove, PackageManagerStatus expectedStatus) {
-      LocalPackageInfo[] localPackages = new[] {
-        LocalPackageInfo.CreateForTests("a", "1.0.0", packagePath: "packagePath"),
-        LocalPackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }, packagePath: "packagePath"),
-        LocalPackageInfo.CreateForTests("c", "1.0.0", new[] { PackageDependency.CreateForTests("b", "1.0.0") }, packagePath: "packagePath")
-      };
-      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages);
-      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
-      LocalPackageInfo packageToRemove = localPackages.Where(x => x.Id == packageNameToRemove).Single();
+    [InlineData("TestPackage.ListedStable", "2.0.2")]
+    public async Task RemoveInstalledPackage_WithInstalledPackage(string packageId, string version) {
+      IPackageManager pm = PackageManager.Create(Settings);
+      RemotePackageInfo remotePackage = await pm.GetRemotePackageAsync(packageId, version);
+      await pm.InstallRemotePackageAsync(remotePackage, installMissingDependencies: true);
+      LocalPackageInfo packageToRemove = pm.InstalledPackages.Single();
 
       pm.RemoveInstalledPackage(packageToRemove);
 
-      Assert.DoesNotContain(packageToRemove, pm.InstalledPackages);
-      Assert.Equal(expectedStatus, pm.Status);
-    }
-    [Theory]
-    [InlineData(new[] { "a", "c" }, PackageManagerStatus.InvalidPackages)]
-    [InlineData(new[] { "b", "c" }, PackageManagerStatus.OK)]
-    public void RemoveInstalledPackages_WithInstalledPackages(string[] packageNamesToRemove, PackageManagerStatus expectedStatus) {
-      LocalPackageInfo[] localPackages = new[] {
-        LocalPackageInfo.CreateForTests("a", "1.0.0", packagePath: "packagePath"),
-        LocalPackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }, packagePath: "packagePath"),
-        LocalPackageInfo.CreateForTests("c", "1.0.0", new[] { PackageDependency.CreateForTests("b", "1.0.0") }, packagePath: "packagePath")
-      };
-      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages);
-      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
-      LocalPackageInfo[] packagesToRemove = localPackages.Where(x => packageNamesToRemove.Contains(x.Id)).ToArray();
-
-      pm.RemoveInstalledPackages(packagesToRemove);
-
-      foreach (LocalPackageInfo packageToRemove in packagesToRemove) {
-        Assert.DoesNotContain(packageToRemove, pm.InstalledPackages);
-      }
-      Assert.Equal(expectedStatus, pm.Status);
+      Assert.Empty(pm.InstalledPackages);
+      Assert.False(Directory.EnumerateFileSystemEntries(Settings.PackagesPath).Any());
     }
     #endregion
 

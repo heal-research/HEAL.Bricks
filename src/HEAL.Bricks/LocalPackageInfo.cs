@@ -12,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.NetworkInformation;
 
 namespace HEAL.Bricks {
   public sealed class LocalPackageInfo : PackageInfo, IEquatable<LocalPackageInfo>, IComparable<LocalPackageInfo> {
