@@ -48,10 +48,15 @@ namespace HEAL.Bricks {
       Guard.Argument(packageReader, nameof(packageReader)).NotNull().Member(p => p.NuspecReader, n => n.NotNull());
       Guard.Argument(currentFramework, nameof(currentFramework)).NotNull();
 
+      PackagePath = Path.GetDirectoryName(packageReader.GetNuspecFile());
+
       nuspecReader = packageReader.NuspecReader;
-      Dependencies = NuGetFrameworkUtility.GetNearest(nuspecReader.GetDependencyGroups(), currentFramework)?.Packages.Select(x => new PackageDependency(x)).ToArray();
-      PackagePath = System.IO.Path.GetDirectoryName(packageReader.GetNuspecFile());
-      ReferenceItems = NuGetFrameworkUtility.GetNearest(packageReader.GetReferenceItems(), currentFramework)?.Items.Select(x => Path.Combine(PackagePath, x)).ToArray();
+      PackageDependencyGroup dependencyGroup = NuGetFrameworkUtility.GetNearest(nuspecReader.GetDependencyGroups(), currentFramework);
+      Dependencies = dependencyGroup?.Packages.Select(x => new PackageDependency(x)).ToArray() ?? Enumerable.Empty<PackageDependency>();
+
+      FrameworkSpecificGroup referenceGroup = NuGetFrameworkUtility.GetNearest(packageReader.GetReferenceItems(), currentFramework);
+      ReferenceItems = referenceGroup?.Items.Select(x => Path.Combine(PackagePath, x)).ToArray() ?? Enumerable.Empty<string>();
+
       bool frameworkNotSupported = new FrameworkReducer().GetNearest(currentFramework, packageReader.GetSupportedFrameworks()) == null;
       status = frameworkNotSupported ? PackageStatus.IncompatibleFramework : PackageStatus.Undefined;
     }

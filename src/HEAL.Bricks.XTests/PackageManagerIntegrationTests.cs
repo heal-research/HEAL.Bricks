@@ -78,10 +78,11 @@ namespace HEAL.Bricks.XTests {
 
     #region InstallRemotePackageAsync
     [Theory]
-    [InlineData("TestPackage.Depends.SupportingMultipleFrameworks", "1.2.0", false,  new[] { "TestPackage.Depends.SupportingMultipleFrameworks" }, new[] { "1.2.0" }, PackageManagerStatus.InvalidPackages)]
-    [InlineData("TestPackage.Depends.SupportingMultipleFrameworks", "1.2.0", true, new[] { "TestPackage.Depends.SupportingMultipleFrameworks", "TestPackage.SupportingMultipleFrameworks" }, new[] { "1.2.0", "1.2.0" }, PackageManagerStatus.OK)]
-    public async Task InstallRemotePackageAsync_WithPackage(string packageId, string version, bool installMissingDependencies, string[] expectedPackageNames, string[] expectedVersions, PackageManagerStatus expectedStatus) {
-      INuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, Settings.Repositories, new XunitLogger(output));
+    [InlineData(Constants.netCoreApp31FrameworkName, "TestPackage.Depends.SupportingMultipleFrameworks", "1.2.0", false,  new[] { "TestPackage.Depends.SupportingMultipleFrameworks" }, new[] { "1.2.0" }, PackageManagerStatus.InvalidPackages)]
+    [InlineData(Constants.netFramework45FrameworkName, "TestPackage.Depends.SupportingMultipleFrameworks", "1.2.0", true, new[] { "TestPackage.Depends.SupportingMultipleFrameworks", "TestPackage.SupportingMultipleFrameworks" }, new[] { "1.2.0", "1.2.0" }, PackageManagerStatus.OK)]
+    [InlineData(Constants.netCoreApp31FrameworkName, "TestPackage.Depends.SupportingMultipleFrameworks", "1.2.0", true, new[] { "TestPackage.Depends.SupportingMultipleFrameworks", "TestPackage.SupportingMultipleFrameworks" }, new[] { "1.2.0", "1.2.0" }, PackageManagerStatus.InvalidPackages)]
+    public async Task InstallRemotePackageAsync_WithPackage(string currentFramework, string packageId, string version, bool installMissingDependencies, string[] expectedPackageNames, string[] expectedVersions, PackageManagerStatus expectedStatus) {
+      INuGetConnector nuGetConnector = NuGetConnector.CreateForTests(currentFramework, Settings.Repositories, new XunitLogger(output));
       IPackageManager pm = PackageManager.CreateForTests(Settings, nuGetConnector);
       RemotePackageInfo packageToInstall = await pm.GetRemotePackageAsync(packageId, version);
       var expectedPackages = expectedPackageNames.Zip(expectedVersions).OrderBy(x => x.First);

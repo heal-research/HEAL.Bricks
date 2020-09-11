@@ -25,11 +25,12 @@ namespace HEAL.Bricks {
     internal PackageLoadInfo(LocalPackageInfo package) {
       Guard.Argument(package, nameof(package)).NotNull()
                                               .Member(p => p.Id, i => i.NotNull().NotEmpty())
-                                              .Member(p => p.Version, v => v.NotNull());
+                                              .Member(p => p.Version, v => v.NotNull())
+                                              .Member(p => p.ReferenceItems, r => r.NotNull());
 
       Id = package.Id;
       Version = package.Version.ToString();
-      assemblyPaths = package.ReferenceItems?.ToArray() ?? Array.Empty<string>();
+      assemblyPaths = package.ReferenceItems.ToArray();
     }
     private PackageLoadInfo(string id, string version, string[] assemblyPaths) {
       // required for unit tests
