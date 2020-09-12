@@ -5,12 +5,10 @@
  */
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Dawn;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -63,8 +61,8 @@ namespace HEAL.Bricks.XTests {
       Assert.Equal(version, result?.Version.ToString());
     }
     [Theory]
-    [InlineData("TestPackage.ListedStable", true, new string[] { "1.0.0", "2.0.0", "2.0.2", "2.0.6" })]
-    [InlineData("TestPackage.AlwaysPrerelease", true, new string[] { "5.0.0-beta" })]
+    [InlineData("TestPackage.ListedStable",     true,  new string[] { "1.0.0", "2.0.0", "2.0.2", "2.0.6" })]
+    [InlineData("TestPackage.AlwaysPrerelease", true,  new string[] { "5.0.0-beta" })]
     [InlineData("TestPackage.AlwaysPrerelease", false, new string[] { })]
     public async Task GetRemotePackagesAsync_WithPackage_ReturnsPackages(string packageId, bool includePreReleases, string[] expectedVersions) {
       IPackageManager pm = PackageManager.Create(Settings);
@@ -78,9 +76,12 @@ namespace HEAL.Bricks.XTests {
 
     #region InstallRemotePackageAsync
     [Theory]
-    [InlineData(Constants.netCoreApp31FrameworkName, "TestPackage.Depends.SupportingMultipleFrameworks", "1.2.0", false,  new[] { "TestPackage.Depends.SupportingMultipleFrameworks" }, new[] { "1.2.0" }, PackageManagerStatus.InvalidPackages)]
-    [InlineData(Constants.netFramework45FrameworkName, "TestPackage.Depends.SupportingMultipleFrameworks", "1.2.0", true, new[] { "TestPackage.Depends.SupportingMultipleFrameworks", "TestPackage.SupportingMultipleFrameworks" }, new[] { "1.2.0", "1.2.0" }, PackageManagerStatus.OK)]
-    [InlineData(Constants.netCoreApp31FrameworkName, "TestPackage.Depends.SupportingMultipleFrameworks", "1.2.0", true, new[] { "TestPackage.Depends.SupportingMultipleFrameworks", "TestPackage.SupportingMultipleFrameworks" }, new[] { "1.2.0", "1.2.0" }, PackageManagerStatus.InvalidPackages)]
+    [InlineData(Constants.netCoreApp31FrameworkName,    "TestPackage.Depends.SupportingMultipleFrameworks", "1.2.0", false,  new[] { "TestPackage.Depends.SupportingMultipleFrameworks" },                                             new[] { "1.2.0" },          PackageManagerStatus.InvalidPackages)]
+    [InlineData(Constants.netFramework45FrameworkName,  "TestPackage.Depends.SupportingMultipleFrameworks", "1.2.0", true,   new[] { "TestPackage.Depends.SupportingMultipleFrameworks", "TestPackage.SupportingMultipleFrameworks" }, new[] { "1.2.0", "1.2.0" }, PackageManagerStatus.OK)]
+    [InlineData(Constants.netCoreApp31FrameworkName,    "TestPackage.Depends.SupportingMultipleFrameworks", "1.2.0", true,   new[] { "TestPackage.Depends.SupportingMultipleFrameworks", "TestPackage.SupportingMultipleFrameworks" }, new[] { "1.2.0", "1.2.0" }, PackageManagerStatus.InvalidPackages)]
+    [InlineData(Constants.netFramework472FrameworkName, "TestPackage.SupportingMultipleFrameworks",         "1.2.0", true,   new[] { "TestPackage.SupportingMultipleFrameworks" },                                                     new[] { "1.2.0" },          PackageManagerStatus.OK)]
+    [InlineData(Constants.netFramework35FrameworkName,  "TestPackage.SupportingMultipleFrameworks",         "1.2.0", true,   new[] { "TestPackage.SupportingMultipleFrameworks" },                                                     new[] { "1.2.0" },          PackageManagerStatus.InvalidPackages)]
+    [InlineData(Constants.netCoreApp31FrameworkName,    "TestPackage.SupportingMultipleFrameworks",         "1.2.0", true,   new[] { "TestPackage.SupportingMultipleFrameworks" },                                                     new[] { "1.2.0" },          PackageManagerStatus.InvalidPackages)]
     public async Task InstallRemotePackageAsync_WithPackage(string currentFramework, string packageId, string version, bool installMissingDependencies, string[] expectedPackageNames, string[] expectedVersions, PackageManagerStatus expectedStatus) {
       INuGetConnector nuGetConnector = NuGetConnector.CreateForTests(currentFramework, Settings.Repositories, new XunitLogger(output));
       IPackageManager pm = PackageManager.CreateForTests(Settings, nuGetConnector);
@@ -112,229 +113,42 @@ namespace HEAL.Bricks.XTests {
     }
     #endregion
 
-    #region GetMissingDependenciesAsync, InstallMissingDependenciesAsync
-    [Fact]
-    public async Task GetMissingDependenciesAsync_WhenDependenciesAreMissing_ReturnsMissingDependencies() {
-      LocalPackageInfo[] localPackages = new[] {
-        LocalPackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "1.0.0") })
-      };
-      RemotePackageInfo[] remotePackages = new[] {
-        RemotePackageInfo.CreateForTests("a", "1.0.0"),
-        RemotePackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }),
-        RemotePackageInfo.CreateForTests("c", "1.0.0", new[] { PackageDependency.CreateForTests("b", "1.0.0") }),
-        RemotePackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "1.0.0") })
-      };
-      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages, remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
-      RemotePackageInfo[] expectedDependencies = new[] {
-        RemotePackageInfo.CreateForTests("a", "1.0.0"),
-        RemotePackageInfo.CreateForTests("b", "1.0.0"),
-        RemotePackageInfo.CreateForTests("c", "1.0.0")
-      };
-
-      IEnumerable<RemotePackageInfo> result = await pm.GetMissingDependenciesAsync();
-
-      Assert.Equal(expectedDependencies.OrderBy(x => x), result.OrderBy(x => x));
-    }
-    [Fact]
-    public async Task GetMissingDependenciesAsync_WhenNoDependenciesAreMissing_ReturnsEmpty() {
-      LocalPackageInfo[] localPackages = new[] {
-        LocalPackageInfo.CreateForTests("a", "1.0.0"),
-        LocalPackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }),
-        LocalPackageInfo.CreateForTests("c", "1.0.0", new[] { PackageDependency.CreateForTests("b", "1.0.0") }),
-        LocalPackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "1.0.0") })
-      };
-      RemotePackageInfo[] remotePackages = new[] {
-        RemotePackageInfo.CreateForTests("a", "1.0.0"),
-        RemotePackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }),
-        RemotePackageInfo.CreateForTests("c", "1.0.0", new[] { PackageDependency.CreateForTests("b", "1.0.0") }),
-        RemotePackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "1.0.0") })
-      };
-      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages, remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
-
-      IEnumerable<RemotePackageInfo> result = await pm.GetMissingDependenciesAsync();
-
-      Assert.Empty(result);
-    }
-    [Fact]
-    public async Task InstallMissingDependenciesAsync_WhenDependenciesAreMissing() {
-      LocalPackageInfo[] localPackages = new[] {
-        LocalPackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "1.0.0") })
-      };
-      RemotePackageInfo[] remotePackages = new[] {
-        RemotePackageInfo.CreateForTests("a", "1.0.0"),
-        RemotePackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }),
-        RemotePackageInfo.CreateForTests("c", "1.0.0", new[] { PackageDependency.CreateForTests("b", "1.0.0") }),
-        RemotePackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "1.0.0") })
-      };
-      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages, remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
-      LocalPackageInfo[] expectedPackages = new[] {
-        LocalPackageInfo.CreateForTests("a", "1.0.0"),
-        LocalPackageInfo.CreateForTests("b", "1.0.0"),
-        LocalPackageInfo.CreateForTests("c", "1.0.0"),
-        LocalPackageInfo.CreateForTests("d", "1.0.0")
-      };
-
-      await pm.InstallMissingDependenciesAsync();
-
-      Assert.Equal(expectedPackages.OrderBy(x => x), pm.InstalledPackages.OrderBy(x => x));
-      Assert.Equal(PackageManagerStatus.OK, pm.Status);
-    }
-    [Fact]
-    public async Task InstallMissingDependenciesAsync_WhenNoDependenciesAreMissing() {
-      LocalPackageInfo[] localPackages = new[] {
-        LocalPackageInfo.CreateForTests("a", "1.0.0"),
-        LocalPackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }),
-        LocalPackageInfo.CreateForTests("c", "1.0.0", new[] { PackageDependency.CreateForTests("b", "1.0.0") }),
-        LocalPackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "1.0.0") })
-      };
-      RemotePackageInfo[] remotePackages = new[] {
-        RemotePackageInfo.CreateForTests("a", "1.0.0"),
-        RemotePackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }),
-        RemotePackageInfo.CreateForTests("c", "1.0.0", new[] { PackageDependency.CreateForTests("b", "1.0.0") }),
-        RemotePackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "1.0.0") })
-      };
-      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages, remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
-
-      await pm.InstallMissingDependenciesAsync();
-
-      Assert.Equal(localPackages.OrderBy(x => x), pm.InstalledPackages.OrderBy(x => x));
-      Assert.Equal(PackageManagerStatus.OK, pm.Status);
-    }
-    #endregion
-
-    #region GetPackageUpdateAsync, GetPackageUpdatesAsync, InstallPackageUpdatesAsync
+    #region InstallPackageUpdatesAsync
     [Theory]
-    [InlineData("a", "1.0.0", true, "a", "2.1.0-alpha.1")]
-    [InlineData("a", "1.0.0", false, "a", "2.0.0")]
-    [InlineData("a", "2.1.0-alpha.1", true, null, null)]
-    [InlineData("a", "2.1.0-alpha.1", false, null, null)]
-    [InlineData("a", "2.0.0", false, null, null)]
-    [InlineData("b", "1.0.0", true, null, null)]
-    [InlineData("b", "1.0.0", false, null, null)]
-    public async Task GetPackageUpdateAsync_WithPackage_ReturnsLatestUpdateOrNull(string packageToUpdate, string versionToUpdate, bool includePreReleases, string expectedPackage, string expectedVersion) {
-      RemotePackageInfo[] remotePackages = new[] {
-        RemotePackageInfo.CreateForTests("a", "1.0.0"),
-        RemotePackageInfo.CreateForTests("a", "1.1.0-alpha.1"),
-        RemotePackageInfo.CreateForTests("a", "1.1.0"),
-        RemotePackageInfo.CreateForTests("a", "2.0.0-alpha.1"),
-        RemotePackageInfo.CreateForTests("a", "2.0.0"),
-        RemotePackageInfo.CreateForTests("a", "2.1.0-alpha.1")
-      };
-      LocalPackageInfo localPackage = LocalPackageInfo.CreateForTests(packageToUpdate, versionToUpdate);
-      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
-
-      RemotePackageInfo result = await pm.GetPackageUpdateAsync(localPackage, includePreReleases: includePreReleases);
-
-      if (expectedPackage == null) {
-        Assert.Null(result);
-      } else {
-        Assert.Equal(expectedPackage, result.Id);
-        Assert.Equal(expectedVersion, result.Version.ToString());
-      }
-    }
-    [Theory]
-    [InlineData(true, new[] { "a", "b" }, new string[] { "2.1.0-alpha.1", "2.0.0" })]
-    [InlineData(false, new[] { "a", "b" }, new string[] { "2.0.0", "2.0.0" })]
-    public async Task GetPackageUpdatesAsync_WhenUpdatesArePending_ReturnsLatestUpdates(bool includePreReleases, string[] expectedPackageNames, string[] expectedVersions) {
-      LocalPackageInfo[] localPackages = new[] {
-        LocalPackageInfo.CreateForTests("a", "1.0.0"),
-        LocalPackageInfo.CreateForTests("b", "1.0.0"),
-        LocalPackageInfo.CreateForTests("c", "2.0.0")
-      };
-      RemotePackageInfo[] remotePackages = new[] {
-        RemotePackageInfo.CreateForTests("a", "1.0.0"),
-        RemotePackageInfo.CreateForTests("a", "2.0.0"),
-        RemotePackageInfo.CreateForTests("a", "2.1.0-alpha.1"),
-        RemotePackageInfo.CreateForTests("b", "1.0.0"),
-        RemotePackageInfo.CreateForTests("b", "1.1.0-alpha.1"),
-        RemotePackageInfo.CreateForTests("b", "2.0.0"),
-        RemotePackageInfo.CreateForTests("c", "2.0.0")
-      };
-      RemotePackageInfo[] expectedPackages = expectedPackageNames.Select((n, i) => RemotePackageInfo.CreateForTests(n, expectedVersions[i])).ToArray();
-      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages, remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
-
-      IEnumerable<RemotePackageInfo> result = await pm.GetPackageUpdatesAsync(includePreReleases: includePreReleases);
-
-      Assert.Equal(expectedPackages.OrderBy(x => x.Id), result.OrderBy(x => x.Id));
-    }
-    [Theory]
-    [InlineData(true,  true,  new[] { "a", "b", "c", "x", "y", "z" }, new[] { "2.1.0-alpha.1", "2.0.0", "2.0.0", "2.0.0", "2.0.0", "2.0.0" }, PackageManagerStatus.OK)]
-    [InlineData(true,  false, new[] { "a", "b", "c", "x", "y", "z" }, new[] { "2.0.0",         "2.0.0", "2.0.0", "2.0.0", "2.0.0", "2.0.0" }, PackageManagerStatus.OK)]
-    [InlineData(false, true,  new[] { "a", "b", "c"                }, new[] { "2.1.0-alpha.1", "2.0.0", "2.0.0"                            }, PackageManagerStatus.InvalidPackages)]
-    [InlineData(false, false, new[] { "a", "b", "c"                }, new[] { "2.0.0"        , "2.0.0", "2.0.0"                            }, PackageManagerStatus.InvalidPackages)]
-    public async Task InstallPackageUpdatesAsync_WhenUpdatesArePending(bool installMissingDependencies, bool includePreReleases, string[] expectedPackageNames, string[] expectedVersions, PackageManagerStatus expectedStatus) {
-      LocalPackageInfo[] localPackages = new[] {
-        LocalPackageInfo.CreateForTests("a", "1.0.0"),
-        LocalPackageInfo.CreateForTests("b", "1.0.0"),
-        LocalPackageInfo.CreateForTests("c", "2.0.0", new[] { PackageDependency.CreateForTests("y", "1.0.0") })
-      };
-      RemotePackageInfo[] remotePackages = new[] {
-        RemotePackageInfo.CreateForTests("a", "1.0.0"),
-        RemotePackageInfo.CreateForTests("a", "2.0.0"),
-        RemotePackageInfo.CreateForTests("a", "2.1.0-alpha.1"),
-        RemotePackageInfo.CreateForTests("b", "1.0.0"),
-        RemotePackageInfo.CreateForTests("b", "1.1.0-alpha.1"),
-        RemotePackageInfo.CreateForTests("b", "2.0.0", new[] { PackageDependency.CreateForTests("x", "1.0.0") }),
-        RemotePackageInfo.CreateForTests("c", "2.0.0", new[] { PackageDependency.CreateForTests("y", "1.0.0") }),
-        RemotePackageInfo.CreateForTests("x", "2.0.0", new[] { PackageDependency.CreateForTests("z", "1.0.0") }),
-        RemotePackageInfo.CreateForTests("y", "2.0.0"),
-        RemotePackageInfo.CreateForTests("z", "2.0.0")
-      };
-      LocalPackageInfo[] expectedPackages = expectedPackageNames.Select((n, i) => LocalPackageInfo.CreateForTests(n, expectedVersions[i])).ToArray();
-      INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages, remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, nuGetConnectorStub);
+    [InlineData("TestPackage.ListedStable", "1.0.0", true,  true,  "2.0.6")]
+    public async Task InstallPackageUpdatesAsync_WhenUpdatesArePending(string packageId, string version, bool installMissingDependencies, bool includePreReleases, string expectedVersion) {
+      IPackageManager pm = PackageManager.Create(Settings);
+      RemotePackageInfo remotePackage = await pm.GetRemotePackageAsync(packageId, version);
+      await pm.InstallRemotePackageAsync(remotePackage, installMissingDependencies: false);
 
       await pm.InstallPackageUpdatesAsync(installMissingDependencies: installMissingDependencies, includePreReleases: includePreReleases);
 
       WriteInstalledPackagesToOutput(pm);
-      Assert.Equal(expectedPackages.OrderBy(x => x.Id), pm.InstalledPackages.Where(x => x.Status != PackageStatus.Outdated).OrderBy(x => x.Id));
-      Assert.Equal(expectedStatus, pm.Status);
+      Assert.Equal(expectedVersion, pm.InstalledPackages.Where(x => x.Id == packageId).OrderByDescending(x => x.Version).First().Version.ToString());
     }
     #endregion
 
-    #region GetPackageLoadInfo, GetPackageLoadInfos
-    [Fact]
-    public void GetPackageLoadInfo_WithPackage_ReturnsPackageLoadInfo() {
-      LocalPackageInfo[] localPackages = new[] {
-        LocalPackageInfo.CreateForTests("a", "1.0.0", referenceItems: new[] { "path/to/assemblyA1", "path/to/assemblyA1" })
-      };
-      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, new NuGetConnectorStub(localPackages));
-
-      PackageLoadInfo result = pm.GetPackageLoadInfo(localPackages[0]);
-
-      Assert.Equal(localPackages[0].Id, result.Id);
-      Assert.Equal(localPackages[0].Version.ToString(), result.Version);
-      Assert.Equal(localPackages[0].ReferenceItems, result.AssemblyPaths);
-    }
-    [Fact]
-    public void GetPackageLoadInfos_ReturnsPackageLoadInfos() {
-      LocalPackageInfo[] localPackages = new[] {
-        LocalPackageInfo.CreateForTests("a", "1.0.0", referenceItems: new[] { "path/to/assemblyA1", "path/to/assemblyA2" }),
-        LocalPackageInfo.CreateForTests("b", "1.0.0", referenceItems: new[] { "path/to/assemblyB1", "path/to/assemblyB2" }),
-        LocalPackageInfo.CreateForTests("c", "1.0.0", referenceItems: new[] { "path/to/assemblyC1", "path/to/assemblyC2" }, frameworkNotSupported: true)
-      };
-      IPackageManager pm = PackageManager.CreateForTests(Settings.Default, new NuGetConnectorStub(localPackages));
+    #region GetPackageLoadInfos
+    [Theory(Skip = "WIP")]
+    [InlineData(Constants.netCoreApp31FrameworkName,    "SimSharp", "3.3.2", new[] { "SimSharp.dll" })]
+    [InlineData(Constants.netFramework472FrameworkName, "SimSharp", "3.3.2", new[] { "SimSharp.dll" })]
+    [InlineData(Constants.netFramework35FrameworkName,  "SimSharp", "3.3.2", new string[0])]
+    public async Task GetPackageLoadInfos_ReturnsPackageLoadInfos(string currentFramework, string packageId, string version, string[] expectedAssemblies) {
+      INuGetConnector nuGetConnector = NuGetConnector.CreateForTests(currentFramework, Settings.Repositories, new XunitLogger(output));
+      IPackageManager pm = PackageManager.CreateForTests(Settings, nuGetConnector);
+      RemotePackageInfo remotePackage = await pm.GetRemotePackageAsync(packageId, version);
+      await pm.InstallRemotePackageAsync(remotePackage, installMissingDependencies: false);
 
       IEnumerable<PackageLoadInfo> result = pm.GetPackageLoadInfos();
 
-      Assert.Collection(result.OrderBy(x => x.Id),
-        first => {
-          Assert.Equal(localPackages[0].Id, first.Id);
-          Assert.Equal(localPackages[0].Version.ToString(), first.Version);
-          Assert.Equal(localPackages[0].ReferenceItems, first.AssemblyPaths);
-        },
-        second => {
-          Assert.Equal(localPackages[1].Id, second.Id);
-          Assert.Equal(localPackages[1].Version.ToString(), second.Version);
-          Assert.Equal(localPackages[1].ReferenceItems, second.AssemblyPaths);
-        }
-      );
+      if (expectedAssemblies.Length == 0) {
+        Assert.Empty(result);
+      } else {
+        Assert.Collection(result, x => {
+          Assert.All(x.AssemblyPaths, y => Path.IsPathRooted(y));
+          Assert.Equal(expectedAssemblies.OrderBy(y => y), x.AssemblyPaths.Select(y => Path.GetFileName(y)).OrderBy(y => y));
+        });
+      }
     }
     #endregion
 

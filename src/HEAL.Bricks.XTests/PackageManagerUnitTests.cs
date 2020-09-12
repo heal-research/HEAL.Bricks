@@ -208,7 +208,7 @@ namespace HEAL.Bricks.XTests {
     [InlineData("b", "1.0.0", "b", "1.0.0")]
     [InlineData("x", "1.0.0", null, null)]
     [InlineData("c", "2.0.0", null, null)]
-    public async Task GetRemotePackageAsync_WithPackageAndVersion_ReturnsPackage(string packageId, string version, string expectedPackageId, string expectedVersion) {
+    public async Task GetRemotePackageAsync_WithPackageAndVersion_ReturnsPackageOrNull(string packageId, string version, string expectedPackageId, string expectedVersion) {
       RemotePackageInfo[] remotePackages = new[] {
         RemotePackageInfo.CreateForTests("a", "1.0.0"),
         RemotePackageInfo.CreateForTests("b", "1.0.0"),
