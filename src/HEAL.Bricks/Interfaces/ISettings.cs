@@ -9,6 +9,7 @@ using System.Collections.Generic;
 
 namespace HEAL.Bricks {
   public interface ISettings {
+    bool CurrentRuntimeIsNETFramework { get; }
     IEnumerable<string> Repositories { get; }
     string AppPath { get; }
     string PackagesPath { get; }
@@ -17,6 +18,7 @@ namespace HEAL.Bricks {
     string DotnetCommand { get; }
     string DockerCommand { get; }
     string DockerImage { get; }
+    bool UseWindowsContainer { get; }
     string StarterAssembly { get; }
   }
 }

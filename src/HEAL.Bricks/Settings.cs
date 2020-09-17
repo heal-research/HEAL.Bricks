@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Dawn;
 
 namespace HEAL.Bricks {
@@ -24,6 +25,7 @@ namespace HEAL.Bricks {
     private string dockerImage;
     private string starterAssembly;
 
+    public bool CurrentRuntimeIsNETFramework => RuntimeInformation.FrameworkDescription.ToLower().Contains("framework");
     IEnumerable<string> ISettings.Repositories => Repositories;
     public List<string> Repositories { get; }
     public string AppPath { get; private set; }
@@ -52,6 +54,7 @@ namespace HEAL.Bricks {
       get { return dockerImage; }
       set { dockerImage = Guard.Argument(value, nameof(DockerImage)).NotNull().NotEmpty().NotWhiteSpace(); }
     }
+    public bool UseWindowsContainer { get; set; }
     public string StarterAssembly {
       get { return starterAssembly; }
       set { starterAssembly = Guard.Argument(value, nameof(StarterAssembly)).NotNull().NotEmpty().NotWhiteSpace().RelativePath(); }
@@ -65,7 +68,8 @@ namespace HEAL.Bricks {
       Isolation = Isolation.AnonymousPipes;
       DotnetCommand = "dotnet";
       DockerCommand = "docker";
-      DockerImage = "mcr.microsoft.com/dotnet/core/runtime:3.1";
+      DockerImage = CurrentRuntimeIsNETFramework ? "mcr.microsoft.com/dotnet/framework/runtime:4.7.2" : "mcr.microsoft.com/dotnet/core/runtime:3.1";
+      UseWindowsContainer = CurrentRuntimeIsNETFramework ? true : false;
       StarterAssembly = Path.GetFileName(Assembly.GetEntryAssembly().Location);
     }
 

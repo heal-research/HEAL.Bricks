@@ -67,11 +67,24 @@ namespace HEAL.Bricks {
         case Isolation.None:
           return new MemoryChannel((channel, token) => MemoryChannelClientCode(channel, token).Wait());
         case Isolation.AnonymousPipes:
-          return new AnonymousPipesProcessChannel(Settings.DotnetCommand, $"\"{Settings.StarterAssembly}\"");
+          if (Settings.CurrentRuntimeIsNETFramework) {
+            return new AnonymousPipesProcessChannel(Settings.StarterAssembly);
+          } else {
+            return new AnonymousPipesProcessChannel(Settings.DotnetCommand, $"\"{Settings.StarterAssembly}\"");
+          }
         case Isolation.StdInOut:
-          return new StdInOutProcessChannel(Settings.DotnetCommand, $"\"{Settings.StarterAssembly}\"");
+          if (Settings.CurrentRuntimeIsNETFramework) {
+            return new StdInOutProcessChannel(Settings.StarterAssembly);
+          } else {
+            return new StdInOutProcessChannel(Settings.DotnetCommand, $"\"{Settings.StarterAssembly}\"");
+          }
         case Isolation.Docker:
-          return new DockerChannel(Settings.DockerCommand, Settings.DockerImage, Settings.AppPath, "dotnet", $"\"{Settings.StarterAssembly}\"");
+          if (Settings.CurrentRuntimeIsNETFramework) {
+            return new DockerChannel(Settings.DockerCommand, Settings.DockerImage, Settings.UseWindowsContainer, Settings.AppPath, Settings.StarterAssembly);
+          }
+          else {
+            return new DockerChannel(Settings.DockerCommand, Settings.DockerImage, Settings.UseWindowsContainer, Settings.AppPath, "dotnet", $"\"{Settings.StarterAssembly}\"");
+          }
         default:
           throw new NotSupportedException($"Isolation {Settings.Isolation} is not supported.");
       }

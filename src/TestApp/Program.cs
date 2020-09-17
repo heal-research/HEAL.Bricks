@@ -19,7 +19,7 @@ namespace TestApp {
         Isolation = Isolation.AnonymousPipes
       };
       settings.Repositories.Add(@"C:\# Daten\NuGet");
-      Directory.CreateDirectory(settings.PackagesPath);
+      Directory.CreateDirectory(Path.Combine(settings.AppPath, settings.PackagesPath));
       Directory.CreateDirectory(settings.PackagesCachePath);
       IApplicationManager am = ApplicationManager.Create(settings);
 

@@ -24,7 +24,7 @@ namespace HEAL.Bricks {
 
     Task InstallRemotePackagesAsync(IEnumerable<RemotePackageInfo> packages, string packagesPath, string packagesCachePath, CancellationToken ct);
 
-    void RemoveLocalPackages(IEnumerable<LocalPackageInfo> packages);
+    void RemoveLocalPackages(IEnumerable<LocalPackageInfo> packages, string packagesPath);
 
     Task<IEnumerable<RemotePackageInfo>> GetMissingDependenciesAsync(IEnumerable<LocalPackageInfo> packages, CancellationToken ct);
 

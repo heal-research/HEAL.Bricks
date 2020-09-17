@@ -410,7 +410,11 @@ namespace HEAL.Bricks.XTests {
     [Theory]
     [InlineData(null)]
     [InlineData("")]
+    [InlineData("rootedPath")]
     public void RemoveInstalledPackage_WithParameterWherePackagePathIsInvalid_ThrowsArgumentException(string packagePath) {
+      if (!string.IsNullOrEmpty(packagePath)) {
+        packagePath = (Constants.Platform == Platform.Windows ? "C:/" : "/") + packagePath;
+      }
       LocalPackageInfo package = LocalPackageInfo.CreateForTests("a", "1.0.0", packagePath: packagePath);
       IPackageManager pm = PackageManager.CreateForTests(Settings.Default, new NuGetConnectorStub());
 
@@ -485,7 +489,11 @@ namespace HEAL.Bricks.XTests {
     [Theory]
     [InlineData(null)]
     [InlineData("")]
+    [InlineData("rootedPath")]
     public void RemoveInstalledPackages_WithParameterWherePackagePathIsInvalid_ThrowsArgumentException(string packagePath) {
+      if (!string.IsNullOrEmpty(packagePath)) {
+        packagePath = (Constants.Platform == Platform.Windows ? "C:/" : "/") + packagePath;
+      }
       LocalPackageInfo[] packages = new[] { LocalPackageInfo.CreateForTests("a", "1.0.0", packagePath: packagePath) };
       IPackageManager pm = PackageManager.CreateForTests(Settings.Default, new NuGetConnectorStub());
 

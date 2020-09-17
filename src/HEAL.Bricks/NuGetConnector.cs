@@ -87,22 +87,24 @@ namespace HEAL.Bricks {
     public virtual async Task InstallRemotePackagesAsync(IEnumerable<RemotePackageInfo> packages, string packagesPath, string packagesCachePath, CancellationToken ct) {
       await InstallPackagesAsync(packages.Select(x => x.sourcePackageDependencyInfo), packagesPath, packagesCachePath, ct);
     }
-    public virtual void RemoveLocalPackages(IEnumerable<LocalPackageInfo> packages) {
+    public virtual void RemoveLocalPackages(IEnumerable<LocalPackageInfo> packages, string packagesPath) {
       foreach (LocalPackageInfo package in packages) {
-        Directory.Delete(package.PackagePath, true);
+        Directory.Delete(Path.Combine(packagesPath, package.PackagePath), true);
       }
     }
     public virtual async Task<IEnumerable<RemotePackageInfo>> GetMissingDependenciesAsync(IEnumerable<LocalPackageInfo> packages, CancellationToken ct) {
-      IEnumerable<PackageIdentity> localPackages = packages.Select(x => x.nuspecReader.GetIdentity());
+      IEnumerable<PackageIdentity> localPackages = packages.Select(x => x.packageIdentity);
       IEnumerable<SourcePackageDependencyInfo> allDependencies = await GetPackageDependenciesAsync(localPackages, true, ct);
       IEnumerable<LocalPackageInfo> latestVersionOfInstalledPackages = packages.GroupBy(x => x.Id).Select(x => x.OrderByDescending(y => y, PackageInfoIdentityComparer.Default).First());
-      IEnumerable<PackageIdentity> installedPackages = latestVersionOfInstalledPackages.Select(x => x.nuspecReader.GetIdentity());
+      IEnumerable<PackageIdentity> installedPackages = latestVersionOfInstalledPackages.Select(x => x.packageIdentity);
 
       IEnumerable<SourcePackageDependencyInfo> resolvedDependencies = ResolveDependencies(Enumerable.Empty<string>(), installedPackages, allDependencies, ct, out bool resolveSucceeded);
       if (!resolveSucceeded) throw new InvalidOperationException("Dependency resolution failed.");
 
-      IEnumerable<SourcePackageDependencyInfo> missingDependencies = resolvedDependencies.Where(x => !packages.Any(y => x.Equals(y.nuspecReader.GetIdentity())));
+      IEnumerable<SourcePackageDependencyInfo> missingDependencies = resolvedDependencies.Where(x => !packages.Any(y => x.Equals(y.packageIdentity)));
       IEnumerable<IPackageSearchMetadata> packageMetadata = await GetPackagesAsync(missingDependencies, ct);
+      packageMetadata = packageMetadata.OrderBy(x => x, PackageSearchMetadataComparer.Default);
+      missingDependencies = missingDependencies.OrderBy(x => x, PackageIdentityComparer.Default);
       return packageMetadata.Zip(missingDependencies, (x, y) => new RemotePackageInfo(x, y)).ToArray();
     }
     public virtual async Task<IEnumerable<RemotePackageInfo>> GetPackageUpdatesAsync(IEnumerable<LocalPackageInfo> packages, bool includePreReleases, CancellationToken ct) {
@@ -270,7 +272,7 @@ namespace HEAL.Bricks {
         return Enumerable.Empty<SourcePackageDependencyInfo>();
       }
 
-      PackageResolverContext context = new PackageResolverContext(DependencyBehavior.Highest,
+      PackageResolverContext context = new PackageResolverContext(DependencyBehavior.Lowest,
                                                                   additionalPackages,
                                                                   existingPackages.Select(x => x.Id),
                                                                   Enumerable.Empty<PackageReference>(),

@@ -52,7 +52,7 @@ namespace HEAL.Bricks.XTests {
       return Task.CompletedTask;
     }
 
-    public void RemoveLocalPackages(IEnumerable<LocalPackageInfo> packages) {
+    public void RemoveLocalPackages(IEnumerable<LocalPackageInfo> packages, string packagesPath) {
       bool ok = true;
       foreach (var package in packages) {
         ok = ok && localPackages.Remove(package);

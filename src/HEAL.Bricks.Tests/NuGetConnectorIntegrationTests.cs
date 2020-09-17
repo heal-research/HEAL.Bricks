@@ -18,8 +18,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using NuGet.Common;
-using Microsoft.VisualBasic;
 
 namespace HEAL.Bricks.Tests {
   [TestClass]
@@ -253,7 +251,7 @@ namespace HEAL.Bricks.Tests {
 
       searchString = "PackageId:NuGet.Protocol";
       includePreReleases = true;
-      expectedPackages = new[] { "NuGet.Protocol.5.8.0-preview.2.6776" };
+      expectedPackages = new[] { "NuGet.Protocol.5.8.0-preview.3.6823" };
       foundPackages = (await nuGetConnector.SearchPackagesAsync(searchString, includePreReleases, 0, int.MaxValue, default)).Select(x => x.Package.Identity.ToString()).ToArray();
       CollectionAssert.AreEqual(expectedPackages, foundPackages);
 
@@ -730,7 +728,7 @@ namespace HEAL.Bricks.Tests {
       existingPackages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version010) };
       availablePackages = allAvailablePackages;
       expectedPackages = new[] { CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
-                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version010),
                                  CreatePackageIdentity(Constants.namePluginB, Constants.version010) };
       resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
       Assert.IsTrue(resolveSucceeded);
@@ -740,7 +738,7 @@ namespace HEAL.Bricks.Tests {
       existingPackages = new[] { CreatePackageIdentity(Constants.namePluginB, Constants.version010_alpha1) };
       availablePackages = allAvailablePackages;
       expectedPackages = new[] { CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
-                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version010),
                                  CreatePackageIdentity(Constants.namePluginB, Constants.version010_alpha1) };
       resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
       Assert.IsTrue(resolveSucceeded);
@@ -751,7 +749,7 @@ namespace HEAL.Bricks.Tests {
                                  CreatePackageIdentity(Constants.namePluginB, Constants.version020) };
       availablePackages = allAvailablePackages;
       expectedPackages = new[] { CreatePackageIdentity(Constants.nameBricksPluginTypes, Constants.versionBricksPluginTypes),
-                                 CreatePackageIdentity(Constants.namePluginA, Constants.version030),
+                                 CreatePackageIdentity(Constants.namePluginA, Constants.version020),
                                  CreatePackageIdentity(Constants.namePluginB, Constants.version020) };
       resolvedPackages = nuGetConnector.ResolveDependencies(additionalPackages, existingPackages, availablePackages, default, out resolveSucceeded).ToArray();
       Assert.IsTrue(resolveSucceeded);

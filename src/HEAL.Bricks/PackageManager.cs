@@ -83,15 +83,15 @@ namespace HEAL.Bricks {
     }
 
     public void RemoveInstalledPackage(LocalPackageInfo package) {
-      Guard.Argument(package, nameof(package)).NotNull().Member(p => p.PackagePath, s => s.NotNull().NotEmpty());
+      Guard.Argument(package, nameof(package)).NotNull().Member(p => p.PackagePath, s => s.NotNull().NotEmpty().RelativePath());
 
       RemoveInstalledPackages(Enumerable.Repeat(package, 1));
     }
     public void RemoveInstalledPackages(IEnumerable<LocalPackageInfo> packages) {
-      Guard.Argument(packages, nameof(packages)).NotNull().NotEmpty().DoesNotContainNull().Require(packages.All(x => !string.IsNullOrEmpty(x.PackagePath)));
+      Guard.Argument(packages, nameof(packages)).NotNull().NotEmpty().DoesNotContainNull().Require(packages.All(x => !string.IsNullOrEmpty(x.PackagePath) && !Path.IsPathRooted(x.PackagePath)));
 
       try {
-        nuGetConnector.RemoveLocalPackages(packages);
+        nuGetConnector.RemoveLocalPackages(packages, Settings.PackagesPath);
       }
       catch (DirectoryNotFoundException e) {
         throw new InvalidOperationException("Package not found.", e);
@@ -134,7 +134,7 @@ namespace HEAL.Bricks {
     public PackageLoadInfo GetPackageLoadInfo(LocalPackageInfo package) {
       Guard.Argument(package, nameof(package)).NotNull().Member(p => p.Status, s => s.Equal(PackageStatus.OK));
 
-      return new PackageLoadInfo(package);
+      return new PackageLoadInfo(package, Settings.PackagesPath);
     }
     public IEnumerable<PackageLoadInfo> GetPackageLoadInfos() {
       return InstalledPackages.Where(x => x.Status == PackageStatus.OK).Select(x => GetPackageLoadInfo(x)).ToArray();

@@ -25,9 +25,6 @@ namespace HEAL.Bricks {
         channel.SendMessageAsync(new RunnerStartedMessage(), cancellationToken).Wait(cancellationToken);
         await runner.ExecuteOnClientAsync(channel, cancellationToken);
       }
-      catch (Exception e) {
-        channel.SendMessageAsync(new ExceptionMessage(e), cancellationToken).Wait(cancellationToken);
-      }
       finally {
         channel.Close();
       }

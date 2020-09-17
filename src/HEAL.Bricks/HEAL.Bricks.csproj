@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net472;netcoreapp3.1</TargetFrameworks>
     <Authors>Heuristic and Evolutionary Algorithms Laboratory (HEAL) and Contributors</Authors>
     <Company>University of Applied Sciences Upper Austria</Company>
     <Product>HEAL.Bricks</Product>
@@ -31,6 +31,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HEAL.Bricks.PluginTypes\HEAL.Bricks.PluginTypes.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
+    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
   </ItemGroup>
 
   <ItemGroup>

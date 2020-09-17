@@ -24,7 +24,7 @@ namespace WinFormsTestApp {
         Isolation = Isolation.AnonymousPipes
       };
       settings.Repositories.Add(@"C:\# Daten\NuGet");
-      Directory.CreateDirectory(settings.PackagesPath);
+      Directory.CreateDirectory(Path.Combine(settings.AppPath, settings.PackagesPath));
       Directory.CreateDirectory(settings.PackagesCachePath);
       am = await ApplicationManager.CreateAsync(settings);
 
