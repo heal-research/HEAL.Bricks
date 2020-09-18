@@ -43,9 +43,11 @@ test:linux:
     reports:
       cobertura: "**/coverage.cobertura.xml"
   script:
-    - dotnet restore src/   # explicit restore is required, because each new container has an empty package cache
+    # explicit restore is required, because each new container has an empty package cache
+    - dotnet restore src/HEAL.Bricks.Tests
+    - dotnet restore src/HEAL.Bricks.XTests
     - dotnet test src/HEAL.Bricks.Tests --no-build
-    - dotnet test src/HEAL.Bricks.XTests --collect:"XPlat Code Coverage" --no-build
+    - dotnet test src/HEAL.Bricks.XTests --no-build --collect:"XPlat Code Coverage"
 
 deploy:
   stage: deploy
@@ -60,8 +62,9 @@ deploy:
     paths:
       - "nupkgs/*"
   script:
-    - dotnet restore src/
-    - dotnet pack src/HEAL.Bricks.PluginTypes -c Release --include-symbols --output nupkgs --no-build
-    - dotnet pack src/HEAL.Bricks -c Release --include-symbols --output nupkgs --no-build
+    # explicit restore is required, because each new container has an empty package cache
+    - dotnet restore src/HEAL.Bricks
+    - dotnet pack src/HEAL.Bricks.PluginTypes -c Release --no-build --include-symbols --output nupkgs
+    - dotnet pack src/HEAL.Bricks -c Release --no-build --include-symbols --output nupkgs
     - dotnet nuget add source "$CI_SERVER_URL/api/v4/projects/719/packages/nuget/index.json" --name gitlab --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text
     - dotnet nuget push "nupkgs/*.nupkg" --source gitlab
