@@ -45,6 +45,7 @@ test:linux:
     reports:
       cobertura: "**/coverage.cobertura.xml"
   script:
+    - ls -alR
 #    - dotnet test src/HEAL.Bricks.Tests
     - dotnet test src/HEAL.Bricks.XTests --collect:"XPlat Code Coverage" --no-build
 
