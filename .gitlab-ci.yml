@@ -8,10 +8,10 @@ image: mcr.microsoft.com/dotnet/core/sdk:3.1
 build:
   stage: build
   tags:
-    - docker
+    - windows
   artifacts:
     name: $CI_JOB_NAME-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA
-    expire_in: 1 month
+    expire_in: 1 week
     paths:
       - "**/bin"
       - "**/obj"
@@ -21,7 +21,20 @@ build:
     - dotnet build src/HEAL.Bricks.XTests
     - dotnet build-server shutdown
 
-test:
+test_on_windows:
+  stage: test
+  tags:
+    - windows
+  dependencies:
+    - build
+  artifacts:
+    reports:
+      cobertura: "**/coverage.cobertura.xml"
+  script:
+#    - dotnet test src/HEAL.Bricks.Tests
+    - dotnet test src/HEAL.Bricks.XTests --collect:"XPlat Code Coverage" --no-build
+
+test_on_linux:
   stage: test
   tags:
     - docker
@@ -31,8 +44,8 @@ test:
     reports:
       cobertura: "**/coverage.cobertura.xml"
   script:
-    - dotnet test src/HEAL.Bricks.Tests
-    - dotnet test src/HEAL.Bricks.XTests --collect:"XPlat Code Coverage"
+#    - dotnet test src/HEAL.Bricks.Tests
+    - dotnet test src/HEAL.Bricks.XTests --collect:"XPlat Code Coverage" --no-build
 
 deploy:
   stage: deploy
