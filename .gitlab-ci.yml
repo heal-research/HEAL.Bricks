@@ -53,7 +53,7 @@ deploy:
   stage: deploy
   when: manual
   tags:
-    - docker
+    - windows
   dependencies:
     - build
   artifacts:
@@ -62,8 +62,6 @@ deploy:
     paths:
       - "nupkgs/*"
   script:
-    # explicit restore is required, because each new container has an empty package cache
-    - dotnet restore src/HEAL.Bricks
     - dotnet pack src/HEAL.Bricks.PluginTypes -c Release --no-build --include-symbols --output nupkgs
     - dotnet pack src/HEAL.Bricks -c Release --no-build --include-symbols --output nupkgs
     - dotnet nuget add source "$CI_SERVER_URL/api/v4/projects/719/packages/nuget/index.json" --name gitlab --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text
