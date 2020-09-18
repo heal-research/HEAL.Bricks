@@ -65,4 +65,5 @@ deploy:
     - dotnet pack src/HEAL.Bricks.PluginTypes -c Release --no-build --include-symbols --output nupkgs
     - dotnet pack src/HEAL.Bricks -c Release --no-build --include-symbols --output nupkgs
     - dotnet nuget add source "$CI_SERVER_URL/api/v4/projects/719/packages/nuget/index.json" --name gitlab --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text
-    - dotnet nuget push "nupkgs/*.nupkg" --source gitlab
+    - cd nupkgs
+    - dotnet nuget push "*.nupkg" --source gitlab
