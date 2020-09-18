@@ -14,8 +14,8 @@ build:
     name: $CI_JOB_NAME-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA
     expire_in: 1 week
     paths:
-      - "**\\bin"
-      - "**\\obj"
+      - "src/*/bin"
+      - "src/*/obj"
   script:
     - dotnet build src/HEAL.Bricks
     - dotnet build src/HEAL.Bricks.Tests
