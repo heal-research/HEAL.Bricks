@@ -29,16 +29,17 @@ namespace HEAL.Bricks {
     public IEnumerable<string> Files => files;
 
 
-    internal PackageLoadInfo(LocalPackageInfo package, string packagesPath) {
+    internal PackageLoadInfo(LocalPackageInfo package, string packagesPath, string appPath) {
       Guard.Argument(package, nameof(package)).NotNull()
                                               .Member(p => p.Id, i => i.NotNull().NotEmpty().NotWhiteSpace())
                                               .Member(p => p.Version, v => v.NotNull())
                                               .Member(p => p.ReferenceItems, r => r.NotNull().DoesNotContainNull())
                                               .Member(p => p.Files, f => f.NotNull().DoesNotContainNull());
-      PackagesPath = Guard.Argument(packagesPath, nameof(packagesPath)).NotNull().NotEmpty().NotWhiteSpace();
+      Guard.Argument(packagesPath, nameof(packagesPath)).NotNull().NotEmpty().NotWhiteSpace();
 
       Id = package.Id;
       Version = package.Version.ToString();
+      PackagesPath = packagesPath.StartsWith(appPath) ? packagesPath.Substring(appPath.Length + 1) : packagesPath;
       assemblyPaths = package.ReferenceItems.ToArray();
       files = package.Files.ToArray();
     }

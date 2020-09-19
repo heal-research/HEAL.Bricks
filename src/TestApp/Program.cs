@@ -23,12 +23,6 @@ namespace TestApp {
       Directory.CreateDirectory(settings.PackagesCachePath);
       IApplicationManager am = ApplicationManager.Create(settings);
 
-      var pkg = am.PackageManager.GetRemotePackageAsync("HEAL.Bricks.OrApp", "1.0.0").Result;
-      am.PackageManager.InstallRemotePackageAsync(pkg).Wait();
-//      am.PackageManager.InstallMissingDependenciesAsync().Wait();
-
-
-
       if (am.InstalledApplications.Count() == 0) {
         Console.WriteLine("No applications found.");
         return;
@@ -51,7 +45,7 @@ namespace TestApp {
 
       CancellationTokenSource cts = new CancellationTokenSource();
       CancellationToken token = cts.Token;
-      cts.CancelAfter(1000);
+      cts.CancelAfter(2000);
 
       using (IChannel channel = am.CreateRunnerChannel()) {
         EchoRunner echoRunner = new EchoRunner();

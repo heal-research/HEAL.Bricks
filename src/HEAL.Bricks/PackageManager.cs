@@ -134,7 +134,7 @@ namespace HEAL.Bricks {
     public PackageLoadInfo GetPackageLoadInfo(LocalPackageInfo package) {
       Guard.Argument(package, nameof(package)).NotNull().Member(p => p.Status, s => s.Equal(PackageStatus.OK));
 
-      return new PackageLoadInfo(package, Settings.PackagesPath);
+      return new PackageLoadInfo(package, Settings.PackagesPath, Settings.AppPath);
     }
     public IEnumerable<PackageLoadInfo> GetPackageLoadInfos() {
       return InstalledPackages.Where(x => x.Status == PackageStatus.OK).Select(x => GetPackageLoadInfo(x)).ToArray();

@@ -55,8 +55,12 @@ namespace HEAL.Bricks {
 
     private string PreparePackagesPath(IEnumerable<PackageLoadInfo> packages) {
       string packagesPath = packages.First().PackagesPath;
+      if (!Path.IsPathRooted(packagesPath)) {
+        packagesPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), packagesPath);
+      }
+
       if (!Directory.Exists(packagesPath)) {
-        packagesPath = "packages";
+        throw new InvalidOperationException($"Packages path '{packagesPath}' not found.");
       }
       return packagesPath;
     }
