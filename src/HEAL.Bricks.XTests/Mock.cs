@@ -16,6 +16,7 @@ using NuGet.Packaging.Core;
 using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
+using NuGet.Configuration;
 
 namespace HEAL.Bricks.XTests {
   public static class Mock {
@@ -44,13 +45,15 @@ namespace HEAL.Bricks.XTests {
     }
     #endregion
 
-    #region SourceRepository, PackageMetadataResource, DependencyInfoResource
-    public static SourceRepository CreateSourceRepositoryMock(params (PackageIdentity Id, NuGetPackageDependency[] Dependencies)[] packages) {
-      var metadata = packages.Select(x => CreatePackageSearchMetadata(x.Id));
-      var dependencies = packages.Select(x => CreateSourcePackageDependenyInfo(x.Id, x.Dependencies));
+    #region SourceRepository, PackageMetadataResource, DependencyInfoResource, PackageSearchResource
+    public static SourceRepository CreateSourceRepositoryMock(string packageSource, params (PackageIdentity Id, NuGetPackageDependency[] Dependencies)[] packages) {
+      var metadata = packages.Select(x => CreatePackageSearchMetadata(x.Id)).ToArray();
+      var dependencies = packages.Select(x => CreateSourcePackageDependenyInfo(x.Id, x.Dependencies)).ToArray();
       var repository = Mock.Of<SourceRepository>()
-                           .GetResourceAsync(Mock.Of<PackageMetadataResource>().GetMetadataAsync(metadata.ToArray()))
-                           .GetResourceAsync(Mock.Of<DependencyInfoResource>().ResolvePackage(dependencies.ToArray()));
+                           .PackageSource(packageSource)
+                           .GetResourceAsync(Mock.Of<PackageMetadataResource>().GetMetadataAsync(metadata))
+                           .GetResourceAsync(Mock.Of<DependencyInfoResource>().ResolvePackage(dependencies))
+                           .GetResourceAsync(Mock.Of<PackageSearchResource>().SearchAsync(metadata));
       return repository.Object;
     }
 
@@ -58,6 +61,11 @@ namespace HEAL.Bricks.XTests {
       mock.Setup(x => x.GetResourceAsync<T>(It.IsAny<CancellationToken>())).Returns(Task.FromResult(resource.Object));
       return mock;
     }
+    public static Mock<SourceRepository> PackageSource(this Mock<SourceRepository> mock, string packageSource) {
+      mock.Setup(x => x.PackageSource).Returns(new PackageSource(packageSource));
+      return mock;
+    }
+
     public static Mock<PackageMetadataResource> GetMetadataAsync(this Mock<PackageMetadataResource> mock, params IPackageSearchMetadata[] packages) {
       mock.Setup(x => x.GetMetadataAsync(It.IsAny<PackageIdentity>(), It.IsAny<SourceCacheContext>(), It.IsAny<ILogger>(), It.IsAny<CancellationToken>()))
           .Returns<PackageIdentity, SourceCacheContext, ILogger, CancellationToken>((id, cache, logger, token) => {
@@ -68,6 +76,20 @@ namespace HEAL.Bricks.XTests {
               logger.Log(LogLevel.Information, $"Returned IPackageSearchMetadata of package '{id}'.");
             }
             return Task.FromResult(package);
+          });
+      mock.Setup(x => x.GetMetadataAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<SourceCacheContext>(), It.IsAny<ILogger>(), It.IsAny<CancellationToken>()))
+          .Returns<string, bool, bool, SourceCacheContext, ILogger, CancellationToken>((id, includePreReleases, includeUnlisted, cache, logger, token) => {
+            IEnumerable<IPackageSearchMetadata> matches = packages.Where(p => p.Identity.Id.Equals(id));
+            if (!includePreReleases) {
+              matches = matches.Where(x => !x.Identity.Version.IsPrerelease);
+            }
+            if (matches.Count() == 0) {
+              logger.Log(LogLevel.Warning, $"Package '{id}' not found.");
+            }
+            else {
+              logger.Log(LogLevel.Information, $"Returned IPackageSearchMetadata of package '{id}'.");
+            }
+            return Task.FromResult(matches);
           });
       return mock;
     }
@@ -81,6 +103,24 @@ namespace HEAL.Bricks.XTests {
               logger.Log(LogLevel.Information, $"Returned SourcePackageDependencyInfo of package '{id}'.");
             }
             return Task.FromResult(dependency);
+          });
+      return mock;
+    }
+    public static Mock<PackageSearchResource> SearchAsync(this Mock<PackageSearchResource> mock, params IPackageSearchMetadata[] packages) {
+      mock.Setup(x => x.SearchAsync(It.IsAny<string>(), It.IsAny<SearchFilter>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<ILogger>(), It.IsAny<CancellationToken>()))
+          .Returns<string, SearchFilter, int, int, ILogger, CancellationToken>((searchTerm, filters, skip, take, logger, token) => {
+            IEnumerable<IPackageSearchMetadata> matches = packages.Where(p => p.Identity.Id.Contains(searchTerm));
+            if (!filters.IncludePrerelease) {
+              matches = matches.Where(x => !x.Identity.Version.IsPrerelease);
+            }
+            if (matches.Count() == 0) {
+              logger.Log(LogLevel.Warning, $"Search for '{searchTerm}' returned no packages.");
+            }
+            else {
+              logger.Log(LogLevel.Information, $"Search for '{searchTerm}' returned {matches.Count()} packages.");
+            }
+            matches = matches.Skip(skip).Take(take);
+            return Task.FromResult(matches);
           });
       return mock;
     }

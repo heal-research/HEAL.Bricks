@@ -31,83 +31,116 @@ namespace HEAL.Bricks.XTests {
 
       Assert.Equal(expectedCurrentFrameworkName, nuGetConnector.CurrentFramework.DotNetFrameworkName);
     }
-    [Fact]
-    public void CreateForTests_WithFrameworkName_ReturnsInstanceWhereFrameworkIsCorrect() {
-      string currentFrameworkName = Constants.netCoreApp31FrameworkName;
+    [Theory]
+    [InlineData(Constants.netCoreApp31FrameworkName)]
+    [InlineData(Constants.netFramework472FrameworkName)]
+    [InlineData(Constants.netStandard20FrameworkName)]
+    public void CreateForTests_WithFrameworkName_ReturnsInstanceWhereFrameworkIsCorrect(string frameworkName) {
+      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(frameworkName, Enumerable.Empty<string>(), logger);
 
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(currentFrameworkName, Enumerable.Empty<string>(), logger);
-
-      Assert.Equal(currentFrameworkName, nuGetConnector.CurrentFramework.DotNetFrameworkName);
+      Assert.Equal(frameworkName, nuGetConnector.CurrentFramework.DotNetFrameworkName);
     }
 
-    [Fact]
-    public async Task GetPackageAsync_WithPackageIdentity_ReturnsPackage() {
-      var a = Mock.CreatePackage("a", "1.0.0");
-      var repository = Mock.CreateSourceRepositoryMock(a);
+    [Theory]
+    [InlineData("a", "1.0.0")]  // package without dependencies
+    [InlineData("b", "1.0.0")]  // duplicated package
+    [InlineData("c", "1.0.0")]  // package with one dependency
+    [InlineData("d", "1.0.0")]  // package with multiple dependencies
+    [InlineData("x", "1.0.0")]  // unknown package
+    [InlineData("a", "2.0.0")]  // unknown version
+    public async Task GetRemotePackageAsync_WithPackageIdAndVersion_ReturnsRemotePackageInfoOrNull(string packageId, string version) {
+      var packages = new[] {
+        new[] {
+          Mock.CreatePackage("b", "1.0.0")
+        },
+        new[] {
+          Mock.CreatePackage("a", "1.0.0"),
+          Mock.CreatePackage("b", "1.0.0"),
+          Mock.CreatePackage("c", "1.0.0", ("a", "1.0.0")),
+          Mock.CreatePackage("d", "1.0.0", ("b", "1.0.0"), ("c", "1.0.0"))
+        }
+      };
+      var repositories = packages.Select((x, i) => Mock.CreateSourceRepositoryMock($"PS{i}", x));
+      var expectedPackage = packages.SelectMany(x => x).Where(x => (x.Id.Id == packageId) && (x.Id.Version.ToString() == version)).FirstOrDefault();
+      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, repositories, logger);
+
+      RemotePackageInfo result = await nuGetConnector.GetRemotePackageAsync(packageId, version, default);
+
+      if (expectedPackage.Id == null) {
+        Assert.Null(result);
+      } else {
+        Assert.Equal(expectedPackage.Id.Id, result.Id);
+        Assert.Equal(expectedPackage.Id.Version.ToString(), result.Version.ToString());
+
+        Assert.Equal(expectedPackage.Dependencies.Length, result.Dependencies.Count());
+        Assert.All(expectedPackage.Dependencies.Zip(result.Dependencies), x => {
+          Assert.Equal(x.First.Id, x.Second.Id);
+          Assert.Equal(x.First.VersionRange.MinVersion?.ToString(), x.Second.VersionRange.MinVersion?.ToString());
+          Assert.Equal(x.First.VersionRange.MaxVersion?.ToString(), x.Second.VersionRange.MaxVersion?.ToString());
+        });
+      }
+    }
+
+    [Theory]
+    [InlineData("a", false, new[] { "1.0.0" } )]
+    [InlineData("a", true,  new[] { "1.0.0" } )]
+    [InlineData("b", false, new[] { "1.0.0", "2.0.0" } )]
+    [InlineData("b", true,  new[] { "1.0.0-alpha", "1.0.0", "2.0.0", "3.0.0-alpha" } )]
+    [InlineData("x", false, new string[0] )]
+    [InlineData("x", true,  new string[0] )]
+    public async Task GetRemotePackagesAsync_WithPackageIdAndIncludePreReleases_ReturnsRemotePackageInfos(string packageId, bool includePreReleases, string[] expectedVersions) {
+      var packages = new[] {
+        Mock.CreatePackage("a", "1.0.0"),
+        Mock.CreatePackage("b", "1.0.0-alpha", ("a", "1.0.0")),
+        Mock.CreatePackage("b", "1.0.0",       ("a", "1.0.0")),
+        Mock.CreatePackage("b", "2.0.0",       ("a", "1.0.0")),
+        Mock.CreatePackage("b", "3.0.0-alpha", ("a", "1.0.0")),
+      };
+      var repository = Mock.CreateSourceRepositoryMock("PS", packages);
       NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
 
-      IPackageSearchMetadata result = await nuGetConnector.GetPackageAsync(a.Id, default);
+      var result = await nuGetConnector.GetRemotePackagesAsync(packageId, includePreReleases, default);
 
-      Assert.Equal(a.Id, result.Identity);
-    }
-    [Fact]
-    public async Task GetPackageAsync_WithUnknownPackage_ReturnsNull() {
-      var a = Mock.CreatePackage("a", "1.0.0");
-      var repository = Mock.CreateSourceRepositoryMock(a);
-      var missingId = Mock.CreatePackageIdentity("unknown", "1.0.0");
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
-
-      IPackageSearchMetadata result = await nuGetConnector.GetPackageAsync(missingId, default);
-
-      Assert.Null(result);
-    }
-    [Fact]
-    public async Task GetPackageAsync_WithDuplicatedPackage_ReturnsPackage() {
-      var a = Mock.CreatePackage("a", "1.0.0");
-      var duplicate = Mock.CreatePackage("duplicate", "1.0.0");
-      var repository1 = Mock.CreateSourceRepositoryMock(a, duplicate);
-      var repository2 = Mock.CreateSourceRepositoryMock(duplicate);
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository1, repository2 }, logger);
-
-      IPackageSearchMetadata result = await nuGetConnector.GetPackageAsync(duplicate.Id, default);
-
-      Assert.Equal(duplicate.Id, result.Identity);
+      if (!packages.Any(x => x.Id.Id == packageId)) {
+        Assert.Empty(result);
+      }
+      else {
+        Assert.All(result, x => Assert.Equal(packageId, x.Id));
+        Assert.Equal(expectedVersions, result.Select(x => x.Version.ToString()));
+      }
     }
 
-    [Fact]
-    public async Task GetRemotePackageAsync_WithNameAndVersion_ReturnsPackage() {
-      var a = Mock.CreatePackage("a", "1.0.0");
-      var b = Mock.CreatePackage("b", "1.0.0");
-      var c = Mock.CreatePackage("c", "1.0.0", ("a", "1.0.0"), ("b", "1.0.0"));
-      var repository = Mock.CreateSourceRepositoryMock(a, b, c);
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
+    [Theory]
+    [InlineData("a", 0, 6, true,  new[] { "a", "ab", "abc", "abcd", "abcde", "abcdef" }, new[] { "PS0", "PS0", "PS0", "PS1", "PS1", "PS1" } )]
+    [InlineData("a", 0, 6, false, new[] { "a", "ab", "abcd", "abcde" }, new[] { "PS0", "PS0", "PS1", "PS1" })]
+    [InlineData("a", 1, 2, true,  new[] { "ab", "abc", "abcde", "abcdef" }, new[] { "PS0", "PS0", "PS1", "PS1" })]
+    [InlineData("a", 1, 2, false, new[] { "ab", "abcde" }, new[] { "PS0", "PS1" })]
+    [InlineData("f", 0, 4, true,  new[] { "abcdef" }, new[] { "PS1" } )]
+    [InlineData("x", 0, 4, true,  new string[0], new string[0] )]
+    public async Task SearchRemotePackagesAsync_WithPackageIdAndIncludePreReleases_ReturnsRemotePackageInfos(string searchString, int skip, int take, bool includePreReleases, string[] expectedPackages, string[] expectedSources) {
+      var packages = new[] {
+        new[] {
+          Mock.CreatePackage("a",      "1.0.0"),
+          Mock.CreatePackage("ab",     "1.0.0"),
+          Mock.CreatePackage("abc",    "1.0.0-alpha")
+        },
+        new[] {
+          Mock.CreatePackage("abcd",   "1.0.0"),
+          Mock.CreatePackage("abcde",  "1.0.0"),
+          Mock.CreatePackage("abcdef", "1.0.0-alpha")
+        }
+      };
+      var repositories = packages.Select((x, i) => Mock.CreateSourceRepositoryMock($"PS{i}", x));
+      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, repositories, logger);
 
-      RemotePackageInfo result = await nuGetConnector.GetRemotePackageAsync("c", "1.0.0", default);
+      var result = await nuGetConnector.SearchRemotePackagesAsync(searchString, skip, take, includePreReleases, default);
 
-      Assert.Equal(c.Id, result.packageIdentity);
-      Assert.Equal(c.Dependencies.OrderBy(x => x.Id), result.Dependencies.OrderBy(x => x.Id).Select(x => x.nuGetPackageDependency));
-    }
-    [Fact]
-    public async Task GetRemotePackageAsync_WithDuplicatedPackage_ReturnsPackage() {
-      var a = Mock.CreatePackage("a", "1.0.0");
-      var duplicate = Mock.CreatePackage("duplicate", "1.0.0");
-      var repository1 = Mock.CreateSourceRepositoryMock(a, duplicate);
-      var repository2 = Mock.CreateSourceRepositoryMock(duplicate);
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository1, repository2 }, logger);
-
-      RemotePackageInfo result = await nuGetConnector.GetRemotePackageAsync("duplicate", "1.0.0", default);
-
-      Assert.Equal(duplicate.Id, result.packageIdentity);
-    }
-    [Fact]
-    public async Task GetRemotePackageAsync_WithUnknownPackage_ReturnsNull() {
-      var a = Mock.CreatePackage("a", "1.0.0");
-      var repository = Mock.CreateSourceRepositoryMock(a);
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
-
-      RemotePackageInfo result = await nuGetConnector.GetRemotePackageAsync("unknown", "1.0.0", default);
-
-      Assert.Null(result);
+      if (!packages.SelectMany(x => x).Any(x => x.Id.Id.Contains(searchString))) {
+        Assert.Empty(result);
+      }
+      else {
+        Assert.Equal(expectedPackages.Zip(expectedSources).Select(x => (x.Second, x.First)), result.Select(x => (x.Repository, x.Package.Id) ));
+      }
     }
   }
 }
