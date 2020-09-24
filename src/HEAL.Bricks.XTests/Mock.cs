@@ -52,8 +52,9 @@ namespace HEAL.Bricks.XTests {
       var repository = Mock.Of<SourceRepository>()
                            .PackageSource(packageSource)
                            .GetResourceAsync(Mock.Of<PackageMetadataResource>().GetMetadataAsync(metadata))
-                           .GetResourceAsync(Mock.Of<DependencyInfoResource>().ResolvePackage(dependencies))
-                           .GetResourceAsync(Mock.Of<PackageSearchResource>().SearchAsync(metadata));
+                           .GetResourceAsync(Mock.Of<DependencyInfoResource>().ResolvePackage(dependencies).ResolvePackages(dependencies))
+                           .GetResourceAsync(Mock.Of<PackageSearchResource>().SearchAsync(metadata))
+                           .GetResourceAsync(Mock.Of<MetadataResource>().GetLatestVersions(metadata));
       return repository.Object;
     }
 
@@ -78,15 +79,14 @@ namespace HEAL.Bricks.XTests {
             return Task.FromResult(package);
           });
       mock.Setup(x => x.GetMetadataAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<SourceCacheContext>(), It.IsAny<ILogger>(), It.IsAny<CancellationToken>()))
-          .Returns<string, bool, bool, SourceCacheContext, ILogger, CancellationToken>((id, includePreReleases, includeUnlisted, cache, logger, token) => {
+          .Returns<string, bool, bool, SourceCacheContext, ILogger, CancellationToken>((id, includePrerelease, includeUnlisted, cache, logger, token) => {
             IEnumerable<IPackageSearchMetadata> matches = packages.Where(p => p.Identity.Id.Equals(id));
-            if (!includePreReleases) {
+            if (!includePrerelease) {
               matches = matches.Where(x => !x.Identity.Version.IsPrerelease);
             }
             if (matches.Count() == 0) {
               logger.Log(LogLevel.Warning, $"Package '{id}' not found.");
-            }
-            else {
+            } else {
               logger.Log(LogLevel.Information, $"Returned IPackageSearchMetadata of package '{id}'.");
             }
             return Task.FromResult(matches);
@@ -95,7 +95,7 @@ namespace HEAL.Bricks.XTests {
     }
     public static Mock<DependencyInfoResource> ResolvePackage(this Mock<DependencyInfoResource> mock, params SourcePackageDependencyInfo[] dependencies) {
       mock.Setup(x => x.ResolvePackage(It.IsAny<PackageIdentity>(), It.IsAny<NuGetFramework>(), It.IsAny<SourceCacheContext>(), It.IsAny<ILogger>(), It.IsAny<CancellationToken>()))
-          .Returns<PackageIdentity, NuGetFramework, SourceCacheContext, ILogger, CancellationToken>((id, cache, framework, logger, token) => {
+          .Returns<PackageIdentity, NuGetFramework, SourceCacheContext, ILogger, CancellationToken>((id, framework, cache, logger, token) => {
             SourcePackageDependencyInfo dependency = dependencies.Where(d => (d.Id == id.Id) && (d.Version.Equals(id.Version))).FirstOrDefault();
             if (dependency == null) {
               logger.Log(LogLevel.Warning, $"Dependencies of package '{id}' not found.");
@@ -103,6 +103,19 @@ namespace HEAL.Bricks.XTests {
               logger.Log(LogLevel.Information, $"Returned SourcePackageDependencyInfo of package '{id}'.");
             }
             return Task.FromResult(dependency);
+          });
+      return mock;
+    }
+    public static Mock<DependencyInfoResource> ResolvePackages(this Mock<DependencyInfoResource> mock, params SourcePackageDependencyInfo[] dependencies) {
+      mock.Setup(x => x.ResolvePackages(It.IsAny<string>(), It.IsAny<NuGetFramework>(), It.IsAny<SourceCacheContext>(), It.IsAny<ILogger>(), It.IsAny<CancellationToken>()))
+          .Returns<string, NuGetFramework, SourceCacheContext, ILogger, CancellationToken>((id, framework, cache, logger, token) => {
+            var result = dependencies.Where(d => d.Id == id);
+            if (result.Count() == 0) {
+              logger.Log(LogLevel.Warning, $"Dependencies of package '{id}' not found.");
+            } else {
+              logger.Log(LogLevel.Information, $"Returned SourcePackageDependencyInfos of package '{id}'.");
+            }
+            return Task.FromResult(result);
           });
       return mock;
     }
@@ -115,12 +128,35 @@ namespace HEAL.Bricks.XTests {
             }
             if (matches.Count() == 0) {
               logger.Log(LogLevel.Warning, $"Search for '{searchTerm}' returned no packages.");
-            }
-            else {
+            } else {
               logger.Log(LogLevel.Information, $"Search for '{searchTerm}' returned {matches.Count()} packages.");
             }
             matches = matches.Skip(skip).Take(take);
             return Task.FromResult(matches);
+          });
+      return mock;
+    }
+    public static Mock<MetadataResource> GetLatestVersions(this Mock<MetadataResource> mock, params IPackageSearchMetadata[] packages) {
+      mock.Setup(x => x.GetLatestVersions(It.IsAny<IEnumerable<string>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<SourceCacheContext>(), It.IsAny<ILogger>(), It.IsAny<CancellationToken>()))
+          .Returns<IEnumerable<string>, bool, bool, SourceCacheContext, ILogger, CancellationToken>((packageIds, includePrerelease, includeUnlisted, cache, logger, token) => {
+            Dictionary<string, NuGetVersion> latestVersions = new Dictionary<string, NuGetVersion>();
+
+            foreach (string id in packageIds) {
+              var filtered = packages.Where(x => x.Identity.Id == id);
+              if (!includePrerelease) {
+                filtered = filtered.Where(x => !x.Identity.Version.IsPrerelease);
+              }
+              filtered = filtered.OrderByDescending(x => x.Identity.Version);
+              NuGetVersion version = filtered.Select(x => x.Identity.Version).FirstOrDefault();
+
+              if (version == null) {
+                logger.Log(LogLevel.Warning, $"Latest version of package '{id}' not found.");
+              } else {
+                logger.Log(LogLevel.Information, $"Returned latest version '{version}' of package '{id}'.");
+                latestVersions.Add(id, version);
+              }
+            }
+            return Task.FromResult<IEnumerable<KeyValuePair<string, NuGetVersion>>>(latestVersions);
           });
       return mock;
     }

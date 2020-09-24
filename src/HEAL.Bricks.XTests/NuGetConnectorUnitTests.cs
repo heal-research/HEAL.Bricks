@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using NuGet.Common;
 using Xunit;
 using Xunit.Abstractions;
-using NuGet.Protocol.Core.Types;
 
 namespace HEAL.Bricks.XTests {
   [Trait("Category", "Unit")]
@@ -51,11 +50,11 @@ namespace HEAL.Bricks.XTests {
     public async Task GetRemotePackageAsync_WithPackageIdAndVersion_ReturnsRemotePackageInfoOrNull(string packageId, string version) {
       var packages = new[] {
         new[] {
-          Mock.CreatePackage("b", "1.0.0")
+          Mock.CreatePackage("b", "1.0.0", ("a", "1.0.0"))
         },
         new[] {
           Mock.CreatePackage("a", "1.0.0"),
-          Mock.CreatePackage("b", "1.0.0"),
+          Mock.CreatePackage("b", "1.0.0", ("a", "1.0.0")),
           Mock.CreatePackage("c", "1.0.0", ("a", "1.0.0")),
           Mock.CreatePackage("d", "1.0.0", ("b", "1.0.0"), ("c", "1.0.0"))
         }
@@ -141,6 +140,60 @@ namespace HEAL.Bricks.XTests {
       else {
         Assert.Equal(expectedPackages.Zip(expectedSources).Select(x => (x.Second, x.First)), result.Select(x => (x.Repository, x.Package.Id) ));
       }
+    }
+
+    [Theory]
+    [InlineData("b", "1.0.0-alpha", new[] { "a" }, new[] { "1.0.0-alpha" } )]
+    [InlineData("b", "1.0.0",       new[] { "a" }, new[] { "1.0.0" })]
+    [InlineData("b", "2.0.0",       new[] { "a" }, new[] { "2.0.0-alpha" })]
+    [InlineData("b", "3.0.0-alpha", new[] { "a" }, new[] { "2.0.0" })]
+    [InlineData("a", "1.0.0",       new string[0], new string[0])]
+    public async Task GetMissingDependenciesAsync_WithLocalPackages_ReturnsRemotePackageInfos(string localPackageId, string localVersion, string[] expectedDependencies, string[] expectedVersions) {
+      var packages = new[] {
+        Mock.CreatePackage("a", "1.0.0-alpha"),
+        Mock.CreatePackage("a", "1.0.0"),
+        Mock.CreatePackage("a", "2.0.0-alpha"),
+        Mock.CreatePackage("a", "2.0.0"),
+        Mock.CreatePackage("b", "1.0.0-alpha", ("a", "1.0.0-alpha")),
+        Mock.CreatePackage("b", "1.0.0",       ("a", "1.0.0")),
+        Mock.CreatePackage("b", "2.0.0",       ("a", "2.0.0-alpha")),
+        Mock.CreatePackage("b", "3.0.0-alpha", ("a", "2.0.0")),
+      };
+      var localPackage = LocalPackageInfo.CreateForTests(localPackageId, localVersion);
+      var repository = Mock.CreateSourceRepositoryMock("PS", packages);
+      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
+
+      var result = await nuGetConnector.GetMissingDependenciesAsync(new[] { localPackage }, default);
+
+      Assert.Equal(expectedDependencies.Length, result.Count());
+      Assert.All(result.Zip(expectedDependencies.Zip(expectedVersions)), x => {
+        Assert.Equal(x.Second.First, x.First.Id);
+        Assert.Equal(x.Second.Second, x.First.Version.ToString());
+      });
+    }
+
+    [Theory]
+    [InlineData("a", "1.0.0-alpha", false, "2.0.0")]
+    [InlineData("a", "1.0.0-alpha", true,  "3.0.0-alpha")]
+    [InlineData("a", "2.0.0",       false, null)]
+    [InlineData("a", "2.0.0",       true,  "3.0.0-alpha")]
+    [InlineData("a", "3.0.0-alpha", false, null)]
+    [InlineData("a", "3.0.0-alpha", true,  null)]
+    public async Task GetPackageUpdatesAsync_WithLocalPackages_ReturnsRemotePackageInfos(string localPackageId, string localVersion, bool includePreReleases, string expectedVersion) {
+      var packages = new[] {
+        Mock.CreatePackage("a", "1.0.0-alpha"),
+        Mock.CreatePackage("a", "1.0.0"),
+        Mock.CreatePackage("a", "2.0.0-alpha"),
+        Mock.CreatePackage("a", "2.0.0"),
+        Mock.CreatePackage("a", "3.0.0-alpha"),
+      };
+      var localPackage = LocalPackageInfo.CreateForTests(localPackageId, localVersion);
+      var repository = Mock.CreateSourceRepositoryMock("PS", packages);
+      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
+
+      var result = await nuGetConnector.GetPackageUpdatesAsync(new[] { localPackage }, includePreReleases, default);
+
+      Assert.Equal(expectedVersion, result.SingleOrDefault()?.Version.ToString());
     }
   }
 }
