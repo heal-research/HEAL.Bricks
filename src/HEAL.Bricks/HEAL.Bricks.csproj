@@ -28,9 +28,9 @@
     <PackageReference Include="NuGet.Resolver" Version="5.4.0" />
     <PackageReference Include="System.Threading.Channels" Version="4.7.1" />
   </ItemGroup>
-
+  
   <ItemGroup>
-    <ProjectReference Include="..\HEAL.Bricks.PluginTypes\HEAL.Bricks.PluginTypes.csproj" />
+    <ProjectReference Include="..\HEAL.Bricks.Core\HEAL.Bricks.Core.csproj" />
   </ItemGroup>
   
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
