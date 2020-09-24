@@ -1,36 +1,74 @@
 # HEAL.Bricks Manual
-HEAL.Bricks is a .NET software framework for discovering, loading, and executing plug-ins.
-
-HEAL.Bricks is implemented for the .NET Standard 2.0 interface and can be used from .NET Core as well as .NET Framework projects.
+HEAL.Bricks is a package framework for .NET applications based on [NuGet](https://nuget.org). It allows you to download, manage, update, and execute packages at runtime to extend your application. HEAL.Bricks also offers isolation by executing packages in separate processes or Docker containers.
 
 
-## Basic Usage
-... work in progress ...
+# Example: StringFormatter Console Application
+In this example we implement an application which reads a string from the console, offers different formatters to format the string, and write the formatted string back to the console. Formatters are provided by packages, so everyone can easily extend the application by providing additional packages.
 
-
-## License
-HEAL.Bricks is [licensed](../LICENSE.txt) under the MIT License.
-
+First, we create an interface for string formatters. This interface has to be implemented to provide a formatter.
+```csharp
+namespace HEAL.StringFormatter {
+  public interface IStringFormatter {
+    string Format(string input);
+  }
+}
 ```
-MIT License
+As each package needs this interface to provide a new string formatter, we publish this interface in a new NuGet package named `HEAL.StringFormatter.Interfaces`.
 
-Copyright (c) 2019-present Heuristic and Evolutionary Algorithms Laboratory
+Next, we implement a HEAL.Bricks console application. Each HEAL.Bricks application has to implement the `IApplication` interface, which provides basic information about the application and a `RunAsync` method which is called by HEAL.Bricks to execute the application.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+```csharp
+using HEAL.Bricks;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+namespace HEAL.StringFormatter.ConsoleApp {
+  class Application : IApplication {
+    public string Name => "HEAL.StringFormatter.ConsoleApp";
+    public string Description => "Console application of the HEAL String Formatter.";
+    public ApplicationKind Kind => ApplicationKind.Console;
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+    public async Task RunAsync(ICommandLineArgument[] args, CancellationToken cancellationToken) {
+      await Task.Run(() => {
+        ITypeDiscoverer typeDiscoverer = TypeDiscoverer.Create();
+        IStringFormatter[] formatters = typeDiscoverer.GetInstances<IStringFormatter>()
+                                        .OrderBy(x => x.GetType().Name).ToArray();
+
+        string input = ReadString();
+        while (!string.IsNullOrEmpty(input)) {
+          IStringFormatter formatter = ChooseFormatter(formatters);
+          Console.Write("output: ");
+          Console.WriteLine(formatter?.Format(input) ?? "--- none ---");
+          Console.WriteLine();
+          input = ReadString();
+        }
+      }, cancellationToken);
+    }
+
+    private string ReadString() {
+      Console.Write("string > ");
+      return Console.ReadLine();
+    }
+
+    private IStringFormatter ChooseFormatter(IStringFormatter[] formatters) {
+      if (formatters.Length == 0) {
+        Console.WriteLine("No formatters available.");
+        return null;
+      } else {
+        Console.WriteLine("Available formatters:");
+        for (int i = 0; i < formatters.Length; i++) {
+          Console.WriteLine($"[{i + 1}] {formatters[i].GetType().Name}");
+        }
+        int index = -1;
+        while (index < 1 || index > formatters.Length) {
+          Console.Write("formatter > ");
+          int.TryParse(Console.ReadLine(), out index);
+        }
+        return formatters[index - 1];
+      }
+    }
+  }
+}
 ```

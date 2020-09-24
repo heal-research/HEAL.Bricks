@@ -1,27 +1,42 @@
 # Introduction
-HEAL.Bricks is a plug-in framework for .NET. It allow you to discover, load, and execute plug-ins. HEAL.Bricks offers execution isolation by starting plug-ins in a separate process or Docker container.
+HEAL.Bricks is a package framework for .NET applications based on [NuGet](https://nuget.org). It allows you to download, manage, update, and execute packages at runtime to extend your application. HEAL.Bricks also offers isolation by executing packages in separate processes or Docker containers.
 
 
 # Using HEAL.Bricks
-Simply add the [HEAL.Bricks nuget package](https://www.nuget.org/packages/HEAL.Bricks/).
+HEAL.Bricks provides two NuGet packages:
+ * [HEAL.Bricks.Core](https://www.nuget.org/packages/HEAL.Bricks.Core):<br/>
+   HEAL.Bricks.Core contains everything needed to build a HEAL.Bricks package, which can be published as NuGet package.
+ * [HEAL.Bricks](https://www.nuget.org/packages/HEAL.Bricks):<br/>
+   HEAL.Bricks contains everything needed to manage and execute HEAL.Bricks packages in your application.
 
-HEAL.Bricks uses the .NET Standard 2.0 interface. It can be included in .NET Core as well as in .NET Framework projects. 
+HEAL.Bricks supports the following .NET frameworks:
+ * .NET Standard 2.0[^1]
+ * .NET Framework 4.7.1
+ * .NET Core 3.1
+
+[^1]: Loading of native libraries is not supported for .NET Standard 2.0.
+
+See our [Manual](docs/Manual.md) for more details on how to use HEAL.Bricks.
 
 
 # Background Information
-HEAL.Bricks is a spin-off project of [HeuristicLab](https://dev.heuristiclab.com) which is a software environment for heuristic optimization algorithms by the research group [HEAL](https://heal.heuristiclab.com) of the University of Applied Sciences Upper Austria. We have been working on HeuristicLab for more than 15 years and need a flexible plug-in framework. We use HEAL.Bricks for example to separate optimization algorithms and problems into separate plug-ins which can be shipped and loaded independently.
+HEAL.Bricks is a spin-off project of [HeuristicLab](https://dev.heuristiclab.com) which is an open-source software environment for heuristic optimization, mainly developed by the research group [HEAL](https://heal.heuristiclab.com) of the [University of Applied Sciences Upper Austria](https://www.fh-ooe.at/en). We work on HeuristicLab for more than 15 years now and needed a flexible package framework, which allows us to download, manage, load, and execute packages at runtime. During the migration from .NET Framework to .NET Core, we had to replace our existing plug-in infrastructure, as it used AppDomains for loading plug-ins extensively, which is no longer supported in .NET Core. Therefore, we created HEAL.Bricks as our new runtime package management framework on top of NuGet and seized the moment to add some additional features we missed so far.
 
-Our main objectives for HEAL.Bricks are:
- - Discover and load plugins
- - Isolated execution of plugins in separate processes or Docker containers
+The main features of HEAL.Bricks are:
+ * use NuGet for packing and distributing packages
+ * download, manage, load, and update packages at runtime
+ * discover and instantiate types
+ * execute packages in isolation in a separate process or a Docker container
+ * communicate between host and guest process via various channels
+ * support CLI as well as GUI
 
 
 # Software using HEAL.Bricks
-* [HeuristicLab](https://dev.heuristiclab.com) is a software environment for heuristic optimization algorithms. 
+* [HeuristicLab](https://dev.heuristiclab.com) is an open-source software environment for heuristic optimization. 
 
 
 # License
-HEAL.Bricks is [licensed](LICENSE.txt) under the MIT License.
+HEAL.Bricks is licensed under the [MIT License](LICENSE.txt).
 
 ```
 MIT License
