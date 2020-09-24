@@ -19,7 +19,6 @@ build:
   script:
     - dotnet build src/HEAL.Bricks
     - dotnet build src/HEAL.Bricks -c Release
-    - dotnet build src/HEAL.Bricks.Tests
     - dotnet build src/HEAL.Bricks.XTests
     - dotnet build-server shutdown
 
@@ -30,7 +29,6 @@ test:windows:
   dependencies:
     - build
   script:
-    - dotnet test src/HEAL.Bricks.Tests --no-build
     - dotnet test src/HEAL.Bricks.XTests --no-build
 
 test:linux:
@@ -44,9 +42,7 @@ test:linux:
       cobertura: "**/coverage.cobertura.xml"
   script:
     # explicit restore is required, because each new container has an empty package cache
-    - dotnet restore src/HEAL.Bricks.Tests
     - dotnet restore src/HEAL.Bricks.XTests
-    - dotnet test src/HEAL.Bricks.Tests --no-build
     - dotnet test src/HEAL.Bricks.XTests --no-build --collect:"XPlat Code Coverage"
 
 deploy:
