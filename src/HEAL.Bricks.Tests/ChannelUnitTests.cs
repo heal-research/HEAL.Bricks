@@ -11,7 +11,7 @@ using System;
 using System.ComponentModel;
 using System.Threading;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
   [Trait("Category", "Unit")]
   public class ChannelUnitTests {
     #region Open

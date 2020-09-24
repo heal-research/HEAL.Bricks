@@ -11,7 +11,7 @@ using NuGet.Common;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
   [Trait("Category", "Unit")]
   public class NuGetConnectorUnitTests {
     private readonly ITestOutputHelper output;

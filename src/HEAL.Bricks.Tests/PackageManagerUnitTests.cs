@@ -14,7 +14,7 @@ using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
   [Trait("Category", "Unit")]
   public class PackageManagerUnitTests {
     private readonly ITestOutputHelper output;

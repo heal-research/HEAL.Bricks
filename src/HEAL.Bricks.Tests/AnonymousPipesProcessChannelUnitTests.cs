@@ -8,15 +8,15 @@
 using Xunit;
 using System;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
   [Trait("Category", "Unit")]
-  public class StdInOutProcessChannelUnitTests {
+  public class AnonymousPipesProcessChannelUnitTests {
     [Theory]
     [InlineData(null,  typeof(ArgumentNullException))]
     [InlineData("",    typeof(ArgumentException))]
     [InlineData("   ", typeof(ArgumentException))]
     public void Constructor_WithParameterIsNullOrEmptyOrWhiteSpace_ThrowsArgumentException(string programPath, Type expectedExceptionType) {
-      var e = Assert.Throws(expectedExceptionType, () => new StdInOutProcessChannel(programPath));
+      var e = Assert.Throws(expectedExceptionType, () => new AnonymousPipesProcessChannel(programPath));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty((e as ArgumentException).ParamName));
     }

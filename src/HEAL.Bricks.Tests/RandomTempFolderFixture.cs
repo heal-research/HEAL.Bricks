@@ -8,7 +8,7 @@
 using System;
 using System.IO;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
   public class RandomTempDirectoryFixture : IDisposable {
     public string Directory { get; }
 

@@ -11,7 +11,7 @@ using System.Threading;
 using System.IO;
 using System.Reflection;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
   public static class TestHelpers {
     public static string GetWorkingDir() {
       return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);

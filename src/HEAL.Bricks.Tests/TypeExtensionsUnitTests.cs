@@ -9,7 +9,7 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
   [Trait("Category", "Unit")]
   public class TypeExtensionsUnitTests {
     #region Type Definitions

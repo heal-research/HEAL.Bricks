@@ -11,7 +11,7 @@ using Xunit;
 using System.Reflection;
 using System.IO;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
   [Trait("Category", "Unit")]
   public class RunnerUnitTests {
   }

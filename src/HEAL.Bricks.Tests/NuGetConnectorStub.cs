@@ -17,7 +17,7 @@ using NuGet.Packaging.Core;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
   public class NuGetConnectorStub : INuGetConnector {
     private readonly List<LocalPackageInfo> localPackages = new List<LocalPackageInfo>();
     private readonly List<RemotePackageInfo> remotePackages = new List<RemotePackageInfo>();

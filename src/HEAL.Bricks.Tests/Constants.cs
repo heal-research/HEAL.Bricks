@@ -8,7 +8,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
   public enum Platform {
     Unknown,
     Windows,

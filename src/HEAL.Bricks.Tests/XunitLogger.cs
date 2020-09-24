@@ -9,7 +9,7 @@ using NuGet.Common;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
   public class XunitLogger : LoggerBase {
     public ITestOutputHelper Output { get; }
 

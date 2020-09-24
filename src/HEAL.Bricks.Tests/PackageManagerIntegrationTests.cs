@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
 
   [Trait("Category", "Integration")]
   public class PackageManagerIntegrationTests : IClassFixture<RandomTempDirectoryFixture> {

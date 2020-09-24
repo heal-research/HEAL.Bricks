@@ -9,7 +9,7 @@ using System;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
   public class DummyApplication : IApplication {
     public string Name => "DummyApplication";
     public string Description => "This is a dummy application for testing.";

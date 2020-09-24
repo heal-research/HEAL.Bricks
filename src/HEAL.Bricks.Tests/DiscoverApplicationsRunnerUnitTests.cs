@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Xunit;
 using System;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
   [Trait("Category", "Unit")]
   public class DiscoverApplicationsRunnerUnitTests {
     [Theory]
@@ -18,7 +18,7 @@ namespace HEAL.Bricks.XTests {
     [InlineData(typeof(StdInOutProcessChannel))]
     public async Task GetApplicationsAsync_ReturnsApplications(Type channelType) {
       PackageLoadInfo[] packageLoadInfos = new[] {
-        PackageLoadInfo.CreateForTests("a", "1.0.0", TestHelpers.GetWorkingDir(), "HEAL.Bricks.XTests.dll")
+        PackageLoadInfo.CreateForTests("a", "1.0.0", TestHelpers.GetWorkingDir(), "HEAL.Bricks.Tests.dll")
       };
       IApplication expectedApplication = new DummyApplication();
       IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestRunner", TestHelpers.TestRunnerAsync);

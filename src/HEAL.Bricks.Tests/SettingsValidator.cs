@@ -9,7 +9,7 @@ using System.IO;
 using FluentValidation;
 using FluentValidation.Results;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
   public class SettingsValidator : AbstractValidator<ISettings> {
     public static ValidationResult Check(ISettings settings) {
       return new SettingsValidator().Validate(settings);

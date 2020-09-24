@@ -9,7 +9,7 @@ using System;
 using System.IO;
 using Xunit;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
   [Trait("Category", "Unit")]
   public class SettingsUnitTests {
     #region PublicNuGetRepository

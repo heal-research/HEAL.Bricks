@@ -22,7 +22,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HEAL.Bricks.Tests.BricksRun
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinFormsTestApp", "WinFormsTestApp\WinFormsTestApp.csproj", "{1BCA876D-7745-4A21-BC43-FFCD4DC2DA44}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HEAL.Bricks.XTests", "HEAL.Bricks.XTests\HEAL.Bricks.XTests.csproj", "{9C502284-B2EE-4C0A-8D0C-6F987F1AA265}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HEAL.Bricks.Tests", "HEAL.Bricks.Tests\HEAL.Bricks.Tests.csproj", "{78D276AD-9B37-4FA2-9062-A3020371996A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -50,10 +50,10 @@ Global
 		{1BCA876D-7745-4A21-BC43-FFCD4DC2DA44}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1BCA876D-7745-4A21-BC43-FFCD4DC2DA44}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1BCA876D-7745-4A21-BC43-FFCD4DC2DA44}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9C502284-B2EE-4C0A-8D0C-6F987F1AA265}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9C502284-B2EE-4C0A-8D0C-6F987F1AA265}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9C502284-B2EE-4C0A-8D0C-6F987F1AA265}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9C502284-B2EE-4C0A-8D0C-6F987F1AA265}.Release|Any CPU.Build.0 = Release|Any CPU
+		{78D276AD-9B37-4FA2-9062-A3020371996A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78D276AD-9B37-4FA2-9062-A3020371996A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78D276AD-9B37-4FA2-9062-A3020371996A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78D276AD-9B37-4FA2-9062-A3020371996A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -18,7 +18,7 @@ using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 using NuGet.Configuration;
 
-namespace HEAL.Bricks.XTests {
+namespace HEAL.Bricks.Tests {
   public static class Mock {
     public static Mock<T> Of<T>() where T : class {
       return new Mock<T>();
