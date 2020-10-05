@@ -117,7 +117,8 @@ namespace HEAL.Bricks.Tests {
     [Theory]
     [InlineData("TestPackage.ListedStable", "1.0.0", true,  true,  "2.0.6")]
     public async Task InstallPackageUpdatesAsync_WhenUpdatesArePending(string packageId, string version, bool installMissingDependencies, bool includePreReleases, string expectedVersion) {
-      IPackageManager pm = PackageManager.Create(Settings);
+      INuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netFramework45FrameworkName, Settings.Repositories, new XunitLogger(output));
+      IPackageManager pm = PackageManager.CreateForTests(Settings, nuGetConnector);
       RemotePackageInfo remotePackage = await pm.GetRemotePackageAsync(packageId, version);
       await pm.InstallRemotePackageAsync(remotePackage, installMissingDependencies: false);
 
