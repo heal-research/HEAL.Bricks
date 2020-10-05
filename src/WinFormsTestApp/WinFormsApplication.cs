@@ -15,7 +15,9 @@ namespace WinFormsTestApp {
     public ApplicationKind Kind => ApplicationKind.GUI;
 
     public Task RunAsync(ICommandLineArgument[] args, CancellationToken cancellationToken = default) {
-      Application.Run(new ApplicationForm());
+      var form = new ApplicationForm();
+      cancellationToken.Register(() => { form.Close(); });
+      Application.Run(form);
       return Task.CompletedTask;
     }
   }

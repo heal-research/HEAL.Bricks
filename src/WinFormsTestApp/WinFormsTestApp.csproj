@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\HEAL.Bricks.UI.WindowsForms\HEAL.Bricks.UI.WindowsForms.csproj" />
     <ProjectReference Include="..\HEAL.Bricks\HEAL.Bricks.csproj" />
   </ItemGroup>
 
@@ -14,13 +15,6 @@
     <Compile Update="ApplicationForm.cs" />
     <Compile Update="ApplicationForm.Designer.cs">
       <DependentUpon>ApplicationForm.cs</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <Compile Update="StarterForm.cs" />
-    <Compile Update="StarterForm.Designer.cs">
-      <DependentUpon>StarterForm.cs</DependentUpon>
     </Compile>
   </ItemGroup>
 

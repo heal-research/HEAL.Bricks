@@ -46,6 +46,9 @@ namespace HEAL.Bricks {
     }
 
     private void Initialize() {
+      if (!Directory.Exists(Settings.PackagesPath)) Directory.CreateDirectory(Settings.PackagesPath);
+      if (!Directory.Exists(Settings.PackagesCachePath)) Directory.CreateDirectory(Settings.PackagesCachePath);
+
       IEnumerable<LocalPackageInfo> installedPackages = nuGetConnector.GetLocalPackages(Settings.PackagesPath).ToArray();
       SetPackageAndDependencyStatus(installedPackages);
       Status = GetPackageManagerStatus(installedPackages);
@@ -102,7 +105,8 @@ namespace HEAL.Bricks {
     }
 
     public async Task<IEnumerable<RemotePackageInfo>> GetMissingDependenciesAsync(CancellationToken cancellationToken = default) {
-      return await nuGetConnector.GetMissingDependenciesAsync(InstalledPackages, cancellationToken);
+      IEnumerable<LocalPackageInfo> installedPackages = InstalledPackages.Where(x => x.Status == PackageStatus.DependenciesMissing);
+      return await nuGetConnector.GetMissingDependenciesAsync(installedPackages, cancellationToken);
     }
     public async Task InstallMissingDependenciesAsync(CancellationToken cancellationToken = default) {
       IEnumerable<RemotePackageInfo> dependencies = await GetMissingDependenciesAsync(cancellationToken);
@@ -122,7 +126,10 @@ namespace HEAL.Bricks {
       return await nuGetConnector.GetPackageUpdatesAsync(packages, includePreReleases, cancellationToken);
     }
     public async Task<IEnumerable<RemotePackageInfo>> GetPackageUpdatesAsync(bool includePreReleases = false, CancellationToken cancellationToken = default) {
-      return await GetPackageUpdatesAsync(InstalledPackages, includePreReleases, cancellationToken);
+      IEnumerable<LocalPackageInfo> installedPackages = InstalledPackages.Where(x => (x.Status == PackageStatus.OK) ||
+                                                                                     (x.Status == PackageStatus.DependenciesMissing) ||
+                                                                                     (x.Status == PackageStatus.IndirectDependenciesMissing));
+      return await GetPackageUpdatesAsync(installedPackages, includePreReleases, cancellationToken);
     }
     public async Task InstallPackageUpdatesAsync(bool installMissingDependencies = true, bool includePreReleases = false, CancellationToken cancellationToken = default) {
       IEnumerable<RemotePackageInfo> updates = await GetPackageUpdatesAsync(includePreReleases, cancellationToken);

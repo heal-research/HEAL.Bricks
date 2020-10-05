@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using HEAL.Bricks;
+using HEAL.Bricks.UI.WindowsForms;
 
 namespace WinFormsTestApp {
   static class Program {
@@ -23,7 +24,18 @@ namespace WinFormsTestApp {
         }
       }
 
-      Application.Run(new StarterForm());
+      Settings settings = new Settings {
+        Isolation = Isolation.AnonymousPipes
+      };
+      settings.Repositories.Add(@"C:\# Daten\NuGet");
+
+      StarterForm starterForm = new StarterForm(settings) {
+        Text = "Choose your application",
+        DefaultApplicationImageKey = "Cloud"
+      };
+      starterForm.LargeImageList.Images.Add("Cloud", FeatherIconsLarge.Cloud);
+
+      Application.Run(starterForm);
     }
   }
 }

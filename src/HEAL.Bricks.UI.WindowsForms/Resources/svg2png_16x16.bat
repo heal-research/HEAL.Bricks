@@ -1,0 +1,1 @@
+for %%f in (*.svg) do "C:\Program Files (x86)\Inkscape\inkscape" --export-png="%%~df%%~pf%%~nf_16.png" --export-width=16 --export-height=16 "%%~ff"

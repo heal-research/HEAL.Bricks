@@ -69,7 +69,7 @@ namespace HEAL.Bricks {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Operation(input != null);
 
-      return await input.ReadAsync(cancellationToken) as T;
+      return await input.ReadAsync(cancellationToken).ConfigureAwait(false) as T;
     }
 
     protected virtual void DisposeMembers() {

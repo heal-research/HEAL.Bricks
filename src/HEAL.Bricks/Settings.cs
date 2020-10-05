@@ -46,6 +46,10 @@ namespace HEAL.Bricks {
       get { return dotnetCommand; }
       set { dotnetCommand = Guard.Argument(value, nameof(DotnetCommand)).NotNull().NotEmpty().NotWhiteSpace(); }
     }
+    public string StarterAssembly {
+      get { return starterAssembly; }
+      set { starterAssembly = Guard.Argument(value, nameof(StarterAssembly)).NotNull().NotEmpty().NotWhiteSpace().RelativePath(); }
+    }
     public string DockerCommand {
       get { return dockerCommand; }
       set { dockerCommand = Guard.Argument(value, nameof(DockerCommand)).NotNull().NotEmpty().NotWhiteSpace(); }
@@ -55,10 +59,6 @@ namespace HEAL.Bricks {
       set { dockerImage = Guard.Argument(value, nameof(DockerImage)).NotNull().NotEmpty().NotWhiteSpace(); }
     }
     public bool UseWindowsContainer { get; set; }
-    public string StarterAssembly {
-      get { return starterAssembly; }
-      set { starterAssembly = Guard.Argument(value, nameof(StarterAssembly)).NotNull().NotEmpty().NotWhiteSpace().RelativePath(); }
-    }
 
     public Settings() {
       Repositories = new List<string>(new[] { PublicNuGetRepository });
