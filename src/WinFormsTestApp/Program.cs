@@ -27,7 +27,7 @@ namespace WinFormsTestApp {
       Settings settings = new Settings {
         Isolation = Isolation.AnonymousPipes
       };
-      settings.Repositories.Add(@"C:\# Daten\NuGet");
+      settings.Repositories.Add((@"C:\# Daten\NuGet", string.Empty, string.Empty));
 
       StarterForm starterForm = new StarterForm(settings) {
         Text = "Choose your application",

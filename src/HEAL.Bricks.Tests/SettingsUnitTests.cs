@@ -51,7 +51,7 @@ namespace HEAL.Bricks.Tests {
     #region Repositories
     [Fact]
     public void Repositories_AddRepository_Succeeds() {
-      string repository = "repository";
+      (string, string, string) repository = ("repository", "username", "password");
       Settings settings = new Settings();
 
       settings.Repositories.Add(repository);

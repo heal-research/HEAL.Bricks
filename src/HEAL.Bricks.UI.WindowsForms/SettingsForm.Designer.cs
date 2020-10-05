@@ -49,7 +49,6 @@ namespace HEAL.Bricks.UI.WindowsForms {
       this.moveRepositoryUpButton = new System.Windows.Forms.Button();
       this.removeRepositoryButton = new System.Windows.Forms.Button();
       this.addRepositoryButton = new System.Windows.Forms.Button();
-      this.repositoriesListBox = new System.Windows.Forms.ListBox();
       this.isolationGroupBox = new System.Windows.Forms.GroupBox();
       this.selectStarterAssemblyButton = new System.Windows.Forms.Button();
       this.useWindowsContainerLabel = new System.Windows.Forms.Label();
@@ -68,6 +67,9 @@ namespace HEAL.Bricks.UI.WindowsForms {
       this.errorProvider = new System.Windows.Forms.ErrorProvider(this.components);
       this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
       this.toolTip = new System.Windows.Forms.ToolTip(this.components);
+      this.repositoriesListView = new System.Windows.Forms.ListView();
+      this.repositorySourceColumn = new System.Windows.Forms.ColumnHeader();
+      this.repositoryUsernameColumn = new System.Windows.Forms.ColumnHeader();
       this.pathsGroupBox.SuspendLayout();
       this.repositoriesGroupBox.SuspendLayout();
       this.isolationGroupBox.SuspendLayout();
@@ -206,12 +208,12 @@ namespace HEAL.Bricks.UI.WindowsForms {
       this.repositoriesGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+      this.repositoriesGroupBox.Controls.Add(this.repositoriesListView);
       this.repositoriesGroupBox.Controls.Add(this.editRepositoryButton);
       this.repositoriesGroupBox.Controls.Add(this.moveRepositoryDownButton);
       this.repositoriesGroupBox.Controls.Add(this.moveRepositoryUpButton);
       this.repositoriesGroupBox.Controls.Add(this.removeRepositoryButton);
       this.repositoriesGroupBox.Controls.Add(this.addRepositoryButton);
-      this.repositoriesGroupBox.Controls.Add(this.repositoriesListBox);
       this.repositoriesGroupBox.Location = new System.Drawing.Point(12, 124);
       this.repositoriesGroupBox.Name = "repositoriesGroupBox";
       this.repositoriesGroupBox.Size = new System.Drawing.Size(861, 201);
@@ -273,19 +275,6 @@ namespace HEAL.Bricks.UI.WindowsForms {
       this.addRepositoryButton.TabIndex = 1;
       this.addRepositoryButton.UseVisualStyleBackColor = true;
       this.addRepositoryButton.Click += new System.EventHandler(this.AddRepositoryOnClick);
-      // 
-      // repositoriesListBox
-      // 
-      this.repositoriesListBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-      this.repositoriesListBox.FormattingEnabled = true;
-      this.repositoriesListBox.ItemHeight = 15;
-      this.repositoriesListBox.Location = new System.Drawing.Point(6, 22);
-      this.repositoriesListBox.Name = "repositoriesListBox";
-      this.repositoriesListBox.Size = new System.Drawing.Size(818, 169);
-      this.repositoriesListBox.TabIndex = 0;
-      this.repositoriesListBox.SelectedIndexChanged += new System.EventHandler(this.EnableDisableControlsOnSelectedIndexChanged);
       // 
       // isolationGroupBox
       // 
@@ -455,6 +444,35 @@ namespace HEAL.Bricks.UI.WindowsForms {
       this.openFileDialog.Filter = "Assemblies (*.dll;*.exe)|*.dll;*.exe|All files (*.*)|*.*";
       this.openFileDialog.Title = "Select Starter Assembly";
       // 
+      // repositoriesListView
+      // 
+      this.repositoriesListView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+      this.repositoriesListView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.repositorySourceColumn,
+            this.repositoryUsernameColumn});
+      this.repositoriesListView.FullRowSelect = true;
+      this.repositoriesListView.HideSelection = false;
+      this.repositoriesListView.Location = new System.Drawing.Point(6, 22);
+      this.repositoriesListView.MultiSelect = false;
+      this.repositoriesListView.Name = "repositoriesListView";
+      this.repositoriesListView.Size = new System.Drawing.Size(818, 173);
+      this.repositoriesListView.TabIndex = 0;
+      this.repositoriesListView.UseCompatibleStateImageBehavior = false;
+      this.repositoriesListView.View = System.Windows.Forms.View.Details;
+      this.repositoriesListView.SelectedIndexChanged += new System.EventHandler(this.EnableDisableControlsOnSelectedIndexChanged);
+      // 
+      // repositorySourceColumn
+      // 
+      this.repositorySourceColumn.Text = "Source";
+      this.repositorySourceColumn.Width = 500;
+      // 
+      // repositoryUsernameColumn
+      // 
+      this.repositoryUsernameColumn.Text = "Username";
+      this.repositoryUsernameColumn.Width = 200;
+      // 
       // SettingsForm
       // 
       this.AcceptButton = this.okButton;
@@ -504,7 +522,6 @@ namespace HEAL.Bricks.UI.WindowsForms {
     private System.Windows.Forms.Button moveRepositoryUpButton;
     private System.Windows.Forms.Button removeRepositoryButton;
     private System.Windows.Forms.Button addRepositoryButton;
-    private System.Windows.Forms.ListBox repositoriesListBox;
     private System.Windows.Forms.Label dockerImageLabel;
     private System.Windows.Forms.Label dotnetCommandLabel;
     private System.Windows.Forms.Label starterAssemblyLabel;
@@ -522,5 +539,8 @@ namespace HEAL.Bricks.UI.WindowsForms {
     private System.Windows.Forms.OpenFileDialog openFileDialog;
     private System.Windows.Forms.ToolTip toolTip;
     private System.Windows.Forms.Button editRepositoryButton;
+    private System.Windows.Forms.ListView repositoriesListView;
+    private System.Windows.Forms.ColumnHeader repositorySourceColumn;
+    private System.Windows.Forms.ColumnHeader repositoryUsernameColumn;
   }
 }

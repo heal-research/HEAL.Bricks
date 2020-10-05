@@ -6,6 +6,7 @@
 #endregion
 
 using NuGet.Common;
+using NuGet.Configuration;
 using NuGet.Frameworks;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
@@ -30,14 +31,14 @@ namespace HEAL.Bricks {
     public NuGetFramework CurrentFramework { get; private set; } = GetFrameworkFromEntryAssembly();
 
     private NuGetConnector() { }
-    public NuGetConnector(IEnumerable<string> repositories, ILogger logger) {
+    public NuGetConnector(IEnumerable<(string Source, string Username, string Password)> repositories, ILogger logger) {
       this.repositories = repositories.Select(x => CreateSourceRepository(x)).ToArray();
       this.logger = logger;
     }
 
-    public static NuGetConnector CreateForTests(string frameworkName, IEnumerable<string> packageSources, ILogger logger) {
+    public static NuGetConnector CreateForTests(string frameworkName, IEnumerable<(string Source, string Username, string Password)> repositories, ILogger logger) {
       // only used for tests to create a specifically initialized NuGetConnector
-      return CreateForTests(frameworkName, packageSources.Select(ps => CreateSourceRepository(ps)).ToArray(), logger);
+      return CreateForTests(frameworkName, repositories.Select(r => CreateSourceRepository(r)).ToArray(), logger);
     }
     public static NuGetConnector CreateForTests(string frameworkName, IEnumerable<SourceRepository> repositories, ILogger logger) {
       // only used for tests to create a specifically initialized NuGetConnector
@@ -371,7 +372,10 @@ namespace HEAL.Bricks {
       return NuGetFramework.ParseFrameworkName(frameworkName, DefaultFrameworkNameProvider.Instance);
     }
 
-    private static SourceRepository CreateSourceRepository(string packageSource) {
+    private static SourceRepository CreateSourceRepository((string Source, string Username, string Password) repository) {
+      PackageSource packageSource = new PackageSource(repository.Source) {
+        Credentials = PackageSourceCredential.FromUserInput(repository.Source, repository.Username, repository.Password, true, string.Empty)
+      };
       return Repository.CreateSource(Repository.Provider.GetCoreV3(), packageSource);
     }
 

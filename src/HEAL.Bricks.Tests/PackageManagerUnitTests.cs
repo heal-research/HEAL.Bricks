@@ -45,7 +45,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData("   ")]
     public void Create_WithSettingsWhereRepositoriesContainsNullOrEmpty_ThrowsArgumentException(string repository) {
       Settings settings = new Settings();
-      settings.Repositories.Add(repository);
+      settings.Repositories.Add((repository, string.Empty, string.Empty));
 
       var e = Assert.Throws<ArgumentException>(() => PackageManager.Create(settings));
       Assert.False(string.IsNullOrEmpty(e.Message));

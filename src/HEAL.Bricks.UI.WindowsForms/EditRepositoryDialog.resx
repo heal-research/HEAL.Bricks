@@ -61,7 +61,7 @@
   <data name="okButton.Image" type="System.Drawing.Bitmap, System.Drawing.Common" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAL
-        zQAAC80BNxUJ1gAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAABpSURBVDhPYxiZ
+        ywAAC8sBtxZNTQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAABpSURBVDhPYxiZ
         QA+IuyBM0oEBEL8B4u1gHolAH4hfA/FBIOYBCZACiNIM8hdIITqAOXsvEHOBBHCBHUAMUgjSAANEawYB
         TiDeDcTvgdgEiMnyM8gWkG0gW4m2GR2ANOyEYpI1jzzAwAAAol0VZ7iZn+QAAAAASUVORK5CYII=
 </value>
@@ -69,7 +69,7 @@
   <data name="cancelButton.Image" type="System.Drawing.Bitmap, System.Drawing.Common" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAL
-        zQAAC80BNxUJ1gAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAABjSURBVDhPYxh+
+        ywAAC8sBtxZNTQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAABjSURBVDhPYxh+
         IBSIUyBMrCAZiEFqcAKQ5n9AXATmoQKQGEgOZAheUADE/4G4EsyDgEIgBolVgHlEAGRDSNYMAzBDyNIM
         AjCbYS4hCSA7G1uY4AXY/Ey0IRRHI8UJacgBBgYATXMfPweMEIgAAAAASUVORK5CYII=
 </value>

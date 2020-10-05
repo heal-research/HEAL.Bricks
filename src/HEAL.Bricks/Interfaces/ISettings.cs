@@ -10,7 +10,7 @@ using System.Collections.Generic;
 namespace HEAL.Bricks {
   public interface ISettings {
     bool CurrentRuntimeIsNETFramework { get; }
-    IEnumerable<string> Repositories { get; }
+    IEnumerable<(string Source, string Username, string Password)> Repositories { get; }
     string AppPath { get; }
     string PackagesPath { get; }
     string PackagesCachePath { get; }

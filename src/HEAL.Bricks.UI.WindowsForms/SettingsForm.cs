@@ -27,8 +27,8 @@ namespace HEAL.Bricks.UI.WindowsForms {
       selectPackagesPathButton.Tag = packagesPathTextBox;
       packagesCachePathTextBox.Text = settings.PackagesCachePath;
       selectPackagesCachePathButton.Tag = packagesCachePathTextBox;
-      foreach (string repository in settings.Repositories) {
-        repositoriesListBox.Items.Add(repository);
+      foreach ((string source, string username, string password) in settings.Repositories) {
+        repositoriesListView.Items.Add(new ListViewItem(new[] { source, username }) { Tag = password });
       }
       isolationComboBox.DataSource = Enum.GetValues(typeof(Isolation));
       isolationComboBox.SelectedItem = settings.Isolation;
@@ -54,16 +54,18 @@ namespace HEAL.Bricks.UI.WindowsForms {
         UseWindowsContainer = useWindowsContainerCheckBox.Checked
       };
       settings.Repositories.Clear();
-      settings.Repositories.AddRange(repositoriesListBox.Items.Cast<string>());
+      foreach (ListViewItem item in repositoriesListView.Items) {
+        settings.Repositories.Add((item.SubItems[0].Text, item.SubItems[1].Text, item.Tag as string));
+      }
       return settings;
     }
 
     private void EnableDisableControls() {
-      int index = repositoriesListBox.SelectedIndex;
+      int index = repositoriesListView.SelectedIndices.Count > 0 ? repositoriesListView.SelectedIndices[0] : -1;
       removeRepositoryButton.Enabled = index != -1;
       editRepositoryButton.Enabled = index != -1;
       moveRepositoryUpButton.Enabled = index > 0;
-      moveRepositoryDownButton.Enabled = (index != -1) && (index < repositoriesListBox.Items.Count - 1);
+      moveRepositoryDownButton.Enabled = (index != -1) && (index < repositoriesListView.Items.Count - 1);
     }
 
     private void SelectFolderPathOnClick(object sender, EventArgs e) {
@@ -100,40 +102,38 @@ namespace HEAL.Bricks.UI.WindowsForms {
 
     private void AddRepositoryOnClick(object sender, EventArgs e) {
       EditRepositoryDialog dialog = new EditRepositoryDialog();
-      if (dialog.ShowDialog(this) == DialogResult.OK) {
-        repositoriesListBox.Items.Add(dialog.Repository);
+      if ((dialog.ShowDialog(this) == DialogResult.OK) && (!string.IsNullOrWhiteSpace(dialog.Repository))) {
+        repositoriesListView.Items.Add(new ListViewItem(new[] { dialog.Repository, dialog.Username }) { Tag = dialog.Password });
         EnableDisableControls();
       }
     }
 
     private void RemoveRepositoryOnClick(object sender, EventArgs e) {
-      repositoriesListBox.Items.RemoveAt(repositoriesListBox.SelectedIndex);
+      repositoriesListView.Items.RemoveAt(repositoriesListView.SelectedIndices[0]);
     }
 
     private void EditRepositoryOnClick(object sender, EventArgs e) {
-      EditRepositoryDialog dialog = new EditRepositoryDialog(repositoriesListBox.SelectedItem as string);
+      ListViewItem selected = repositoriesListView.SelectedItems[0];
+      EditRepositoryDialog dialog = new EditRepositoryDialog(selected.SubItems[0].Text, selected.SubItems[1].Text, selected.Tag as string);
       if ((dialog.ShowDialog(this) == DialogResult.OK) && (!string.IsNullOrWhiteSpace(dialog.Repository))) {
-        int index = repositoriesListBox.SelectedIndex;
-        repositoriesListBox.Items.RemoveAt(index);
-        repositoriesListBox.Items.Insert(index, dialog.Repository);
-        repositoriesListBox.SelectedIndex = index;
+        selected.SubItems[0].Text = dialog.Repository;
+        selected.SubItems[1].Text = dialog.Username;
+        selected.Tag = dialog.Password;
       }
     }
 
     private void MoveRepositoryUpOnClick(object sender, EventArgs e) {
-      int index = repositoriesListBox.SelectedIndex;
-      object item = repositoriesListBox.SelectedItem;
-      repositoriesListBox.Items.RemoveAt(index);
-      repositoriesListBox.Items.Insert(index - 1, item);
-      repositoriesListBox.SelectedIndex = index - 1;
+      int index = repositoriesListView.SelectedIndices[0];
+      ListViewItem item = repositoriesListView.SelectedItems[0];
+      repositoriesListView.Items.RemoveAt(index);
+      repositoriesListView.Items.Insert(index - 1, item);
     }
 
     private void MoveRepositoryDownOnClick(object sender, EventArgs e) {
-      int index = repositoriesListBox.SelectedIndex;
-      object item = repositoriesListBox.SelectedItem;
-      repositoriesListBox.Items.RemoveAt(index);
-      repositoriesListBox.Items.Insert(index + 1, item);
-      repositoriesListBox.SelectedIndex = index + 1;
+      int index = repositoriesListView.SelectedIndices[0];
+      ListViewItem item = repositoriesListView.SelectedItems[0];
+      repositoriesListView.Items.RemoveAt(index);
+      repositoriesListView.Items.Insert(index + 1, item);
     }
 
     private void EnableDisableControlsOnSelectedIndexChanged(object sender, EventArgs e) {

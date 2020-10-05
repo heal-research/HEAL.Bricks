@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 namespace HEAL.Bricks {
   public sealed class PackageManager : IPackageManager {
     public static IPackageManager Create(ISettings settings) {
-      Guard.Argument(settings, nameof(settings)).NotNull().Member(s => s.Repositories, x => x.NotNull().NotEmpty().Require(x.Value.All(y => !string.IsNullOrWhiteSpace(y))))
+      Guard.Argument(settings, nameof(settings)).NotNull().Member(s => s.Repositories, x => x.NotNull().NotEmpty().Require(x.Value.All(y => !string.IsNullOrWhiteSpace(y.Source))))
                                                           .Member(s => s.PackagesPath, x => x.NotNull().NotEmpty().NotWhiteSpace().AbsolutePath())
                                                           .Member(s => s.PackagesCachePath, x => x.NotNull().NotEmpty().NotWhiteSpace().AbsolutePath());
       return new PackageManager(settings);

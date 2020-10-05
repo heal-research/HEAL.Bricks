@@ -26,8 +26,8 @@ namespace HEAL.Bricks {
     private string starterAssembly;
 
     public bool CurrentRuntimeIsNETFramework => RuntimeInformation.FrameworkDescription.ToLower().Contains("framework");
-    IEnumerable<string> ISettings.Repositories => Repositories;
-    public List<string> Repositories { get; }
+    IEnumerable<(string Source, string Username, string Password)> ISettings.Repositories => Repositories;
+    public List<(string Source, string Username, string Password)> Repositories { get; }
     public string AppPath { get; private set; }
     public string PackagesPath {
       get { return packagesPath; }
@@ -61,7 +61,9 @@ namespace HEAL.Bricks {
     public bool UseWindowsContainer { get; set; }
 
     public Settings() {
-      Repositories = new List<string>(new[] { PublicNuGetRepository });
+      Repositories = new List<(string Source, string Username, string Password)> {
+        (PublicNuGetRepository, string.Empty, string.Empty)
+      };
       AppPath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
       PackagesPath = "packages";
       PackagesCachePath = "packages_cache";
@@ -69,7 +71,7 @@ namespace HEAL.Bricks {
       DotnetCommand = "dotnet";
       DockerCommand = "docker";
       DockerImage = CurrentRuntimeIsNETFramework ? "mcr.microsoft.com/dotnet/framework/runtime:4.7.2" : "mcr.microsoft.com/dotnet/core/runtime:3.1";
-      UseWindowsContainer = CurrentRuntimeIsNETFramework ? true : false;
+      UseWindowsContainer = CurrentRuntimeIsNETFramework;
       StarterAssembly = Path.GetFileName(Assembly.GetEntryAssembly().Location);
     }
 

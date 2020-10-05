@@ -26,7 +26,7 @@ namespace HEAL.Bricks.Tests {
     public void Constructor_ReturnsInstanceWhereFrameworkIsCorrect() {
       string expectedCurrentFrameworkName = Constants.netCoreApp21FrameworkName;
 
-      NuGetConnector nuGetConnector = new NuGetConnector(Enumerable.Empty<string>(), logger);
+      NuGetConnector nuGetConnector = new NuGetConnector(Enumerable.Empty<(string, string, string)>(), logger);
 
       Assert.Equal(expectedCurrentFrameworkName, nuGetConnector.CurrentFramework.DotNetFrameworkName);
     }
@@ -35,7 +35,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData(Constants.netFramework472FrameworkName)]
     [InlineData(Constants.netStandard20FrameworkName)]
     public void CreateForTests_WithFrameworkName_ReturnsInstanceWhereFrameworkIsCorrect(string frameworkName) {
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(frameworkName, Enumerable.Empty<string>(), logger);
+      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(frameworkName, Enumerable.Empty<(string, string, string)>(), logger);
 
       Assert.Equal(frameworkName, nuGetConnector.CurrentFramework.DotNetFrameworkName);
     }
