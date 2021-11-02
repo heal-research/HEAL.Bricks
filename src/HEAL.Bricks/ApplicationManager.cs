@@ -53,7 +53,7 @@ namespace HEAL.Bricks {
       }
     }
 
-    public async Task RunAsync(ApplicationInfo application, ICommandLineArgument[] arguments = null, CancellationToken cancellationToken = default) {
+    public async Task RunAsync(ApplicationInfo application, string arguments = null, CancellationToken cancellationToken = default) {
       Guard.Argument(application, nameof(application)).NotNull();
 
       using (IChannel channel = CreateRunnerChannel()) {

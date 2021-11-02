@@ -14,6 +14,6 @@ namespace HEAL.Bricks {
     string Description { get; }
     ApplicationKind Kind { get; }
 
-    Task RunAsync(ICommandLineArgument[] args, CancellationToken cancellationToken = default);
+    Task RunAsync(string arguments, CancellationToken cancellationToken);
   }
 }

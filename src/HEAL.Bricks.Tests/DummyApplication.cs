@@ -14,7 +14,7 @@ namespace HEAL.Bricks.Tests {
     public string Name => "DummyApplication";
     public string Description => "This is a dummy application for testing.";
     public ApplicationKind Kind => ApplicationKind.Console;
-    public Task RunAsync(ICommandLineArgument[] args, CancellationToken cancellationToken = default) {
+    public Task RunAsync(string arguments, CancellationToken cancellationToken = default) {
       throw new NotImplementedException();
     }
   }

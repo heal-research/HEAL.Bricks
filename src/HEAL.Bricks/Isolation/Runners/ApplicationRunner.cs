@@ -17,9 +17,9 @@ namespace HEAL.Bricks {
   [Serializable]
   public sealed class ApplicationRunner : PackageLoaderRunner {
     public ApplicationInfo ApplicationInfo { get; }
-    public ICommandLineArgument[] Arguments { get; }
+    public string Arguments { get; }
 
-    public ApplicationRunner(IEnumerable<PackageLoadInfo> packages, ApplicationInfo applicationInfo, ICommandLineArgument[] arguments = null) : base(packages) {
+    public ApplicationRunner(IEnumerable<PackageLoadInfo> packages, ApplicationInfo applicationInfo, string arguments = null) : base(packages) {
       ApplicationInfo = Guard.Argument(applicationInfo, nameof(applicationInfo)).NotNull();
       Arguments = arguments;
     }

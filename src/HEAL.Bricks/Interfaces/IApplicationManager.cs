@@ -16,7 +16,7 @@ namespace HEAL.Bricks {
     IPackageManager PackageManager { get; }
     IEnumerable<ApplicationInfo> InstalledApplications { get; }
 
-    Task RunAsync(ApplicationInfo application, ICommandLineArgument[] arguments = null, CancellationToken cancellationToken = default);
+    Task RunAsync(ApplicationInfo application, string arguments = null, CancellationToken cancellationToken = default);
 
     IChannel CreateRunnerChannel();
   }

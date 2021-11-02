@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public interface IServiceApplication : IApplication {
-    Task SuspendAsync(CancellationToken cancellationToken = default);
-    Task ResumeAsync(CancellationToken cancellationToken = default);
+    Task SuspendAsync(CancellationToken cancellationToken);
+    Task ResumeAsync(CancellationToken cancellationToken);
   }
 }
