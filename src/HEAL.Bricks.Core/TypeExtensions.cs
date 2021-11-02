@@ -14,7 +14,7 @@ namespace HEAL.Bricks {
     internal static bool IsNonDiscoverableType(this Type type) {
       if (type == null) throw new ArgumentNullException(nameof(type));
 
-      return type.GetCustomAttributes(typeof(NonDiscoverableTypeAttribute), false).Any();
+      return type.GetCustomAttribute<NonDiscoverableTypeAttribute>(inherit: false) != null;
     }
 
     /// <summary>

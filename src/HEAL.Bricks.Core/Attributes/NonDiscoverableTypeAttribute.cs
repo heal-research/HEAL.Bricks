@@ -8,7 +8,7 @@
 using System;
 
 namespace HEAL.Bricks {
-  [AttributeUsage(AttributeTargets.Class)]
+  [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
   public class NonDiscoverableTypeAttribute : Attribute {
     public NonDiscoverableTypeAttribute() { }
   }
