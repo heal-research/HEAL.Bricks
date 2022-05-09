@@ -56,7 +56,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
       this.settingsButton.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
       this.toolTip.SetToolTip(this.settingsButton, "Open settings dialog");
       this.settingsButton.UseVisualStyleBackColor = true;
-      this.settingsButton.Click += new System.EventHandler(this.ShowSettingsDialogOnClick);
+      this.settingsButton.Click += new System.EventHandler(this.ShowOptionsDialogOnClick);
       // 
       // packageManagerButton
       // 

@@ -6,6 +6,7 @@
 #endregion
 
 using Dawn;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,79 +15,118 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public sealed class ApplicationManager : IApplicationManager {
-    public static async Task<IApplicationManager> CreateAsync(ISettings settings, CancellationToken cancellationToken = default) {
-      Guard.Argument(settings, nameof(settings)).NotNull().Member(s => s.Isolation, x => x.Defined())
-                                                          .Member(s => s.DotnetCommand, x => x.NotNull().NotEmpty().NotWhiteSpace())
-                                                          .Member(s => s.DockerCommand, x => x.NotNull().NotEmpty().NotWhiteSpace())
-                                                          .Member(s => s.DockerImage, x => x.NotNull().NotEmpty().NotWhiteSpace())
-                                                          .Member(s => s.StarterAssembly, x => x.NotNull().NotEmpty().NotWhiteSpace().RelativePath());
+    public static async Task<IApplicationManager> CreateAsync(BricksOptions options, bool reloadApplications = true, CancellationToken cancellationToken = default) {
+      Guard.Argument(options, nameof(options)).NotNull().Member(s => s.DefaultIsolation, x => x.Defined())
+                                                        .Member(s => s.DotnetCommand, x => x.NotNull().NotEmpty().NotWhiteSpace())
+                                                        .Member(s => s.StarterAssembly, x => x.NotNull().NotEmpty().NotWhiteSpace().RelativePath())
+                                                        .Member(s => s.DockerCommand, x => x.NotNull().NotEmpty().NotWhiteSpace())
+                                                        .Member(s => s.DefaultDockerImage, x => x.NotNull().NotEmpty().NotWhiteSpace());
 
-      ApplicationManager applicationManager = new ApplicationManager(settings) {
-        PackageManager = Bricks.PackageManager.Create(settings)
-      };
-      await applicationManager.InitializeAsync(cancellationToken);
+      ApplicationManager applicationManager = new ApplicationManager(new OptionsWrapper<BricksOptions>(options), Bricks.PackageManager.Create(options));
+      await applicationManager.InitializeAsync(reloadApplications, cancellationToken);
       return applicationManager;
     }
-    public static IApplicationManager Create(ISettings settings) {
-      return CreateAsync(settings).Result;
+    public static IApplicationManager Create(BricksOptions options, bool reloadApplications = true) {
+      return CreateAsync(options, reloadApplications).Result;
     }
-    internal static IApplicationManager CreateForTests(ISettings settings, IPackageManager packageManager) {
-      ApplicationManager applicationManager = new ApplicationManager(settings) {
-        PackageManager = packageManager
-      };
-      applicationManager.InitializeAsync(default).Wait();
+    internal static IApplicationManager CreateForTests(BricksOptions options, IPackageManager packageManager) {
+      ApplicationManager applicationManager = new ApplicationManager(new OptionsWrapper<BricksOptions>(options), packageManager);
+      applicationManager.InitializeAsync(true, default).Wait();
       return applicationManager;
     }
 
-    public ISettings Settings { get; }
+    private BricksOptions Options { get; }
     public IPackageManager PackageManager { get; private set; }
     public IEnumerable<ApplicationInfo> InstalledApplications { get; private set; } = Enumerable.Empty<ApplicationInfo>();
 
-    private ApplicationManager(ISettings settings) {
-      Settings = settings;
+    private ApplicationManager(IOptions<BricksOptions> options, IPackageManager packageManager) {
+      Options = options.Value;
+      PackageManager = packageManager;
     }
 
-    private async Task InitializeAsync(CancellationToken cancellationToken) {
-      using (IChannel channel = CreateRunnerChannel()) {
-        DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(PackageManager.GetPackageLoadInfos());
-        InstalledApplications = await discoverApplicationsRunner.GetApplicationsAsync(channel, cancellationToken);
+    private async Task InitializeAsync(bool reloadApplications, CancellationToken cancellationToken) {
+      if (reloadApplications) {
+        await ReloadAsync(cancellationToken);
+      }
+      else {
+        //InstalledApplications = Options.ApplicationSettings.Select(x => x.ApplicationInfo).OrderBy(x => x.Name).ThenByDescending(x => x.Version).ToArray();
       }
     }
 
-    public async Task RunAsync(ApplicationInfo application, string arguments = null, CancellationToken cancellationToken = default) {
-      Guard.Argument(application, nameof(application)).NotNull();
+    public async Task RunAsync(ApplicationInfo applicationInfo, string arguments = null, CancellationToken cancellationToken = default) {
+      Guard.Argument(applicationInfo, nameof(applicationInfo)).NotNull();
 
-      using (IChannel channel = CreateRunnerChannel()) {
-        ApplicationRunner applicationRunner = new ApplicationRunner(PackageManager.GetPackageLoadInfos(), application, arguments);
-        await applicationRunner.RunAsync(channel, cancellationToken);
-      }
+      //if (!Options.ApplicationSettings.Contains(applicationInfo)) {
+      //  Options.ApplicationSettings.Add(new ApplicationSettings(applicationInfo));
+      //}
+      //ApplicationSettings appSettings = Options.ApplicationSettings[applicationInfo];
+
+      //using (IChannel channel = CreateRunnerChannel(appSettings.Isolation, appSettings.ApplicationInfo.DockerImage)) {
+      //  ApplicationRunner applicationRunner = new ApplicationRunner(PackageManager.GetPackageLoadInfos(), applicationInfo, arguments);
+      //  await applicationRunner.RunAsync(channel, cancellationToken);
+      //}
     }
 
-    public IChannel CreateRunnerChannel() {
-      switch (Settings.Isolation) {
+    public async Task RunAutoStartAsync(string arguments = null, CancellationToken cancellationToken = default) {
+      //List<Task> tasks = new List<Task>();
+      //foreach (ApplicationSettings appSettings in Options.ApplicationSettings.Where(x => x.AutoStart)) {
+      //  tasks.Add(RunAsync(appSettings.ApplicationInfo, arguments, cancellationToken));
+      //}
+      //await Task.WhenAll(tasks);
+    }
+
+    public async Task ReloadAsync(CancellationToken cancellationToken = default) {
+      //using (IChannel channel = CreateRunnerChannel(Options.DefaultIsolation)) {
+      //  DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(PackageManager.GetPackageLoadInfos());
+      //  InstalledApplications = await discoverApplicationsRunner.GetApplicationsAsync(channel, cancellationToken);
+
+      //  List<ApplicationSettings> appSettings = new List<ApplicationSettings>();
+      //  foreach (ApplicationInfo appInfo in InstalledApplications) {
+      //    if (Options.ApplicationSettings.Contains(appInfo)) {
+      //      appSettings.Add(new ApplicationSettings(appInfo, Options.ApplicationSettings[appInfo]));
+      //    }
+      //    else {
+      //      appSettings.Add(new ApplicationSettings(appInfo));
+      //    }
+      //  }
+      //  Options.ApplicationSettings.Clear();
+      //  foreach (ApplicationSettings settings in appSettings) {
+      //    Options.ApplicationSettings.Add(settings);
+      //  }
+      //}
+    }
+
+    public IChannel CreateRunnerChannel(Isolation isolation, string dockerImage = null) {
+      if (string.IsNullOrWhiteSpace(dockerImage)) dockerImage = Options.DefaultDockerImage;
+
+      switch (isolation) {
+        case Isolation.Default:
+          return CreateRunnerChannel(Options.DefaultIsolation, dockerImage);
         case Isolation.None:
           return new MemoryChannel((channel, token) => MemoryChannelClientCode(channel, token).Wait());
         case Isolation.AnonymousPipes:
-          if (Settings.CurrentRuntimeIsNETFramework) {
-            return new AnonymousPipesProcessChannel(Settings.StarterAssembly);
-          } else {
-            return new AnonymousPipesProcessChannel(Settings.DotnetCommand, $"\"{Settings.StarterAssembly}\"");
-          }
-        case Isolation.StdInOut:
-          if (Settings.CurrentRuntimeIsNETFramework) {
-            return new StdInOutProcessChannel(Settings.StarterAssembly);
-          } else {
-            return new StdInOutProcessChannel(Settings.DotnetCommand, $"\"{Settings.StarterAssembly}\"");
-          }
-        case Isolation.Docker:
-          if (Settings.CurrentRuntimeIsNETFramework) {
-            return new DockerChannel(Settings.DockerCommand, Settings.DockerImage, Settings.UseWindowsContainer, Settings.AppPath, Settings.StarterAssembly);
+          if (RuntimeInfo.CurrentRuntimeIsNETFramework) {
+            return new AnonymousPipesProcessChannel(Options.StarterAssembly);
           }
           else {
-            return new DockerChannel(Settings.DockerCommand, Settings.DockerImage, Settings.UseWindowsContainer, Settings.AppPath, "dotnet", $"\"{Settings.StarterAssembly}\"");
+            return new AnonymousPipesProcessChannel(Options.DotnetCommand, $"\"{Options.StarterAssembly}\"");
+          }
+        case Isolation.StdInOut:
+          if (RuntimeInfo.CurrentRuntimeIsNETFramework) {
+            return new StdInOutProcessChannel(Options.StarterAssembly);
+          }
+          else {
+            return new StdInOutProcessChannel(Options.DotnetCommand, $"\"{Options.StarterAssembly}\"");
+          }
+        case Isolation.Docker:
+          if (RuntimeInfo.CurrentRuntimeIsNETFramework) {
+            return new DockerChannel(Options.DockerCommand, dockerImage, Options.UseWindowsContainer, Options.AppPath, Options.StarterAssembly);
+          }
+          else {
+            return new DockerChannel(Options.DockerCommand, dockerImage, Options.UseWindowsContainer, Options.AppPath, "dotnet", $"\"{Options.StarterAssembly}\"");
           }
         default:
-          throw new NotSupportedException($"Isolation {Settings.Isolation} is not supported.");
+          throw new NotSupportedException($"Isolation {Options.DefaultIsolation} is not supported.");
       }
     }
 

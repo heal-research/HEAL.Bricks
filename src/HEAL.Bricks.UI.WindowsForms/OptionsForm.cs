@@ -14,50 +14,50 @@ using System.Linq;
 using System.Windows.Forms;
 
 namespace HEAL.Bricks.UI.WindowsForms {
-  public partial class SettingsForm : Form {
-    public Settings Settings => GetSettings();
+  public partial class OptionsForm : Form {
+    public BricksOptions Options => GetOptions();
 
-    public SettingsForm() {
+    public OptionsForm() {
       InitializeComponent();
     }
-    public SettingsForm(ISettings settings) : this() {
-      Guard.Argument(settings, nameof(settings)).NotNull();
-      appPathTextBox.Text = settings.AppPath;
-      packagesPathTextBox.Text = settings.PackagesPath;
+    public OptionsForm(BricksOptions options) : this() {
+      Guard.Argument(options, nameof(options)).NotNull();
+      appPathTextBox.Text = options.AppPath;
+      packagesPathTextBox.Text = options.PackagesPath;
       selectPackagesPathButton.Tag = packagesPathTextBox;
-      packagesCachePathTextBox.Text = settings.PackagesCachePath;
+      packagesCachePathTextBox.Text = options.PackagesCachePath;
       selectPackagesCachePathButton.Tag = packagesCachePathTextBox;
-      foreach ((string source, string username, string password) in settings.Repositories) {
-        repositoriesListView.Items.Add(new ListViewItem(new[] { source, username }) { Tag = password });
+      foreach (Repository rep in options.Repositories) {
+        repositoriesListView.Items.Add(new ListViewItem(rep.Source) { Tag = rep });
       }
       isolationComboBox.DataSource = Enum.GetValues(typeof(Isolation));
-      isolationComboBox.SelectedItem = settings.Isolation;
-      dotnetCommandTextBox.Text = settings.DotnetCommand;
-      starterAssemblyTextBox.Text = settings.StarterAssembly;
+      isolationComboBox.SelectedItem = options.DefaultIsolation;
+      dotnetCommandTextBox.Text = options.DotnetCommand;
+      starterAssemblyTextBox.Text = options.StarterAssembly;
       selectStarterAssemblyButton.Tag = starterAssemblyTextBox;
-      dockerCommandTextBox.Text = settings.DockerCommand;
-      dockerImageTextBox.Text = settings.DockerImage;
-      useWindowsContainerCheckBox.Checked = settings.UseWindowsContainer;
+      dockerCommandTextBox.Text = options.DockerCommand;
+      dockerImageTextBox.Text = options.DefaultDockerImage;
+      useWindowsContainerCheckBox.Checked = options.UseWindowsContainer;
 
       EnableDisableControls();
     }
 
-    private Settings GetSettings() {
-      Settings settings = new Settings {
+    private BricksOptions GetOptions() {
+      BricksOptions options = new BricksOptions {
         PackagesPath = packagesPathTextBox.Text.Trim(),
         PackagesCachePath = packagesCachePathTextBox.Text.Trim(),
-        Isolation = (Isolation)isolationComboBox.SelectedItem,
+        DefaultIsolation = (Isolation)isolationComboBox.SelectedItem,
         DotnetCommand = dotnetCommandTextBox.Text.Trim(),
         StarterAssembly = starterAssemblyTextBox.Text.Trim(),
         DockerCommand = dockerCommandTextBox.Text.Trim(),
-        DockerImage = dockerImageTextBox.Text.Trim(),
+        DefaultDockerImage = dockerImageTextBox.Text.Trim(),
         UseWindowsContainer = useWindowsContainerCheckBox.Checked
       };
-      settings.Repositories.Clear();
+      options.Repositories.Clear();
       foreach (ListViewItem item in repositoriesListView.Items) {
-        settings.Repositories.Add((item.SubItems[0].Text, item.SubItems[1].Text, item.Tag as string));
+        options.Repositories.Add(item.Tag as Repository);
       }
-      return settings;
+      return options;
     }
 
     private void EnableDisableControls() {

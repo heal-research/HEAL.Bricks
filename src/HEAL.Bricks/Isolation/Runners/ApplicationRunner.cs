@@ -17,16 +17,16 @@ namespace HEAL.Bricks {
   [Serializable]
   public sealed class ApplicationRunner : PackageLoaderRunner {
     public ApplicationInfo ApplicationInfo { get; }
-    public string Arguments { get; }
+    public string[] Arguments { get; }
 
-    public ApplicationRunner(IEnumerable<PackageLoadInfo> packages, ApplicationInfo applicationInfo, string arguments = null) : base(packages) {
+    public ApplicationRunner(IEnumerable<PackageLoadInfo> packages, ApplicationInfo applicationInfo, string[] args = null) : base(packages) {
       ApplicationInfo = Guard.Argument(applicationInfo, nameof(applicationInfo)).NotNull();
-      Arguments = arguments;
+      Arguments = args;
     }
 
     protected override async Task ExecuteOnClientAsync(IChannel channel, CancellationToken cancellationToken) {
       await base.ExecuteOnClientAsync(channel, cancellationToken);
-      ITypeDiscoverer typeDiscoverer = TypeDiscoverer.Create();
+      ITypeDiscoverer typeDiscoverer = new TypeDiscoverer();
       Type applicationType = typeDiscoverer.GetTypes(typeof(IApplication)).Where(x => x.FullName == ApplicationInfo.TypeName).SingleOrDefault();
 
       if (applicationType == null) {
@@ -34,7 +34,7 @@ namespace HEAL.Bricks {
       }
 
       IApplication application = Activator.CreateInstance(applicationType) as IApplication;
-      await application.RunAsync(Arguments, cancellationToken);
+      await application.StartAsync(Arguments, cancellationToken);
     }
 
     protected override async Task ExecuteOnHostAsync(IChannel channel, CancellationToken cancellationToken) {

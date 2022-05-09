@@ -29,7 +29,7 @@ namespace HEAL.Bricks {
 
     protected override async Task ExecuteOnClientAsync(IChannel channel, CancellationToken cancellationToken) {
       await base.ExecuteOnClientAsync(channel, cancellationToken);
-      ITypeDiscoverer typeDiscoverer = TypeDiscoverer.Create();
+      ITypeDiscoverer typeDiscoverer = new TypeDiscoverer();
       IEnumerable<IApplication> applications = typeDiscoverer.GetInstances<IApplication>();
       ApplicationInfo[] applicationInfos = applications.Select(x => new ApplicationInfo(x)).OrderBy(x => x.Name).ToArray();
       await channel.SendMessageAsync(new DiscoveredApplicationsMessage(applicationInfos), cancellationToken);

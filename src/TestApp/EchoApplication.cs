@@ -9,7 +9,7 @@ namespace TestApp {
     public string Description => "Reads strings and returns their echo.";
     public ApplicationKind Kind => ApplicationKind.Console;
 
-    public async Task RunAsync(string args, CancellationToken cancellationToken = default) {
+    public async Task StartAsync(string[] args, CancellationToken cancellationToken = default) {
       await Task.Run(() => {
         Console.WriteLine("EchoApplication started");
         Console.Write("message > ");

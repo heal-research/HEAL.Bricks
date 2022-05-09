@@ -13,7 +13,7 @@ using System.Windows.Forms;
 
 namespace HEAL.Bricks.UI.WindowsForms {
   public partial class StarterForm : Form {
-    private ISettings settings;
+    private BricksOptions options;
     private IApplicationManager appMan;
     private readonly Dictionary<ApplicationInfo, List<CancellationTokenSource>> appCTS = new Dictionary<ApplicationInfo, List<CancellationTokenSource>>();
     private int runningApplications = 0;
@@ -24,12 +24,12 @@ namespace HEAL.Bricks.UI.WindowsForms {
     
     public StarterForm() {
       InitializeComponent();
-      settings = new Settings() {
-        Isolation = Isolation.AnonymousPipes
+      options = new BricksOptions() {
+        DefaultIsolation = Isolation.AnonymousPipes
       };
     }
-    public StarterForm(ISettings settings) : this() {
-      this.settings = settings;
+    public StarterForm(BricksOptions options) : this() {
+      this.options = options;
     }
 
     private void EnableDisableControls() {
@@ -97,10 +97,10 @@ namespace HEAL.Bricks.UI.WindowsForms {
       await LoadApplicationsAsync();
     }
 
-    private async void ShowSettingsDialogOnClick(object sender, EventArgs e) {
-      var dialog = new SettingsForm(settings);
+    private async void ShowOptionsDialogOnClick(object sender, EventArgs e) {
+      var dialog = new OptionsForm(options);
       if (dialog.ShowDialog(this) == DialogResult.OK) {
-        settings = dialog.Settings;
+        options = dialog.Options;
         await LoadApplicationsAsync();
       }
     }
@@ -116,7 +116,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
     }
 
     private async Task LoadApplicationsAsync() {
-      appMan = await ApplicationManager.CreateAsync(settings);
+      appMan = await ApplicationManager.CreateAsync(options);
 
       applicationsListView.Items.Clear();
       appCTS.Clear();

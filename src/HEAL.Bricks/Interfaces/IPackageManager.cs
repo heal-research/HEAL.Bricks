@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public interface IPackageManager {
-    ISettings Settings { get; }
+    BricksOptions Options { get; }
     IEnumerable<LocalPackageInfo> InstalledPackages { get; }
     PackageManagerStatus Status { get; }
 

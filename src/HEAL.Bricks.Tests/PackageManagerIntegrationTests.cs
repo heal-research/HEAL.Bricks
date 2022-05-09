@@ -19,7 +19,7 @@ namespace HEAL.Bricks.Tests {
     private readonly ITestOutputHelper output;
     private readonly RandomTempDirectoryFixture tempDir;
     private string TestDir { get; }
-    private Settings Settings { get; }
+    private BricksOptions Options { get; }
 
     public PackageManagerIntegrationTests(RandomTempDirectoryFixture tempDir, ITestOutputHelper output) {
       this.output = output;
@@ -31,17 +31,18 @@ namespace HEAL.Bricks.Tests {
       string packagesCachePath = Path.Combine(TestDir, "packages_cache");
       Directory.CreateDirectory(packagesCachePath);
 
-      Settings = new Settings {
+      Options = new BricksOptions {
         PackagesPath = packagesPath,
         PackagesCachePath = packagesCachePath
       };
+      Options.Repositories.Add(BricksOptions.PublicNuGetRepository);
     }
 
     #region SearchRemotePackagesAsync
     [Theory]
     [InlineData("PackageId:TestPackage.ListedStable", new string[] { "TestPackage.ListedStable" })]
     public async Task SearchRemotePackagesAsync_WithSearchString_ReturnsFoundPackages(string searchString, string[] expectedPackageNames) {
-      IPackageManager pm = PackageManager.Create(Settings);
+      IPackageManager pm = PackageManager.Create(Options);
 
       IEnumerable<string> result = (await pm.SearchRemotePackagesAsync(searchString, 0, 10)).Select(x => x.Package.Id);
 
@@ -53,7 +54,7 @@ namespace HEAL.Bricks.Tests {
     [Theory]
     [InlineData("TestPackage.ListedStable", "2.0.2")]
     public async Task GetRemotePackageAsync_WithPackageAndVersion_ReturnsPackage(string packageId, string version) {
-      IPackageManager pm = PackageManager.Create(Settings);
+      IPackageManager pm = PackageManager.Create(Options);
 
       RemotePackageInfo result = await pm.GetRemotePackageAsync(packageId, version);
 
@@ -65,7 +66,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData("TestPackage.AlwaysPrerelease", true,  new string[] { "5.0.0-beta" })]
     [InlineData("TestPackage.AlwaysPrerelease", false, new string[] { })]
     public async Task GetRemotePackagesAsync_WithPackage_ReturnsPackages(string packageId, bool includePreReleases, string[] expectedVersions) {
-      IPackageManager pm = PackageManager.Create(Settings);
+      IPackageManager pm = PackageManager.Create(Options);
 
       IEnumerable<RemotePackageInfo> result = await pm.GetRemotePackagesAsync(packageId, includePreReleases);
 
@@ -83,8 +84,8 @@ namespace HEAL.Bricks.Tests {
     [InlineData(Constants.netFramework35FrameworkName,  "TestPackage.SupportingMultipleFrameworks",         "1.2.0", true,   new[] { "TestPackage.SupportingMultipleFrameworks" },                                                     new[] { "1.2.0" },          PackageManagerStatus.InvalidPackages)]
     [InlineData(Constants.netCoreApp31FrameworkName,    "TestPackage.SupportingMultipleFrameworks",         "1.2.0", true,   new[] { "TestPackage.SupportingMultipleFrameworks" },                                                     new[] { "1.2.0" },          PackageManagerStatus.InvalidPackages)]
     public async Task InstallRemotePackageAsync_WithPackage(string currentFramework, string packageId, string version, bool installMissingDependencies, string[] expectedPackageNames, string[] expectedVersions, PackageManagerStatus expectedStatus) {
-      INuGetConnector nuGetConnector = NuGetConnector.CreateForTests(currentFramework, Settings.Repositories, new XunitLogger(output));
-      IPackageManager pm = PackageManager.CreateForTests(Settings, nuGetConnector);
+      INuGetConnector nuGetConnector = NuGetConnector.CreateForTests(currentFramework, Options.Repositories, new XunitLogger(output));
+      IPackageManager pm = PackageManager.CreateForTests(Options, nuGetConnector);
       RemotePackageInfo packageToInstall = await pm.GetRemotePackageAsync(packageId, version);
       var expectedPackages = expectedPackageNames.Zip(expectedVersions).OrderBy(x => x.First);
 
@@ -101,7 +102,7 @@ namespace HEAL.Bricks.Tests {
     [Theory]
     [InlineData("TestPackage.ListedStable", "2.0.2")]
     public async Task RemoveInstalledPackage_WithInstalledPackage(string packageId, string version) {
-      IPackageManager pm = PackageManager.Create(Settings);
+      IPackageManager pm = PackageManager.Create(Options);
       RemotePackageInfo remotePackage = await pm.GetRemotePackageAsync(packageId, version);
       await pm.InstallRemotePackageAsync(remotePackage, installMissingDependencies: true);
       LocalPackageInfo packageToRemove = pm.InstalledPackages.Single();
@@ -109,7 +110,7 @@ namespace HEAL.Bricks.Tests {
       pm.RemoveInstalledPackage(packageToRemove);
 
       Assert.Empty(pm.InstalledPackages);
-      Assert.False(Directory.EnumerateFileSystemEntries(Settings.PackagesPath).Any());
+      Assert.False(Directory.EnumerateFileSystemEntries(Options.PackagesPath).Any());
     }
     #endregion
 
@@ -117,8 +118,8 @@ namespace HEAL.Bricks.Tests {
     [Theory]
     [InlineData("TestPackage.ListedStable", "1.0.0", true,  true,  "2.0.6")]
     public async Task InstallPackageUpdatesAsync_WhenUpdatesArePending(string packageId, string version, bool installMissingDependencies, bool includePreReleases, string expectedVersion) {
-      INuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netFramework45FrameworkName, Settings.Repositories, new XunitLogger(output));
-      IPackageManager pm = PackageManager.CreateForTests(Settings, nuGetConnector);
+      INuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netFramework45FrameworkName, Options.Repositories, new XunitLogger(output));
+      IPackageManager pm = PackageManager.CreateForTests(Options, nuGetConnector);
       RemotePackageInfo remotePackage = await pm.GetRemotePackageAsync(packageId, version);
       await pm.InstallRemotePackageAsync(remotePackage, installMissingDependencies: false);
 
@@ -135,8 +136,8 @@ namespace HEAL.Bricks.Tests {
     [InlineData(Constants.netFramework472FrameworkName, "SimSharp", "3.3.2", new[] { "SimSharp.dll" })]
     [InlineData(Constants.netFramework35FrameworkName,  "SimSharp", "3.3.2", new string[0])]
     public async Task GetPackageLoadInfos_ReturnsPackageLoadInfos(string currentFramework, string packageId, string version, string[] expectedAssemblies) {
-      INuGetConnector nuGetConnector = NuGetConnector.CreateForTests(currentFramework, Settings.Repositories, new XunitLogger(output));
-      IPackageManager pm = PackageManager.CreateForTests(Settings, nuGetConnector);
+      INuGetConnector nuGetConnector = NuGetConnector.CreateForTests(currentFramework, Options.Repositories, new XunitLogger(output));
+      IPackageManager pm = PackageManager.CreateForTests(Options, nuGetConnector);
       RemotePackageInfo remotePackage = await pm.GetRemotePackageAsync(packageId, version);
       await pm.InstallRemotePackageAsync(remotePackage, installMissingDependencies: false);
 

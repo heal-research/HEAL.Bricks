@@ -34,16 +34,6 @@ namespace HEAL.Bricks.Tests {
     }
     #endregion
 
-    #region Create
-    [Fact]
-    public void Create_ReturnsInstance() {
-      ITypeDiscoverer td = TypeDiscoverer.Create();
-
-      Assert.NotNull(td);
-      Assert.Equal(typeof(TypeDiscoverer), td.GetType());
-    }
-    #endregion
-
     #region GetTypes
     [Theory]
     [InlineData(typeof(I1), true,  true,  new[] { typeof(A), typeof(B), typeof(E) })]
@@ -51,7 +41,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData(typeof(I1), true,  false, new[] { typeof(A), typeof(B), typeof(C<>), typeof(E)})]
     [InlineData(typeof(I1), false, false, new[] { typeof(I1), typeof(A), typeof(B), typeof(C<>), typeof(E) })]
     public void GetTypes_WithType_ReturnsSubTypes(Type type, bool onlyInstantiable, bool excludeGenericTypeDefinitions, Type[] expectedTypes) {
-      ITypeDiscoverer td = TypeDiscoverer.Create();
+      ITypeDiscoverer td = new TypeDiscoverer();
 
       IEnumerable<Type> result = td.GetTypes(type, onlyInstantiable, excludeGenericTypeDefinitions);
 
@@ -61,7 +51,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData(new[] { typeof(I1), typeof(I2) }, true, true, true,  new[] { typeof(E) })]
     [InlineData(new[] { typeof(I1), typeof(I2) }, true, true, false, new[] { typeof(A), typeof(B), typeof(D), typeof(E) })]
     public void GetTypes_WithTypes_ReturnsSubTypes(Type[] types, bool onlyInstantiable, bool excludeGenericTypeDefinitions, bool assignableToAllTypes, Type[] expectedTypes) {
-      ITypeDiscoverer td = TypeDiscoverer.Create();
+      ITypeDiscoverer td = new TypeDiscoverer();
 
       IEnumerable<Type> result = td.GetTypes(types, onlyInstantiable, excludeGenericTypeDefinitions, assignableToAllTypes);
 
@@ -74,7 +64,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData(typeof(I1), false, false, new[] { typeof(I1), typeof(A), typeof(B), typeof(C<>), typeof(E) })]
     public void GetTypes_WithTypeAndAssembly_ReturnsSubTypes(Type type, bool onlyInstantiable, bool excludeGenericTypeDefinitions, Type[] expectedTypes) {
       Assembly assembly = Assembly.GetExecutingAssembly();
-      ITypeDiscoverer td = TypeDiscoverer.Create();
+      ITypeDiscoverer td = new TypeDiscoverer();
 
       IEnumerable<Type> result = td.GetTypes(type, assembly, onlyInstantiable, excludeGenericTypeDefinitions);
 
@@ -85,7 +75,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData(new[] { typeof(I1), typeof(I2) }, true, true, false, new[] { typeof(A), typeof(B), typeof(D), typeof(E) })]
     public void GetTypes_WithTypesAndAssembly_ReturnsSubTypes(Type[] types, bool onlyInstantiable, bool excludeGenericTypeDefinitions, bool assignableToAllTypes, Type[] expectedTypes) {
       Assembly assembly = Assembly.GetExecutingAssembly();
-      ITypeDiscoverer td = TypeDiscoverer.Create();
+      ITypeDiscoverer td = new TypeDiscoverer();
 
       IEnumerable<Type> result = td.GetTypes(types, assembly, onlyInstantiable, excludeGenericTypeDefinitions, assignableToAllTypes);
 
@@ -94,7 +84,7 @@ namespace HEAL.Bricks.Tests {
     [Fact]
     public void GetTypes_WithNullType_ThrowsArgumentNullException() {
       Type type = null;
-      ITypeDiscoverer td = TypeDiscoverer.Create();
+      ITypeDiscoverer td = new TypeDiscoverer();
 
       var e = Assert.Throws<ArgumentNullException>(() => td.GetTypes(type));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -103,7 +93,7 @@ namespace HEAL.Bricks.Tests {
     [Fact]
     public void GetTypes_WithNullTypeEnumerable_ThrowsArgumentNullException() {
       Type[] types = null;
-      ITypeDiscoverer td = TypeDiscoverer.Create();
+      ITypeDiscoverer td = new TypeDiscoverer();
 
       var e = Assert.Throws<ArgumentNullException>(() => td.GetTypes(types));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -115,7 +105,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData(typeof(object), null)]
     public void GetTypes_WithNullTypeOrAssembly_ThrowsArgumentNullException(Type type, string assemblyName) {
       Assembly assembly = assemblyName == null ? null : Assembly.GetExecutingAssembly();
-      ITypeDiscoverer td = TypeDiscoverer.Create();
+      ITypeDiscoverer td = new TypeDiscoverer();
 
       var e = Assert.Throws<ArgumentNullException>(() => td.GetTypes(type, assembly));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -127,7 +117,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData(new[] { typeof(object) }, null)]
     public void GetTypes_WithNullTypeEnumerableOrAssembly_ThrowsArgumentNullException(Type[] types, string assemblyName) {
       Assembly assembly = assemblyName == null ? null : Assembly.GetExecutingAssembly();
-      ITypeDiscoverer td = TypeDiscoverer.Create();
+      ITypeDiscoverer td = new TypeDiscoverer();
 
       var e = Assert.Throws<ArgumentNullException>(() => td.GetTypes(types, assembly));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -138,7 +128,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData(false)]
     public void GetTypes_WithTypesIsEmptyOrContainsNull_ThrowsArgumentException(bool typesIsEmpty) {
       Type[] types = typesIsEmpty ? new Type[0] : new Type[] { null };
-      ITypeDiscoverer td = TypeDiscoverer.Create();
+      ITypeDiscoverer td = new TypeDiscoverer();
 
       var e = Assert.Throws<ArgumentException>(() => td.GetTypes(types));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -150,7 +140,7 @@ namespace HEAL.Bricks.Tests {
     public void GetTypes_WithTypesIsEmptyOrContainsNullAndAssembly_ThrowsArgumentException(bool typesIsEmpty) {
       Type[] types = typesIsEmpty ? new Type[0] : new Type[] { null };
       Assembly assembly = Assembly.GetExecutingAssembly();
-      ITypeDiscoverer td = TypeDiscoverer.Create();
+      ITypeDiscoverer td = new TypeDiscoverer();
 
       var e = Assert.Throws<ArgumentException>(() => td.GetTypes(types, assembly));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -162,7 +152,7 @@ namespace HEAL.Bricks.Tests {
     [Fact]
     public void GetInstancesOfType_ReturnsInstances() {
       Type[] expectedInstanceTypes = new[] { typeof(A), typeof(B), typeof(E) };
-      ITypeDiscoverer td = TypeDiscoverer.Create();
+      ITypeDiscoverer td = new TypeDiscoverer();
 
       IEnumerable<I1> result = td.GetInstances<I1>();
 
@@ -172,7 +162,7 @@ namespace HEAL.Bricks.Tests {
     public void GetInstancesOfType_WithArgs_ReturnsInstances() {
       int value = 42;
       Type[] expectedInstanceTypes = new[] { typeof(D), typeof(E) };
-      ITypeDiscoverer td = TypeDiscoverer.Create();
+      ITypeDiscoverer td = new TypeDiscoverer();
 
       IEnumerable<I2> result = td.GetInstances<I2>(value);
 
@@ -182,7 +172,7 @@ namespace HEAL.Bricks.Tests {
     [Fact]
     public void GetInstances_WithType_ReturnsInstances() {
       Type[] expectedInstanceTypes = new[] { typeof(A), typeof(B), typeof(E) };
-      ITypeDiscoverer td = TypeDiscoverer.Create();
+      ITypeDiscoverer td = new TypeDiscoverer();
 
       IEnumerable<object> result = td.GetInstances(typeof(I1));
 
@@ -192,7 +182,7 @@ namespace HEAL.Bricks.Tests {
     public void GetInstances_WithTypeAndArgs_ReturnsInstances() {
       int value = 42;
       Type[] expectedInstanceTypes = new[] { typeof(D), typeof(E) };
-      ITypeDiscoverer td = TypeDiscoverer.Create();
+      ITypeDiscoverer td = new TypeDiscoverer();
 
       IEnumerable<object> result = td.GetInstances(typeof(I2), value);
 
@@ -202,7 +192,7 @@ namespace HEAL.Bricks.Tests {
     [Fact]
     public void GetInstances_WithNullParameter_ThrowsArgumentNullException() {
       Type type = null;
-      ITypeDiscoverer td = TypeDiscoverer.Create();
+      ITypeDiscoverer td = new TypeDiscoverer();
 
       var e = Assert.Throws<ArgumentNullException>(() => td.GetInstances(type));
       Assert.False(string.IsNullOrEmpty(e.Message));

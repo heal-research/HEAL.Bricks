@@ -5,9 +5,11 @@
  */
 #endregion
 
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace HEAL.Bricks {
-  public enum ApplicationKind {
-    Console,
-    GUI
+  public interface IFunction<TInput, TOutput> : IRunnable {
+    Task<TOutput> ExecAsync(TInput input, CancellationToken cancellationToken);
   }
 }

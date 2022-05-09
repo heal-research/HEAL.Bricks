@@ -6,8 +6,7 @@
 #endregion
 
 namespace HEAL.Bricks {
-  public enum ApplicationKind {
-    Console,
-    GUI
+  public static class RuntimeInfo {
+    public static bool CurrentRuntimeIsNETFramework => System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.ToLower().Contains("framework");
   }
 }

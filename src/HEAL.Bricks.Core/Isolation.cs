@@ -6,8 +6,11 @@
 #endregion
 
 namespace HEAL.Bricks {
-  public enum ApplicationKind {
-    Console,
-    GUI
+  public enum Isolation {
+    Default,
+    None,
+    AnonymousPipes,
+    StdInOut,
+    Docker
   }
 }

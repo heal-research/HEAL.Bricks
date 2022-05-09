@@ -6,7 +6,7 @@
 #endregion
 
 namespace HEAL.Bricks.UI.WindowsForms {
-  partial class SettingsForm {
+  partial class OptionsForm {
     /// <summary>
     /// Required designer variable.
     /// </summary>
@@ -31,7 +31,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
     /// </summary>
     private void InitializeComponent() {
       this.components = new System.ComponentModel.Container();
-      System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SettingsForm));
+      System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(OptionsForm));
       this.okButton = new System.Windows.Forms.Button();
       this.cancelButton = new System.Windows.Forms.Button();
       this.pathsGroupBox = new System.Windows.Forms.GroupBox();

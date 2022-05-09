@@ -5,19 +5,19 @@
  */
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public interface IApplicationManager {
-    ISettings Settings { get; }
     IPackageManager PackageManager { get; }
     IEnumerable<ApplicationInfo> InstalledApplications { get; }
 
     Task RunAsync(ApplicationInfo application, string arguments = null, CancellationToken cancellationToken = default);
+    Task RunAutoStartAsync(string arguments = null, CancellationToken cancellationToken = default);
+    Task ReloadAsync(CancellationToken cancellationToken = default);
 
-    IChannel CreateRunnerChannel();
+    IChannel CreateRunnerChannel(Isolation isolation, string dockerImage = null);
   }
 }

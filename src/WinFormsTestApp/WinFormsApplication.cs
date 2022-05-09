@@ -7,17 +7,18 @@ using System.Windows.Forms;
 using HEAL.Bricks;
 
 namespace WinFormsTestApp {
-  class WinFormsApplication : IApplication {
-    public string Name => "WinFormsApplication";
+  class WinFormsApplication : HEAL.Bricks.Application {
+    public override string Name => "WinFormsApplication";
 
-    public string Description => "Simple WinForms GUI application.";
+    public override string Description => "Simple WinForms GUI application.";
 
-    public ApplicationKind Kind => ApplicationKind.GUI;
+    public override ApplicationKind Kind => ApplicationKind.GUI;
 
-    public Task RunAsync(string args, CancellationToken cancellationToken = default) {
+    public override Task StartAsync(string[] args, CancellationToken cancellationToken = default) {
       var form = new ApplicationForm();
+      form.Text = "WinFormsApplication";
       cancellationToken.Register(() => { form.Close(); });
-      Application.Run(form);
+      System.Windows.Forms.Application.Run(form);
       return Task.CompletedTask;
     }
   }

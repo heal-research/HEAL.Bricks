@@ -16,40 +16,40 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public sealed class PackageManager : IPackageManager {
-    public static IPackageManager Create(ISettings settings) {
-      Guard.Argument(settings, nameof(settings)).NotNull().Member(s => s.Repositories, x => x.NotNull().NotEmpty().Require(x.Value.All(y => !string.IsNullOrWhiteSpace(y.Source))))
-                                                          .Member(s => s.PackagesPath, x => x.NotNull().NotEmpty().NotWhiteSpace().AbsolutePath())
-                                                          .Member(s => s.PackagesCachePath, x => x.NotNull().NotEmpty().NotWhiteSpace().AbsolutePath());
-      return new PackageManager(settings);
+    public static IPackageManager Create(BricksOptions options) {
+      Guard.Argument(options, nameof(options)).NotNull().Member(s => s.Repositories, x => x.NotNull().NotEmpty().DoesNotContainNull())
+                                                        .Member(s => s.PackagesPath, x => x.NotNull().NotEmpty().NotWhiteSpace().AbsolutePath())
+                                                        .Member(s => s.PackagesCachePath, x => x.NotNull().NotEmpty().NotWhiteSpace().AbsolutePath());
+      return new PackageManager(options);
     }
-    internal static IPackageManager CreateForTests(ISettings settings, INuGetConnector nuGetConnector) {
-      return new PackageManager(settings, nuGetConnector);
+    internal static IPackageManager CreateForTests(BricksOptions options, INuGetConnector nuGetConnector) {
+      return new PackageManager(options, nuGetConnector);
     }
 
     private readonly INuGetConnector nuGetConnector;
     private ILogger logger = NuGetLogger.NoLogger;
 
-    public ISettings Settings { get; }
+    public BricksOptions Options { get; }
     public IEnumerable<LocalPackageInfo> InstalledPackages { get; private set; } = Enumerable.Empty<LocalPackageInfo>();
     public PackageManagerStatus Status { get; private set; } = PackageManagerStatus.Undefined;
 
-    private PackageManager(ISettings settings) {
-      Settings = settings;
-      nuGetConnector = new NuGetConnector(settings.Repositories, logger);
+    private PackageManager(BricksOptions options) {
+      Options = options;
+      nuGetConnector = new NuGetConnector(options.Repositories, logger);
       Initialize();
     }
-    private PackageManager(ISettings settings, INuGetConnector nuGetConnector) {
+    private PackageManager(BricksOptions options, INuGetConnector nuGetConnector) {
       // only used for unit tests, if a mocked NuGetConnector has to be used
-      Settings = settings;
+      Options = options;
       this.nuGetConnector = nuGetConnector;
       Initialize();
     }
 
     private void Initialize() {
-      if (!Directory.Exists(Settings.PackagesPath)) Directory.CreateDirectory(Settings.PackagesPath);
-      if (!Directory.Exists(Settings.PackagesCachePath)) Directory.CreateDirectory(Settings.PackagesCachePath);
+      if (!Directory.Exists(Options.PackagesPath)) Directory.CreateDirectory(Options.PackagesPath);
+      if (!Directory.Exists(Options.PackagesCachePath)) Directory.CreateDirectory(Options.PackagesCachePath);
 
-      IEnumerable<LocalPackageInfo> installedPackages = nuGetConnector.GetLocalPackages(Settings.PackagesPath).ToArray();
+      IEnumerable<LocalPackageInfo> installedPackages = nuGetConnector.GetLocalPackages(Options.PackagesPath).ToArray();
       SetPackageAndDependencyStatus(installedPackages);
       Status = GetPackageManagerStatus(installedPackages);
       InstalledPackages = installedPackages;
@@ -80,7 +80,7 @@ namespace HEAL.Bricks {
     public async Task InstallRemotePackagesAsync(IEnumerable<RemotePackageInfo> packages, bool installMissingDependencies = true, CancellationToken cancellationToken = default) {
       Guard.Argument(packages, nameof(packages)).NotNull().NotEmpty().DoesNotContainNull();
 
-      await nuGetConnector.InstallRemotePackagesAsync(packages, Settings.PackagesPath, Settings.PackagesCachePath, cancellationToken);
+      await nuGetConnector.InstallRemotePackagesAsync(packages, Options.PackagesPath, Options.PackagesCachePath, cancellationToken);
       Initialize();
       if (installMissingDependencies) await InstallMissingDependenciesAsync(cancellationToken);
     }
@@ -94,7 +94,7 @@ namespace HEAL.Bricks {
       Guard.Argument(packages, nameof(packages)).NotNull().NotEmpty().DoesNotContainNull().Require(packages.All(x => !string.IsNullOrEmpty(x.PackagePath) && !Path.IsPathRooted(x.PackagePath)));
 
       try {
-        nuGetConnector.RemoveLocalPackages(packages, Settings.PackagesPath);
+        nuGetConnector.RemoveLocalPackages(packages, Options.PackagesPath);
       }
       catch (DirectoryNotFoundException e) {
         throw new InvalidOperationException("Package not found.", e);
@@ -141,7 +141,7 @@ namespace HEAL.Bricks {
     public PackageLoadInfo GetPackageLoadInfo(LocalPackageInfo package) {
       Guard.Argument(package, nameof(package)).NotNull().Member(p => p.Status, s => s.Equal(PackageStatus.OK));
 
-      return new PackageLoadInfo(package, Settings.PackagesPath, Settings.AppPath);
+      return new PackageLoadInfo(package, Options.PackagesPath, Options.AppPath);
     }
     public IEnumerable<PackageLoadInfo> GetPackageLoadInfos() {
       return InstalledPackages.Where(x => x.Status == PackageStatus.OK).Select(x => GetPackageLoadInfo(x)).ToArray();

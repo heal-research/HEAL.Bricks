@@ -31,16 +31,16 @@ namespace HEAL.Bricks {
     public NuGetFramework CurrentFramework { get; private set; } = GetFrameworkFromEntryAssembly();
 
     private NuGetConnector() { }
-    public NuGetConnector(IEnumerable<(string Source, string Username, string Password)> repositories, ILogger logger) {
-      this.repositories = repositories.Select(x => CreateSourceRepository(x)).ToArray();
+    public NuGetConnector(IEnumerable<Repository> repositories, ILogger logger) {
+      this.repositories = repositories.Select(r => r.CreateSourceRepository()).ToArray();
       this.logger = logger;
     }
 
-    public static NuGetConnector CreateForTests(string frameworkName, IEnumerable<(string Source, string Username, string Password)> repositories, ILogger logger) {
+    internal static NuGetConnector CreateForTests(string frameworkName, IEnumerable<Repository> repositories, ILogger logger) {
       // only used for tests to create a specifically initialized NuGetConnector
-      return CreateForTests(frameworkName, repositories.Select(r => CreateSourceRepository(r)).ToArray(), logger);
+      return CreateForTests(frameworkName, repositories.Select(r => r.CreateSourceRepository()).ToArray(), logger);
     }
-    public static NuGetConnector CreateForTests(string frameworkName, IEnumerable<SourceRepository> repositories, ILogger logger) {
+    internal static NuGetConnector CreateForTests(string frameworkName, IEnumerable<SourceRepository> repositories, ILogger logger) {
       // only used for tests to create a specifically initialized NuGetConnector
       // frameworkName: In unit tests, TargetFrameworkAttribute.FrameworkName of the entry assembly (testhost.dll) returns
       // ".NETCoreApp,Version=v1.0" (MSTest) or ".NETCoreApp,Version=v1.0" (xUnit). Consequently, GetFrameworkFromEntryAssembly
@@ -370,13 +370,6 @@ namespace HEAL.Bricks {
     }
     private static NuGetFramework GetFrameworkFromName(string frameworkName) {
       return NuGetFramework.ParseFrameworkName(frameworkName, DefaultFrameworkNameProvider.Instance);
-    }
-
-    private static SourceRepository CreateSourceRepository((string Source, string Username, string Password) repository) {
-      PackageSource packageSource = new PackageSource(repository.Source) {
-        Credentials = PackageSourceCredential.FromUserInput(repository.Source, repository.Username, repository.Password, true, string.Empty)
-      };
-      return Repository.CreateSource(Repository.Provider.GetCoreV3(), packageSource);
     }
 
     private static SourceCacheContext CreateSourceCacheContext(bool useCache = true) {

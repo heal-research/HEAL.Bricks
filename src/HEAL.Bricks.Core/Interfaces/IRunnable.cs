@@ -6,10 +6,5 @@
 #endregion
 
 namespace HEAL.Bricks {
-  public enum Isolation {
-    None,
-    AnonymousPipes,
-    StdInOut,
-    Docker
-  }
+  public interface IRunnable { }
 }

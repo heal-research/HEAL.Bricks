@@ -10,11 +10,11 @@ using System.Threading.Tasks;
 using System.Threading;
 
 namespace HEAL.Bricks.Tests {
-  public class DummyApplication : IApplication {
-    public string Name => "DummyApplication";
-    public string Description => "This is a dummy application for testing.";
-    public ApplicationKind Kind => ApplicationKind.Console;
-    public Task RunAsync(string arguments, CancellationToken cancellationToken = default) {
+  public class DummyApplication : Application {
+    public override string Name => "DummyApplication";
+    public override string Description => "This is a dummy application for testing.";
+    public override ApplicationKind Kind => ApplicationKind.Console;
+    public override Task StartAsync(string[] args, CancellationToken cancellationToken = default) {
       throw new NotImplementedException();
     }
   }

@@ -25,21 +25,21 @@ namespace HEAL.Bricks.Tests {
     }
 
     #region INuGetConnector
-    internal static INuGetConnector EmptyNuGetConnector() {
-      Mock<INuGetConnector> mock = new Mock<INuGetConnector>();
+    internal static NuGetConnector EmptyNuGetConnector() {
+      Mock<NuGetConnector> mock = new Mock<NuGetConnector>();
       mock.Setup(m => m.GetLocalPackages(It.IsAny<string>())).Returns(Enumerable.Empty<LocalPackageInfo>());
       return mock.Object;
     }
 
-    internal static Mock<INuGetConnector> GetLocalPackages(this Mock<INuGetConnector> mock, string packagesPathToVerify, params LocalPackageInfo[] packages) {
+    internal static Mock<NuGetConnector> GetLocalPackages(this Mock<NuGetConnector> mock, string packagesPathToVerify, params LocalPackageInfo[] packages) {
       mock.Setup(m => m.GetLocalPackages(It.Is<string>(s => s == packagesPathToVerify))).Returns(packages);
       return mock;
     }
-    internal static Mock<INuGetConnector> GetLocalPackages(this Mock<INuGetConnector> mock, params LocalPackageInfo[] packages) {
+    internal static Mock<NuGetConnector> GetLocalPackages(this Mock<NuGetConnector> mock, params LocalPackageInfo[] packages) {
       mock.Setup(m => m.GetLocalPackages(It.IsAny<string>())).Returns(packages);
       return mock;
     }
-    internal static Mock<INuGetConnector> InstallRemotePackagesAsync(this Mock<INuGetConnector> mock) {
+    internal static Mock<NuGetConnector> InstallRemotePackagesAsync(this Mock<NuGetConnector> mock) {
       mock.Setup(m => m.InstallRemotePackagesAsync(It.IsAny<IEnumerable<RemotePackageInfo>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
       return mock;
     }

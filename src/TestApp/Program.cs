@@ -15,13 +15,12 @@ namespace TestApp {
         }
       }
 
-      Settings settings = new Settings() {
-        Isolation = Isolation.AnonymousPipes
-      };
-      settings.Repositories.Add((@"C:\# Daten\NuGet", string.Empty, string.Empty));
-      Directory.CreateDirectory(Path.Combine(settings.AppPath, settings.PackagesPath));
-      Directory.CreateDirectory(settings.PackagesCachePath);
-      IApplicationManager am = ApplicationManager.Create(settings);
+      BricksOptions options = BricksOptions.Default;
+      options.DefaultIsolation = Isolation.AnonymousPipes;
+      options.Repositories.Add(new Repository(@"C:\00-Daten\NuGet"));
+      Directory.CreateDirectory(Path.Combine(options.AppPath, options.PackagesPath));
+      Directory.CreateDirectory(options.PackagesCachePath);
+      IApplicationManager am = ApplicationManager.Create(options);
 
       if (am.InstalledApplications.Count() == 0) {
         Console.WriteLine("No applications found.");
@@ -47,7 +46,7 @@ namespace TestApp {
       CancellationToken token = cts.Token;
       cts.CancelAfter(2000);
 
-      using (IChannel channel = am.CreateRunnerChannel()) {
+      using (IChannel channel = am.CreateRunnerChannel(options.DefaultIsolation)) {
         EchoRunner echoRunner = new EchoRunner();
         Task done = echoRunner.RunAsync(channel, token);
 

@@ -9,39 +9,38 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using Dawn;
 
 namespace HEAL.Bricks {
-  [Serializable]
-  public class Settings : ISettings {
-    public static string PublicNuGetRepository => "https://api.nuget.org/v3/index.json";
-    public static Settings Default { get; } = new Settings();
+  public class BricksOptions {
+    public static Repository PublicNuGetRepository => new Repository("https://api.nuget.org/v3/index.json");
+    public static BricksOptions Default => new BricksOptions(PublicNuGetRepository);
 
     private string packagesPath;
     private string packagesCachePath;
+    private Isolation defaultIsolation;
     private string dotnetCommand;
     private string dockerCommand;
     private string dockerImage;
     private string starterAssembly;
 
-    public bool CurrentRuntimeIsNETFramework => RuntimeInformation.FrameworkDescription.ToLower().Contains("framework");
-    IEnumerable<(string Source, string Username, string Password)> ISettings.Repositories => Repositories;
-    public List<(string Source, string Username, string Password)> Repositories { get; }
+    public List<Repository> Repositories { get; }
     public string AppPath { get; private set; }
     public string PackagesPath {
       get { return packagesPath; }
-      set {
-        packagesPath = Guard.Argument(value, nameof(PackagesPath)).NotNull().NotEmpty().NotWhiteSpace().Modify(s => Path.IsPathRooted(s) ? s : Path.Combine(AppPath, s));
-      }
+      set { packagesPath = Guard.Argument(value, nameof(PackagesPath)).NotNull().NotEmpty().NotWhiteSpace().Modify(s => Path.IsPathRooted(s) ? s : Path.Combine(AppPath, s)); }
     }
     public string PackagesCachePath {
       get { return packagesCachePath; }
+      set { packagesCachePath = Guard.Argument(value, nameof(PackagesCachePath)).NotNull().NotEmpty().NotWhiteSpace().Modify(s => Path.IsPathRooted(s) ? s : Path.Combine(AppPath, s)); }
+    }
+    public Isolation DefaultIsolation {
+      get { return defaultIsolation; }
       set {
-        packagesCachePath = Guard.Argument(value, nameof(PackagesCachePath)).NotNull().NotEmpty().NotWhiteSpace().Modify(s => Path.IsPathRooted(s) ? s : Path.Combine(AppPath, s));
+        if (value == Isolation.Default) throw new ArgumentException($"{nameof(DefaultIsolation)} cannot be set to {nameof(Isolation.Default)}.", nameof(DefaultIsolation));
+        defaultIsolation = value;
       }
     }
-    public Isolation Isolation { get; set; }
     public string DotnetCommand {
       get { return dotnetCommand; }
       set { dotnetCommand = Guard.Argument(value, nameof(DotnetCommand)).NotNull().NotEmpty().NotWhiteSpace(); }
@@ -54,25 +53,27 @@ namespace HEAL.Bricks {
       get { return dockerCommand; }
       set { dockerCommand = Guard.Argument(value, nameof(DockerCommand)).NotNull().NotEmpty().NotWhiteSpace(); }
     }
-    public string DockerImage {
+    public string DefaultDockerImage {
       get { return dockerImage; }
-      set { dockerImage = Guard.Argument(value, nameof(DockerImage)).NotNull().NotEmpty().NotWhiteSpace(); }
+      set { dockerImage = Guard.Argument(value, nameof(DefaultDockerImage)).NotNull().NotEmpty().NotWhiteSpace(); }
     }
     public bool UseWindowsContainer { get; set; }
 
-    public Settings() {
-      Repositories = new List<(string Source, string Username, string Password)> {
-        (PublicNuGetRepository, string.Empty, string.Empty)
-      };
+    public BricksOptions() {
+      Repositories = new List<Repository>();
       AppPath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
       PackagesPath = "packages";
       PackagesCachePath = "packages_cache";
-      Isolation = Isolation.AnonymousPipes;
+      DefaultIsolation = Isolation.AnonymousPipes;
       DotnetCommand = "dotnet";
       DockerCommand = "docker";
-      DockerImage = CurrentRuntimeIsNETFramework ? "mcr.microsoft.com/dotnet/framework/runtime:4.7.2" : "mcr.microsoft.com/dotnet/core/runtime:3.1";
-      UseWindowsContainer = CurrentRuntimeIsNETFramework;
+      DefaultDockerImage = RuntimeInfo.CurrentRuntimeIsNETFramework ? "mcr.microsoft.com/dotnet/framework/runtime:4.7.2" : "mcr.microsoft.com/dotnet/runtime:latest";
+      UseWindowsContainer = RuntimeInfo.CurrentRuntimeIsNETFramework;
       StarterAssembly = Path.GetFileName(Assembly.GetEntryAssembly().Location);
+    }
+    public BricksOptions(params Repository[] repositories) : this() {
+      Guard.Argument(repositories, nameof(repositories)).NotNull().DoesNotContainNull();
+      Repositories.AddRange(repositories);
     }
 
     internal void SetAppPath(string appPath) {

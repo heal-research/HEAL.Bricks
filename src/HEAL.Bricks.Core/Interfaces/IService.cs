@@ -9,8 +9,11 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
-  public interface IServiceApplication : IApplication {
-    Task SuspendAsync(CancellationToken cancellationToken);
-    Task ResumeAsync(CancellationToken cancellationToken);
+  public interface IService : IRunnable {
+    string Name { get; }
+    string Description { get; }
+
+    Task StartAsync(string[] args, CancellationToken cancellationToken);
+    Task StopAsync(string[] args, CancellationToken cancellationToken);
   }
 }

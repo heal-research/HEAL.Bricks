@@ -12,8 +12,6 @@ using System.Reflection;
 
 namespace HEAL.Bricks {
   public sealed class TypeDiscoverer : ITypeDiscoverer {
-    public static ITypeDiscoverer Create() => new TypeDiscoverer();
-
     public IEnumerable<Type> GetTypes(Type type, bool onlyInstantiable = true, bool excludeGenericTypeDefinitions = true) {
       if (type == null) throw new ArgumentNullException(nameof(type));
 
