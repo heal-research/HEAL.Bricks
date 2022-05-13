@@ -15,15 +15,15 @@ using System.Linq;
 
 namespace HEAL.Bricks {
   public sealed class LocalPackageInfo : PackageInfo, IEquatable<LocalPackageInfo>, IComparable<LocalPackageInfo> {
-    internal static LocalPackageInfo CreateForTests(string id, string version, IEnumerable<PackageDependency> dependencies = null, string packagePath = null, IEnumerable<string> referenceItems = null, IEnumerable<string> files = null, bool frameworkNotSupported = false) {
-      LocalPackageInfo lpi = new LocalPackageInfo(id, version, packagePath, referenceItems, files) {
+    internal static LocalPackageInfo CreateForTests(string id, string version, IEnumerable<PackageDependency>? dependencies = null, string packagePath = "", IEnumerable<string>? referenceItems = null, IEnumerable<string>? files = null, bool frameworkNotSupported = false) {
+      LocalPackageInfo lpi = new(id, version, packagePath, referenceItems, files) {
         Dependencies = dependencies ?? Enumerable.Empty<PackageDependency>(),
         status = frameworkNotSupported ? PackageStatus.IncompatibleFramework : PackageStatus.Undefined
       };
       return lpi;
     }
-    internal static LocalPackageInfo CreateForTestsFromRemotePackageInfo(RemotePackageInfo package, string packagePath = null, IEnumerable<string> referenceItems = null, IEnumerable<string> files = null, bool frameworkNotSupported = false) {
-      LocalPackageInfo lpi = new LocalPackageInfo(package.Id, package.Version.ToString(), packagePath, referenceItems, files) {
+    internal static LocalPackageInfo CreateForTestsFromRemotePackageInfo(RemotePackageInfo package, string packagePath = "", IEnumerable<string>? referenceItems = null, IEnumerable<string>? files = null, bool frameworkNotSupported = false) {
+      LocalPackageInfo lpi = new(package.Id, package.Version.ToString(), packagePath, referenceItems, files) {
         Dependencies = package.Dependencies,
         status = frameworkNotSupported ? PackageStatus.IncompatibleFramework : PackageStatus.Undefined
       };
@@ -32,7 +32,7 @@ namespace HEAL.Bricks {
 
     private PackageStatus status = PackageStatus.Undefined;
 
-    public string Description { get; }
+    public string Description { get; } = string.Empty;
     public string PackagePath { get; }
     public IEnumerable<string> ReferenceItems { get; }
     public IEnumerable<string> Files { get; }
@@ -43,11 +43,11 @@ namespace HEAL.Bricks {
       }
     } 
 
-    internal LocalPackageInfo(PackageFolderReader packageReader, NuGetFramework currentFramework) : base(packageReader?.GetIdentity()) {
+    internal LocalPackageInfo(PackageFolderReader packageReader, NuGetFramework currentFramework) : base(packageReader.GetIdentity()) {
       Guard.Argument(packageReader, nameof(packageReader)).NotNull().Member(p => p.NuspecReader, n => n.NotNull());
       Guard.Argument(currentFramework, nameof(currentFramework)).NotNull();
 
-      PackagePath = Path.GetFileName(Path.GetDirectoryName(packageReader.GetNuspecFile()));
+      PackagePath = Path.GetFileName(Path.GetDirectoryName(packageReader.GetNuspecFile())) ?? string.Empty;
       Description = packageReader.NuspecReader.GetDescription();
 
       PackageDependencyGroup dependencyGroup = NuGetFrameworkUtility.GetNearest(packageReader.GetPackageDependencies(), currentFramework);
@@ -61,7 +61,7 @@ namespace HEAL.Bricks {
       bool frameworkNotSupported = new FrameworkReducer().GetNearest(currentFramework, packageReader.GetSupportedFrameworks()) == null;
       status = frameworkNotSupported ? PackageStatus.IncompatibleFramework : PackageStatus.Undefined;
     }
-    private LocalPackageInfo(string id, string version, string packagePath, IEnumerable<string> referenceItems, IEnumerable<string> files) : base(id, version) {
+    private LocalPackageInfo(string id, string version, string packagePath, IEnumerable<string>? referenceItems, IEnumerable<string>? files) : base(id, version) {
       // required for unit tests
       PackagePath = packagePath;
       ReferenceItems = referenceItems ?? Enumerable.Empty<string>();
@@ -78,11 +78,17 @@ namespace HEAL.Bricks {
       return s;
     }
 
-    public bool Equals(LocalPackageInfo other) {
+    public override bool Equals(object? obj) {
+      return base.Equals(obj);
+    }
+    public bool Equals(LocalPackageInfo? other) {
       return base.Equals(other);
     }
-    public int CompareTo(LocalPackageInfo other) {
+    public int CompareTo(LocalPackageInfo? other) {
       return base.CompareTo(other);
+    }
+    public override int GetHashCode() {
+      return base.GetHashCode();
     }
   }
 }

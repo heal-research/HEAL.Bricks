@@ -13,8 +13,8 @@ using System.Linq;
 
 namespace HEAL.Bricks {
   public sealed class RemotePackageInfo : PackageInfo, IEquatable<RemotePackageInfo>, IComparable<RemotePackageInfo> {
-    internal static RemotePackageInfo CreateForTests(string id, string version, IEnumerable<PackageDependency> dependencies = null) {
-      RemotePackageInfo rpi = new RemotePackageInfo(id, version) {
+    internal static RemotePackageInfo CreateForTests(string id, string version, IEnumerable<PackageDependency>? dependencies = null) {
+      RemotePackageInfo rpi = new(id, version) {
         Dependencies = dependencies ?? Enumerable.Empty<PackageDependency>()
       };
       return rpi;
@@ -23,7 +23,7 @@ namespace HEAL.Bricks {
     internal readonly IPackageSearchMetadata packageSearchMetadata;
     internal readonly SourcePackageDependencyInfo sourcePackageDependencyInfo;
 
-    public string Source => sourcePackageDependencyInfo?.Source.PackageSource.Source;
+    public string Source => sourcePackageDependencyInfo?.Source.PackageSource.Source ?? string.Empty;
 
     internal RemotePackageInfo(IPackageSearchMetadata packageSearchMetadata, SourcePackageDependencyInfo sourcePackageDependencyInfo) : base(sourcePackageDependencyInfo) {
       Guard.Argument(packageSearchMetadata, nameof(packageSearchMetadata)).NotNull().Member(p => p.Identity.Id, i => i.Equal(sourcePackageDependencyInfo.Id, StringComparison.OrdinalIgnoreCase))
@@ -36,6 +36,8 @@ namespace HEAL.Bricks {
     }
     private RemotePackageInfo(string id, string version) : base(id, version) {
       // required for unit tests
+      packageSearchMetadata = null!;
+      sourcePackageDependencyInfo = null!;
     }
 
     public override string ToString() {
@@ -48,10 +50,16 @@ namespace HEAL.Bricks {
       return s;
     }
 
-    public bool Equals(RemotePackageInfo other) {
+    public bool Equals(RemotePackageInfo? other) {
       return base.Equals(other);
     }
-    public int CompareTo(RemotePackageInfo other) {
+    public override bool Equals(object? obj) {
+      return Equals(obj as RemotePackageInfo);
+    }
+    public override int GetHashCode() {
+      return base.GetHashCode();
+    }
+    public int CompareTo(RemotePackageInfo? other) {
       return base.CompareTo(other);
     }
   }

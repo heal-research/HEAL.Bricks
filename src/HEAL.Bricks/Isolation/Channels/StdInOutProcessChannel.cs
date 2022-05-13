@@ -9,7 +9,7 @@ using System;
 
 namespace HEAL.Bricks {
   public class StdInOutProcessChannel : ProcessChannel {
-    public StdInOutProcessChannel(string programPath, string arguments = null) : base(programPath, arguments) { }
+    public StdInOutProcessChannel(string programPath, string arguments = "") : base(programPath, arguments) { }
     protected StdInOutProcessChannel() {
       // used to create a new channel on the client-side
     }
@@ -21,8 +21,8 @@ namespace HEAL.Bricks {
     }
     protected override void PostStartActions() {
       base.PostStartActions();
-      outputStream = process.StandardInput.BaseStream;
-      inputStream = process.StandardOutput.BaseStream;
+      outputStream = process?.StandardInput.BaseStream;
+      inputStream = process?.StandardOutput.BaseStream;
     }
   }
 }

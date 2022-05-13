@@ -1,49 +1,51 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net472;netcoreapp3.1</TargetFrameworks>
-    <Authors>Heuristic and Evolutionary Algorithms Laboratory (HEAL) and Contributors</Authors>
-    <Company>University of Applied Sciences Upper Austria</Company>
-    <Product>HEAL.Bricks</Product>
-    <Description>HEAL.Bricks is a package framework for .NET. It discovers, manages, loads, and executes packages and supports isolated execution in separate processes or Docker containers.</Description>
-    <Copyright>(c) Heuristic and Evolutionary Algorithms Laboratory (HEAL)</Copyright>
-    <PackageProjectUrl>https://github.com/HeuristicLab/HEAL.Bricks</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/HeuristicLab/HEAL.Bricks.git</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>HEAL.snk</AssemblyOriginatorKeyFile>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <RootNamespace>HEAL.Bricks</RootNamespace>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Authors>Heuristic and Evolutionary Algorithms Laboratory (HEAL) and Contributors</Authors>
+		<Company>University of Applied Sciences Upper Austria</Company>
+		<Product>HEAL.Bricks</Product>
+		<Description>HEAL.Bricks is a package framework for .NET. It discovers, manages, loads, and executes packages and supports isolated execution in separate processes or Docker containers.</Description>
+		<Copyright>(c) Heuristic and Evolutionary Algorithms Laboratory (HEAL)</Copyright>
+		<PackageProjectUrl>https://github.com/HeuristicLab/HEAL.Bricks</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/HeuristicLab/HEAL.Bricks.git</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>HEAL.snk</AssemblyOriginatorKeyFile>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<RootNamespace>HEAL.Bricks</RootNamespace>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Dawn.Guard" Version="1.12.0" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
-    <PackageReference Include="Nerdbank.GitVersioning" Version="3.2.31">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="NuGet.Resolver" Version="5.4.0" />
-    <PackageReference Include="System.Threading.Channels" Version="4.7.1" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <ProjectReference Include="..\HEAL.Bricks.Core\HEAL.Bricks.Core.csproj" />
-  </ItemGroup>
-  
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Dawn.Guard" Version="1.12.0" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
+		<PackageReference Include="Nerdbank.GitVersioning" Version="3.2.31">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="NuGet.Resolver" Version="5.4.0" />
+		<PackageReference Include="System.Threading.Channels" Version="4.7.1" />
+	</ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\HEAL.Bricks.Core\HEAL.Bricks.Core.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="" />
-  </ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+		<PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
+		<PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\..\LICENSE.txt" Pack="true" PackagePath="" />
+	</ItemGroup>
 
 </Project>

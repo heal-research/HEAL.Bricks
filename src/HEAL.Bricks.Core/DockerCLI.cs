@@ -28,13 +28,13 @@ namespace HEAL.Bricks {
     }
 
     public string BuildArguments() {
-      StringBuilder sb = new StringBuilder();
+      StringBuilder sb = new();
 
       sb.Append("run");
       if (remove) sb.Append(" --rm");
       sb.Append(detached ? " -d" : " -i");
       if (terminal) sb.Append(" -t");
-      if (name != null) sb.Append(" --name" + name);
+      if (!string.IsNullOrEmpty(name)) sb.Append(" --name" + name);
 
       foreach (var (hostPort, containerPort) in exposedPorts) {
         sb.Append($" -p {hostPort}:{containerPort}");
@@ -56,20 +56,20 @@ namespace HEAL.Bricks {
       return sb.ToString().Trim();
     }
 
-    protected string image = null;
+    protected string image = string.Empty;
     public DockerCLI Image(string image) {
       if (image == null) throw new ArgumentNullException(nameof(image));
       if (string.IsNullOrWhiteSpace(image)) throw new ArgumentException($"{nameof(image)} must not be empty.", nameof(image));
-      if (this.image != null) throw new InvalidOperationException($"{nameof(image)} is already defined.");
+      if (!string.IsNullOrEmpty(this.image)) throw new InvalidOperationException($"{nameof(image)} is already defined.");
       this.image = " " + image;
       return this;
     }
 
-    protected string name = null;
+    protected string name = string.Empty;
     public DockerCLI Name(string name) {
       if (name == null) throw new ArgumentNullException(nameof(name));
       if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException($"{nameof(name)} must not be empty.", nameof(name));
-      if (this.name != null) throw new InvalidOperationException($"{nameof(name)} is already defined.");
+      if (!string.IsNullOrEmpty(this.name)) throw new InvalidOperationException($"{nameof(name)} is already defined.");
       this.name = " " + name;
       return this;
     }
@@ -92,7 +92,7 @@ namespace HEAL.Bricks {
       return this;
     }
 
-    protected List<(string hostPort, string containerPort)> exposedPorts = new List<(string, string)>();
+    protected List<(string hostPort, string containerPort)> exposedPorts = new();
     public DockerCLI ExposePort(string hostPort, string containerPort) {
       if (hostPort == null) throw new ArgumentNullException(nameof(hostPort));
       if (string.IsNullOrWhiteSpace(hostPort)) throw new ArgumentException($"{nameof(hostPort)} must not be empty.", nameof(hostPort));
@@ -103,7 +103,7 @@ namespace HEAL.Bricks {
       return this;
     }
 
-    protected List<(string hostPath, string containerPath, bool writable)> mountedPaths = new List<(string, string, bool)>();
+    protected List<(string hostPath, string containerPath, bool writable)> mountedPaths = new();
     public DockerCLI MountPath(string hostPath, string containerPath, bool writable = false) {
       if (hostPath == null) throw new ArgumentNullException(nameof(hostPath));
       if (string.IsNullOrWhiteSpace(hostPath)) throw new ArgumentException($"{nameof(hostPath)} must not be empty.", nameof(hostPath));
@@ -115,16 +115,16 @@ namespace HEAL.Bricks {
       return this;
     }
 
-    protected string workDir = null;
+    protected string workDir = string.Empty;
     public DockerCLI WorkDir(string workDir) {
       if (workDir == null) throw new ArgumentNullException(nameof(workDir));
       if (string.IsNullOrWhiteSpace(workDir)) throw new ArgumentException($"{nameof(workDir)} must not be empty.", nameof(workDir));
-      if (this.workDir != null) throw new InvalidOperationException($"{nameof(workDir)} is already defined.");
+      if (!string.IsNullOrEmpty(this.workDir)) throw new InvalidOperationException($"{nameof(workDir)} is already defined.");
       this.workDir = workDir;
       return this;
     }
 
-    protected List<(string variable, string value)> environmentVariables = new List<(string, string)>();
+    protected List<(string variable, string value)> environmentVariables = new();
     public DockerCLI EnvironmentVariable(string variable, string value) {
       if (variable == null) throw new ArgumentNullException(nameof(variable));
       if (string.IsNullOrWhiteSpace(variable)) throw new ArgumentException($"{nameof(variable)} must not be empty.", nameof(variable));
@@ -139,16 +139,16 @@ namespace HEAL.Bricks {
       return this;
     }
 
-    protected string command = null;
+    protected string command = string.Empty;
     public DockerCLI Command(string command) {
       if (command == null) throw new ArgumentNullException(nameof(command));
       if (string.IsNullOrWhiteSpace(command)) throw new ArgumentException($"{nameof(command)} must not be empty.", nameof(command));
-      if (this.command != null) throw new InvalidOperationException($"{nameof(command)} is already defined.");
+      if (!string.IsNullOrEmpty(this.command)) throw new InvalidOperationException($"{nameof(command)} is already defined.");
       this.command = " " + command;
       return this;
     }
 
-    protected string arguments = null;
+    protected string arguments = string.Empty;
     public DockerCLI CommandArgument(string argument) {
       if (argument != null) {
         if (string.IsNullOrWhiteSpace(argument)) throw new ArgumentException($"{nameof(argument)} must not be empty.", nameof(argument));

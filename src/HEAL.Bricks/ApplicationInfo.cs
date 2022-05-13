@@ -35,14 +35,14 @@ namespace HEAL.Bricks {
     }
     internal ApplicationInfo(IApplication application) :
       this(application.Name,
-           application.GetType().Assembly.GetName().Version.ToString(),
+           application.GetType().Assembly.GetName().Version?.ToString() ?? string.Empty,
            application.Description,
            application.Kind,
-           application.GetType().GetCustomAttribute<DockerImageAttribute>(inherit: false)?.Image,
-           application.GetType().FullName
+           application.GetType().GetCustomAttribute<DockerImageAttribute>(inherit: false)?.Image ?? string.Empty,
+           application.GetType().FullName ?? string.Empty
       ) { }
 
-    public override bool Equals(object obj) {
+    public override bool Equals(object? obj) {
       if (obj is ApplicationInfo appInfo) {
         return appInfo.TypeName == TypeName &&
                appInfo.Version == Version;

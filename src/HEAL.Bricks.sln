@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29613.14
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32421.90
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HEAL.Bricks", "HEAL.Bricks\HEAL.Bricks.csproj", "{2E6AD3C3-F423-44DC-B66E-F7A4B3928464}"
 EndProject
@@ -24,7 +24,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HEAL.Bricks.Tests", "HEAL.B
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HEAL.Bricks.Core", "HEAL.Bricks.Core\HEAL.Bricks.Core.csproj", "{799F1D2B-FCCF-4A07-8D72-F09392C0B5FD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HEAL.Bricks.UI.WindowsForms", "HEAL.Bricks.UI.WindowsForms\HEAL.Bricks.UI.WindowsForms.csproj", "{0EAC53C1-C7FE-4C68-911A-AEB429646497}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HEAL.Bricks.UI.WindowsForms", "HEAL.Bricks.UI.WindowsForms\HEAL.Bricks.UI.WindowsForms.csproj", "{0EAC53C1-C7FE-4C68-911A-AEB429646497}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

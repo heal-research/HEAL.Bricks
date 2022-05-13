@@ -12,16 +12,16 @@ namespace HEAL.Bricks {
   public sealed class PackageInfoIdentityComparer : IEqualityComparer<PackageInfo>, IComparer<PackageInfo> {
     internal readonly PackageIdentityComparer nuGetPackageIdentityComparer = PackageIdentityComparer.Default;
 
-    public static PackageInfoIdentityComparer Default => new PackageInfoIdentityComparer();
+    public static PackageInfoIdentityComparer Default => new();
 
-    public bool Equals(PackageInfo x, PackageInfo y) {
-      return nuGetPackageIdentityComparer.Equals(x.packageIdentity, y.packageIdentity);
+    public bool Equals(PackageInfo? x, PackageInfo? y) {
+      return nuGetPackageIdentityComparer.Equals(x?.packageIdentity, y?.packageIdentity);
     }
     public int GetHashCode(PackageInfo obj) {
       return obj.packageIdentity.GetHashCode();
     }
-    public int Compare(PackageInfo x, PackageInfo y) {
-      return nuGetPackageIdentityComparer.Compare(x.packageIdentity, y.packageIdentity);
+    public int Compare(PackageInfo? x, PackageInfo? y) {
+      return nuGetPackageIdentityComparer.Compare(x?.packageIdentity, y?.packageIdentity);
     }
   }
 }

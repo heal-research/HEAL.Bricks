@@ -15,8 +15,7 @@ namespace HEAL.Bricks {
     void Open(out Task channelTerminated, CancellationToken cancellationToken = default);
     void Close();
 
-    Task SendMessageAsync(IMessage message, CancellationToken cancellationToken = default);
-    Task<IMessage> ReceiveMessageAsync(CancellationToken cancellationToken = default);
+    Task SendMessageAsync<T>(T message, CancellationToken cancellationToken = default) where T : class, IMessage;
     Task<T> ReceiveMessageAsync<T>(CancellationToken cancellationToken = default) where T : class, IMessage;
   }
 }

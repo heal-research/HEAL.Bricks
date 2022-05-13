@@ -21,7 +21,7 @@ namespace HEAL.Bricks {
              $"{programPath} {arguments ?? ""}";
     }
 
-    public DockerChannel(string dockerCommand, string dockerImage, bool useWindowsContainer, string hostDirectory, string programPath, string arguments = null)
+    public DockerChannel(string dockerCommand, string dockerImage, bool useWindowsContainer, string hostDirectory, string programPath, string arguments = "")
       : base(dockerCommand, CreateDockerArguments(dockerImage, useWindowsContainer, hostDirectory, programPath, arguments)) { }
     protected DockerChannel() {
       // used to create a new channel on the client-side

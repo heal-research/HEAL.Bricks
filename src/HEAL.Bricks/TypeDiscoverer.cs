@@ -22,7 +22,7 @@ namespace HEAL.Bricks {
 
     public IEnumerable<Type> GetTypes(IEnumerable<Type> types, bool onlyInstantiable = true, bool excludeGenericTypeDefinitions = true, bool assignableToAllTypes = true) {
       if (types == null) throw new ArgumentNullException(nameof(types));
-      if (types.Count() == 0) throw new ArgumentException($"{nameof(types)} is empty.", nameof(types));
+      if (!types.Any()) throw new ArgumentException($"{nameof(types)} is empty.", nameof(types));
       if (types.Any(x => x == null)) throw new ArgumentException($"{nameof(types)} contains null elements.", nameof(types));
 
       return types.Select(t => GetTypes(t, onlyInstantiable, excludeGenericTypeDefinitions))
@@ -37,6 +37,7 @@ namespace HEAL.Bricks {
         return assembly.GetTypes().Where(t => !t.IsNonDiscoverableType())
                                   .Select(t => t.BuildType(type))
                                   .Where(t => t != null)
+                                  .Select(t => t!)
                                   .Where(t => t.IsSubTypeOf(type))
                                   .Where(t => !(onlyInstantiable && (t.IsAbstract || t.IsInterface || t.HasElementType)))
                                   .Where(t => !(excludeGenericTypeDefinitions && t.IsGenericTypeDefinition));
@@ -48,7 +49,7 @@ namespace HEAL.Bricks {
 
     public IEnumerable<Type> GetTypes(IEnumerable<Type> types, Assembly assembly, bool onlyInstantiable = true, bool excludeGenericTypeDefinitions = true, bool assignableToAllTypes = true) {
       if (types == null) throw new ArgumentNullException(nameof(types));
-      if (types.Count() == 0) throw new ArgumentException($"{nameof(types)} is empty.", nameof(types));
+      if (!types.Any()) throw new ArgumentException($"{nameof(types)} is empty.", nameof(types));
       if (types.Any(x => x == null)) throw new ArgumentException($"{nameof(types)} contains null elements.", nameof(types));
       if (assembly == null) throw new ArgumentNullException(nameof(assembly));
 
@@ -57,15 +58,15 @@ namespace HEAL.Bricks {
     }
 
     public IEnumerable<T> GetInstances<T>() where T : class => GetInstances<T>(null);
-    public IEnumerable<T> GetInstances<T>(params object[] args) where T : class => GetInstances(typeof(T), args).Cast<T>();
+    public IEnumerable<T> GetInstances<T>(params object?[]? args) where T : class => GetInstances(typeof(T), args).Cast<T>();
     public IEnumerable<object> GetInstances(Type type) => GetInstances(type, null);
-    public IEnumerable<object> GetInstances(Type type, params object[] args) {
+    public IEnumerable<object> GetInstances(Type type, params object?[]? args) {
       if (type == null) throw new ArgumentNullException(nameof(type));
 
-      List<object> instances = new List<object>();
+      List<object> instances = new();
       foreach (Type t in GetTypes(type)) {
         try {
-          object instance = Activator.CreateInstance(t, args);
+          object? instance = Activator.CreateInstance(t, args);
           if (instance != null) instances.Add(instance);
         }
         catch { }

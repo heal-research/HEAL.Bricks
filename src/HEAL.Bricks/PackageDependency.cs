@@ -30,10 +30,10 @@ namespace HEAL.Bricks {
     public override string ToString() {
       return nuGetPackageDependency.ToString() + " [" + Status + "]";
     }
-    public bool Equals(PackageDependency other) {
-      return nuGetPackageDependency.Equals(other.nuGetPackageDependency);
+    public bool Equals(PackageDependency? other) {
+      return nuGetPackageDependency.Equals(other?.nuGetPackageDependency);
     }
-    public override bool Equals(object obj) {
+    public override bool Equals(object? obj) {
       return nuGetPackageDependency.Equals(obj);
     }
     public override int GetHashCode() {

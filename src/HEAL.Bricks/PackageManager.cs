@@ -60,7 +60,7 @@ namespace HEAL.Bricks {
 
       return await nuGetConnector.SearchRemotePackagesAsync(searchString, skip, take, includePreReleases, cancellationToken);
     }
-    public async Task<RemotePackageInfo> GetRemotePackageAsync(string packageId, string version, CancellationToken cancellationToken = default) {
+    public async Task<RemotePackageInfo?> GetRemotePackageAsync(string packageId, string version, CancellationToken cancellationToken = default) {
       Guard.Argument(packageId, nameof(packageId)).NotNull().NotEmpty();
       Guard.Argument(version, nameof(version)).NotNull().NotEmpty().ValidNuGetVersionString();
 
@@ -110,12 +110,12 @@ namespace HEAL.Bricks {
     }
     public async Task InstallMissingDependenciesAsync(CancellationToken cancellationToken = default) {
       IEnumerable<RemotePackageInfo> dependencies = await GetMissingDependenciesAsync(cancellationToken);
-      if (dependencies.Count() > 0) {
+      if (dependencies.Any()) {
         await InstallRemotePackagesAsync(dependencies, false, cancellationToken);
       }
     }
 
-    public async Task<RemotePackageInfo> GetPackageUpdateAsync(LocalPackageInfo package, bool includePreReleases = false, CancellationToken cancellationToken = default) {
+    public async Task<RemotePackageInfo?> GetPackageUpdateAsync(LocalPackageInfo package, bool includePreReleases = false, CancellationToken cancellationToken = default) {
       Guard.Argument(package, nameof(package)).NotNull();
 
       return (await GetPackageUpdatesAsync(Enumerable.Repeat(package, 1), includePreReleases, cancellationToken)).SingleOrDefault();
@@ -133,7 +133,7 @@ namespace HEAL.Bricks {
     }
     public async Task InstallPackageUpdatesAsync(bool installMissingDependencies = true, bool includePreReleases = false, CancellationToken cancellationToken = default) {
       IEnumerable<RemotePackageInfo> updates = await GetPackageUpdatesAsync(includePreReleases, cancellationToken);
-      if (updates.Count() > 0) {
+      if (updates.Any()) {
         await InstallRemotePackagesAsync(updates, installMissingDependencies, cancellationToken);
       }
     }
@@ -181,7 +181,7 @@ namespace HEAL.Bricks {
       }
 
       foreach (LocalPackageInfo package in packages.Where(x => x.Status == PackageStatus.Undefined)) {
-        if (package.Dependencies.Count() == 0) {
+        if (!package.Dependencies.Any()) {
           package.Status = PackageStatus.OK;
         } else if (package.Dependencies.Any(x => x.Status == PackageDependencyStatus.Missing)) {
           package.Status = PackageStatus.DependenciesMissing;

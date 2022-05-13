@@ -23,13 +23,13 @@ namespace HEAL.Bricks {
     }
 
     protected internal override SourceRepository CreateSourceRepository() {
-      PackageSource packageSource = new PackageSource(Source) {
+      PackageSource packageSource = new(Source) {
         Credentials = PackageSourceCredential.FromUserInput(Source, Username, Password, storePasswordInClearText: true, validAuthenticationTypesText: string.Empty)
       };
       return NuGetRepository.CreateSource(NuGetRepository.Provider.GetCoreV3(), packageSource);
     }
 
-    public override bool Equals(object obj) {
+    public override bool Equals(object? obj) {
       if (obj is SecureRepository secureRepository) {
         return base.Equals(obj) &&
                secureRepository.Username == Username &&

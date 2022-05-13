@@ -5,6 +5,7 @@
  */
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -56,7 +57,7 @@ namespace HEAL.Bricks.Tests {
     public async Task GetRemotePackageAsync_WithPackageAndVersion_ReturnsPackage(string packageId, string version) {
       IPackageManager pm = PackageManager.Create(Options);
 
-      RemotePackageInfo result = await pm.GetRemotePackageAsync(packageId, version);
+      RemotePackageInfo? result = await pm.GetRemotePackageAsync(packageId, version);
 
       Assert.Equal(packageId, result?.Id);
       Assert.Equal(version, result?.Version.ToString());
@@ -86,7 +87,7 @@ namespace HEAL.Bricks.Tests {
     public async Task InstallRemotePackageAsync_WithPackage(string currentFramework, string packageId, string version, bool installMissingDependencies, string[] expectedPackageNames, string[] expectedVersions, PackageManagerStatus expectedStatus) {
       INuGetConnector nuGetConnector = NuGetConnector.CreateForTests(currentFramework, Options.Repositories, new XunitLogger(output));
       IPackageManager pm = PackageManager.CreateForTests(Options, nuGetConnector);
-      RemotePackageInfo packageToInstall = await pm.GetRemotePackageAsync(packageId, version);
+      RemotePackageInfo packageToInstall = await pm.GetRemotePackageAsync(packageId, version) ?? throw new InvalidOperationException("Cannot resolve remote package to install");
       var expectedPackages = expectedPackageNames.Zip(expectedVersions).OrderBy(x => x.First);
 
       await pm.InstallRemotePackageAsync(packageToInstall, installMissingDependencies: installMissingDependencies);
@@ -103,7 +104,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData("TestPackage.ListedStable", "2.0.2")]
     public async Task RemoveInstalledPackage_WithInstalledPackage(string packageId, string version) {
       IPackageManager pm = PackageManager.Create(Options);
-      RemotePackageInfo remotePackage = await pm.GetRemotePackageAsync(packageId, version);
+      RemotePackageInfo remotePackage = await pm.GetRemotePackageAsync(packageId, version) ?? throw new InvalidOperationException("Cannot resolve remote package to install");
       await pm.InstallRemotePackageAsync(remotePackage, installMissingDependencies: true);
       LocalPackageInfo packageToRemove = pm.InstalledPackages.Single();
 
@@ -120,7 +121,7 @@ namespace HEAL.Bricks.Tests {
     public async Task InstallPackageUpdatesAsync_WhenUpdatesArePending(string packageId, string version, bool installMissingDependencies, bool includePreReleases, string expectedVersion) {
       INuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netFramework45FrameworkName, Options.Repositories, new XunitLogger(output));
       IPackageManager pm = PackageManager.CreateForTests(Options, nuGetConnector);
-      RemotePackageInfo remotePackage = await pm.GetRemotePackageAsync(packageId, version);
+      RemotePackageInfo remotePackage = await pm.GetRemotePackageAsync(packageId, version) ?? throw new InvalidOperationException("Cannot resolve remote package to install");
       await pm.InstallRemotePackageAsync(remotePackage, installMissingDependencies: false);
 
       await pm.InstallPackageUpdatesAsync(installMissingDependencies: installMissingDependencies, includePreReleases: includePreReleases);
@@ -138,7 +139,7 @@ namespace HEAL.Bricks.Tests {
     public async Task GetPackageLoadInfos_ReturnsPackageLoadInfos(string currentFramework, string packageId, string version, string[] expectedAssemblies) {
       INuGetConnector nuGetConnector = NuGetConnector.CreateForTests(currentFramework, Options.Repositories, new XunitLogger(output));
       IPackageManager pm = PackageManager.CreateForTests(Options, nuGetConnector);
-      RemotePackageInfo remotePackage = await pm.GetRemotePackageAsync(packageId, version);
+      RemotePackageInfo remotePackage = await pm.GetRemotePackageAsync(packageId, version) ?? throw new InvalidOperationException("Cannot resolve remote package to install");
       await pm.InstallRemotePackageAsync(remotePackage, installMissingDependencies: false);
 
       IEnumerable<PackageLoadInfo> result = pm.GetPackageLoadInfos();

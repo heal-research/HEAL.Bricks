@@ -27,7 +27,7 @@ namespace HEAL.Bricks {
       Isolation = oldSettings.Isolation;
     }
 
-    public override bool Equals(object obj) {
+    public override bool Equals(object? obj) {
       if (obj is ApplicationSettings appSettings) {
         return appSettings.ApplicationInfo.Equals(ApplicationInfo) &&
                appSettings.AutoStart == AutoStart &&

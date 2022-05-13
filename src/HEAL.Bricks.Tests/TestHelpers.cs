@@ -14,25 +14,27 @@ using System.Reflection;
 namespace HEAL.Bricks.Tests {
   public static class TestHelpers {
     public static string GetWorkingDir() {
-      return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+      return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
     }
 
-    public static IChannel CreateChannel(Type channelType, string programPath, string arguments, Func<IChannel, CancellationToken, Task> clientCode) {
+    public static IChannel CreateChannel(Type channelType, string programPath, string arguments, Func<IChannel, CancellationToken, Task>? clientCode) {
+      IChannel? channel = null;
       if (typeof(ProcessChannel).IsAssignableFrom(channelType)) {
-        return Activator.CreateInstance(channelType, programPath, arguments) as IChannel;
+        channel = (IChannel?)Activator.CreateInstance(channelType, programPath, arguments);
       }
       else if (typeof(MemoryChannel).IsAssignableFrom(channelType)) {
-        return Activator.CreateInstance(channelType, new Action<MemoryChannel, CancellationToken>((channel, token) => clientCode(channel, token).Wait())) as MemoryChannel;
+        channel = (IChannel?)Activator.CreateInstance(channelType, new Action<MemoryChannel, CancellationToken>((channel, token) => clientCode?.Invoke(channel, token).Wait(token)));
       }
       else {
-        return Activator.CreateInstance(channelType) as IChannel;
+        channel = (IChannel?)Activator.CreateInstance(channelType);
       }
+      return channel ?? throw new InvalidOperationException($"Cannot create channel of type {channelType.Name}");
     }
     public static async Task TestChannelAsync(IChannel channel, CancellationToken cancellationToken) {
-      IMessage message = await channel.ReceiveMessageAsync(cancellationToken);
-      while (!(message is CancelMessage) && !cancellationToken.IsCancellationRequested) {
+      IMessage message = await channel.ReceiveMessageAsync<IMessage>(cancellationToken);
+      while (message is not CancelMessage && !cancellationToken.IsCancellationRequested) {
         await channel.SendMessageAsync(message, cancellationToken);
-        message = await channel.ReceiveMessageAsync(cancellationToken);
+        message = await channel.ReceiveMessageAsync<IMessage>(cancellationToken);
       }
     }
     public static async Task TestRunnerAsync(IChannel channel, CancellationToken cancellationToken) {

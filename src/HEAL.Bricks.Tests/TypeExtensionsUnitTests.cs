@@ -49,8 +49,8 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void IsNonDiscoverableType_WithNullType_ThrowsArgumentNullException() {
-      Type type = null;
-      var e = Assert.Throws<ArgumentNullException>(() => type.IsNonDiscoverableType());
+      Type? type = null;
+      var e = Assert.Throws<ArgumentNullException>(() => type!.IsNonDiscoverableType());
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
@@ -69,8 +69,8 @@ namespace HEAL.Bricks.Tests {
     [InlineData(typeof(GenericTypeWithReferenceTypeConstraint<>),      typeof(List<object>),                               typeof(GenericTypeWithReferenceTypeConstraint<object>))]
     [InlineData(typeof(GenericTypeWithDefaultConstructorConstraint<>), typeof(List<object>),                               typeof(GenericTypeWithDefaultConstructorConstraint<object>))]
     [InlineData(typeof(GenericTypeWithParameterConstraint<>),          typeof(List<int>),                                  typeof(GenericTypeWithParameterConstraint<int>))]
-    public void BuildType_WithProtoType_ReturnsTypeOrNull(Type type, Type protoType, Type expectedType) {
-      Type result = type.BuildType(protoType);
+    public void BuildType_WithProtoType_ReturnsTypeOrNull(Type type, Type protoType, Type? expectedType) {
+      Type? result = type.BuildType(protoType);
 
       Assert.Equal(expectedType, result);
     }

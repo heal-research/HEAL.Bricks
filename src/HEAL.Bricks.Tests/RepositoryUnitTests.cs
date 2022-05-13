@@ -15,13 +15,13 @@ namespace HEAL.Bricks.Tests {
     public void Constructor_WithValidSource_CreatesValidInstance() {
       string source = "source";
 
-      Repository repository = new Repository(source);
+      Repository repository = new(source);
       Assert.Equal(source, repository.Source);
     }
 
     [Fact]
     public void Constructor_WithSourceIsNull_ThrowsArgumentNullException() {
-      var e = Assert.Throws<ArgumentNullException>(() => new Repository(null));
+      var e = Assert.Throws<ArgumentNullException>(() => new Repository(null!));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
@@ -37,8 +37,8 @@ namespace HEAL.Bricks.Tests {
 
     [Fact]
     public void Equals_WithSameSource_ReturnsTrue() {
-      Repository rep = new Repository("source");
-      Repository otherRep = new Repository("source");
+      Repository rep = new("source");
+      Repository otherRep = new("source");
 
       bool equal = rep.Equals(otherRep);
       Assert.True(equal);
@@ -46,8 +46,8 @@ namespace HEAL.Bricks.Tests {
 
     [Fact]
     public void Equals_WithDifferentSource_ReturnsFalse() {
-      Repository rep = new Repository("source");
-      Repository otherRep = new Repository("other_source");
+      Repository rep = new("source");
+      Repository otherRep = new("other_source");
 
       bool equal = rep.Equals(otherRep);
       Assert.False(equal);

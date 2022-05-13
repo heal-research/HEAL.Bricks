@@ -67,9 +67,9 @@ namespace HEAL.Bricks {
         foreach (PackageFolderReader packageReader in packageReaders) packageReader.Dispose();
       }
     }
-    public virtual async Task<RemotePackageInfo> GetRemotePackageAsync(string packageId, string version, CancellationToken ct) {
-      PackageIdentity identity = new PackageIdentity(packageId, NuGetVersion.Parse(version));
-      IPackageSearchMetadata package = await GetPackageAsync(identity, ct);
+    public virtual async Task<RemotePackageInfo?> GetRemotePackageAsync(string packageId, string version, CancellationToken ct) {
+      PackageIdentity identity = new(packageId, NuGetVersion.Parse(version));
+      IPackageSearchMetadata? package = await GetPackageAsync(identity, ct);
       if (package == null) return null;
 
       SourcePackageDependencyInfo dependencyInfo = (await GetPackageDependenciesAsync(package.Identity, false, ct)).Single();
@@ -109,7 +109,7 @@ namespace HEAL.Bricks {
       return packageMetadata.Zip(missingDependencies, (x, y) => new RemotePackageInfo(x, y)).ToArray();
     }
     public virtual async Task<IEnumerable<RemotePackageInfo>> GetPackageUpdatesAsync(IEnumerable<LocalPackageInfo> packages, bool includePreReleases, CancellationToken ct) {
-      List<PackageIdentity> updates = new List<PackageIdentity>();
+      List<PackageIdentity> updates = new();
       IEnumerable<(string PackageId, NuGetVersion Version)> latestVersions = await GetLatestVersionsAsync(packages.Select(x => x.Id), includePreReleases, ct);
       foreach (PackageIdentity package in packages.Select(x => x.packageIdentity)) {
         (string PackageId, NuGetVersion Version) latestVersion = latestVersions.Where(x => (x.PackageId == package.Id) && (x.Version.CompareTo(package.Version) > 0)).SingleOrDefault();
@@ -125,14 +125,14 @@ namespace HEAL.Bricks {
     #endregion
 
     #region GetPackageAsync, GetPackagesAsync, SearchPackagesAsync
-    public virtual async Task<IPackageSearchMetadata> GetPackageAsync(PackageIdentity identity,
+    public virtual async Task<IPackageSearchMetadata?> GetPackageAsync(PackageIdentity identity,
                                                                       CancellationToken ct) {
       return (await GetPackagesAsync(Enumerable.Repeat(identity, 1), ct)).SingleOrDefault();
     }
 
     public virtual async Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(IEnumerable<PackageIdentity> identities,
                                                                                     CancellationToken ct) {
-      List<IPackageSearchMetadata> packages = new List<IPackageSearchMetadata>();
+      List<IPackageSearchMetadata> packages = new();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (PackageIdentity identity in identities) {
           foreach (SourceRepository sourceRepository in repositories) {
@@ -155,7 +155,7 @@ namespace HEAL.Bricks {
     public virtual async Task<IEnumerable<IPackageSearchMetadata>> GetPackagesAsync(IEnumerable<string> packageIds,
                                                                                     bool includePreReleases,
                                                                                     CancellationToken ct) {
-      List<IPackageSearchMetadata> packages = new List<IPackageSearchMetadata>();
+      List<IPackageSearchMetadata> packages = new();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (string packageId in packageIds) {
           foreach (SourceRepository sourceRepository in repositories) {
@@ -172,11 +172,11 @@ namespace HEAL.Bricks {
                                                                                                                     int skip,
                                                                                                                     int take,
                                                                                                                     CancellationToken ct) {
-      List<(string Repository, IPackageSearchMetadata Package)> packages = new List<(string Repository, IPackageSearchMetadata Package)>();
+      List<(string Repository, IPackageSearchMetadata Package)> packages = new();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (SourceRepository sourceRepository in repositories) {
           PackageSearchResource packageSearchResource = await sourceRepository.GetResourceAsync<PackageSearchResource>(ct);
-          SearchFilter filter = new SearchFilter(includePreReleases);
+          SearchFilter filter = new(includePreReleases);
           IEnumerable<IPackageSearchMetadata> searchResult = await packageSearchResource.SearchAsync(searchString, filter, skip, take, logger, ct);
           packages.AddRange(searchResult.Select(x => (Repository: sourceRepository.PackageSource.Source, Package: x)));
         }
@@ -194,7 +194,7 @@ namespace HEAL.Bricks {
     public virtual async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(IEnumerable<PackageIdentity> identities,
                                                                                                     bool getDependenciesRecursively,
                                                                                                     CancellationToken ct) {
-      HashSet<SourcePackageDependencyInfo> foundDependencies = new HashSet<SourcePackageDependencyInfo>(PackageIdentityComparer.Default);
+      HashSet<SourcePackageDependencyInfo> foundDependencies = new(PackageIdentityComparer.Default);
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (PackageIdentity identity in identities) {
           if (foundDependencies.Contains(identity)) continue;
@@ -224,7 +224,7 @@ namespace HEAL.Bricks {
     public virtual async Task<IEnumerable<SourcePackageDependencyInfo>> GetPackageDependenciesAsync(IEnumerable<NuGetPackageDependency> dependencies,
                                                                                                     bool getDependenciesRecursively,
                                                                                                     CancellationToken ct) {
-      HashSet<SourcePackageDependencyInfo> foundDependencies = new HashSet<SourcePackageDependencyInfo>(PackageIdentityComparer.Default);
+      HashSet<SourcePackageDependencyInfo> foundDependencies = new(PackageIdentityComparer.Default);
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         await GetPackageDependenciesAsync(dependencies, getDependenciesRecursively, foundDependencies, cacheContext, ct);
       }
@@ -236,13 +236,13 @@ namespace HEAL.Bricks {
                                                    SourceCacheContext cacheContext,
                                                    CancellationToken ct) {
       foreach (NuGetPackageDependency dependency in dependencies) {
-        HashSet<SourcePackageDependencyInfo> satisfyingPackages = new HashSet<SourcePackageDependencyInfo>(PackageIdentityComparer.Default);
+        HashSet<SourcePackageDependencyInfo> satisfyingPackages = new(PackageIdentityComparer.Default);
         foreach (SourceRepository sourceRepository in repositories) {
           // find all satisfying packages
           DependencyInfoResource dependencyInfoResource = await sourceRepository.GetResourceAsync<DependencyInfoResource>(ct);
           satisfyingPackages.AddRange((await dependencyInfoResource.ResolvePackages(dependency.Id, CurrentFramework, cacheContext, logger, ct)).Where(x => dependency.VersionRange.Satisfies(x.Version)));
         }
-        if (satisfyingPackages.Count() == 0) throw new InvalidOperationException($"No packages found which satisfy dependency {dependency}.");
+        if (satisfyingPackages.Count == 0) throw new InvalidOperationException($"No packages found which satisfy dependency {dependency}.");
 
         foreach (SourcePackageDependencyInfo package in satisfyingPackages) {
           if (!foundDependencies.Contains(package)) {
@@ -264,16 +264,16 @@ namespace HEAL.Bricks {
       if (additionalPackages == null) additionalPackages = Enumerable.Empty<string>();
       if (existingPackages == null) existingPackages = Enumerable.Empty<PackageIdentity>();
 
-      if ((additionalPackages.Count() == 0) && (existingPackages.Count() == 0)) {
+      if ((!additionalPackages.Any()) && (!existingPackages.Any())) {
         resolveSucceeded = true;
         return Enumerable.Empty<SourcePackageDependencyInfo>();
       }
-      if (availablePackages.Count() == 0) {
+      if (!availablePackages.Any()) {
         resolveSucceeded = false;
         return Enumerable.Empty<SourcePackageDependencyInfo>();
       }
 
-      PackageResolverContext context = new PackageResolverContext(DependencyBehavior.Lowest,
+      PackageResolverContext context = new(DependencyBehavior.Lowest,
                                                                   additionalPackages,
                                                                   existingPackages.Select(x => x.Id),
                                                                   Enumerable.Empty<PackageReference>(),
@@ -281,7 +281,7 @@ namespace HEAL.Bricks {
                                                                   availablePackages,
                                                                   repositories.Select(x => x.PackageSource),
                                                                   logger);
-      PackageResolver resolver = new PackageResolver();
+      PackageResolver resolver = new();
       IEnumerable<PackageIdentity> resolvedIdentities = Enumerable.Empty<PackageIdentity>();
       try {
         resolvedIdentities = resolver.Resolve(context, cancellationToken);
@@ -301,7 +301,7 @@ namespace HEAL.Bricks {
       return Directory.GetDirectories(packagesPath).Select(x => new PackageFolderReader(x));
     }
 
-    public virtual async Task<IPackageDownloader> GetPackageDownloaderAsync(PackageIdentity identity,
+    public virtual async Task<IPackageDownloader?> GetPackageDownloaderAsync(PackageIdentity identity,
                                                                             CancellationToken cancellationToken) {
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (SourceRepository sourceRepository in repositories) {
@@ -323,18 +323,16 @@ namespace HEAL.Bricks {
                                                    string packagesPath,
                                                    string packagesCachePath,
                                                    CancellationToken cancellationToken) {
-      using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
-        foreach (SourcePackageDependencyInfo package in packages) {
-          DownloadResource downloadResource = await package.Source.GetResourceAsync<DownloadResource>(cancellationToken);
-          PackageDownloadContext downloadContext = new PackageDownloadContext(cacheContext, packagesCachePath, cacheContext.DirectDownload);
-          using (DownloadResourceResult downloadResult = await downloadResource.GetDownloadResourceResultAsync(package, downloadContext, packagesCachePath, logger, cancellationToken)) {
-            if (downloadResult.Status == DownloadResourceResultStatus.NotFound) throw new InvalidOperationException($"{package} at package source {package.Source.PackageSource} not found.");
+      using SourceCacheContext cacheContext = CreateSourceCacheContext();
+      foreach (SourcePackageDependencyInfo package in packages) {
+        DownloadResource downloadResource = await package.Source.GetResourceAsync<DownloadResource>(cancellationToken);
+        PackageDownloadContext downloadContext = new(cacheContext, packagesCachePath, cacheContext.DirectDownload);
+        using DownloadResourceResult downloadResult = await downloadResource.GetDownloadResourceResultAsync(package, downloadContext, packagesCachePath, logger, cancellationToken);
+        if (downloadResult.Status == DownloadResourceResultStatus.NotFound) throw new InvalidOperationException($"{package} at package source {package.Source.PackageSource} not found.");
 
-            PackagePathResolver packagePathResolver = new PackagePathResolver(packagesPath);
-            PackageExtractionContext packageExtractionContext = new PackageExtractionContext(PackageSaveMode.Defaultv3, XmlDocFileSaveMode.Skip, null, logger);
-            await PackageExtractor.ExtractPackageAsync(downloadResult.PackageSource, downloadResult.PackageStream, packagePathResolver, packageExtractionContext, cancellationToken);
-          }
-        }
+        PackagePathResolver packagePathResolver = new(packagesPath);
+        PackageExtractionContext packageExtractionContext = new(PackageSaveMode.Defaultv3, XmlDocFileSaveMode.Skip, null, logger);
+        await PackageExtractor.ExtractPackageAsync(downloadResult.PackageSource, downloadResult.PackageStream, packagePathResolver, packageExtractionContext, cancellationToken);
       }
     }
     #endregion
@@ -348,7 +346,7 @@ namespace HEAL.Bricks {
     public virtual async Task<IEnumerable<(string PackageId, NuGetVersion Version)>> GetLatestVersionsAsync(IEnumerable<string> packageIds,
                                                                                                             bool includePreReleases,
                                                                                                             CancellationToken cancellationToken) {
-      List<KeyValuePair<string, NuGetVersion>> versions = new List<KeyValuePair<string, NuGetVersion>>();
+      List<KeyValuePair<string, NuGetVersion>> versions = new();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (SourceRepository sourceRepository in repositories) {
           MetadataResource metadataResource = await sourceRepository.GetResourceAsync<MetadataResource>(cancellationToken);
@@ -365,8 +363,8 @@ namespace HEAL.Bricks {
 
     #region Helpers
     private static NuGetFramework GetFrameworkFromEntryAssembly() {
-      string frameworkName = Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName;
-      return frameworkName != null ? NuGetFramework.ParseFrameworkName(frameworkName, DefaultFrameworkNameProvider.Instance) : NuGetFramework.AnyFramework;
+      string frameworkName = Assembly.GetEntryAssembly()?.GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName ?? string.Empty;
+      return !string.IsNullOrEmpty(frameworkName) ? NuGetFramework.ParseFrameworkName(frameworkName, DefaultFrameworkNameProvider.Instance) : NuGetFramework.AnyFramework;
     }
     private static NuGetFramework GetFrameworkFromName(string frameworkName) {
       return NuGetFramework.ParseFrameworkName(frameworkName, DefaultFrameworkNameProvider.Instance);
@@ -378,16 +376,16 @@ namespace HEAL.Bricks {
 
     #region PackageSearchMetadataEqualityComparer
     private class PackageSearchMetadataComparer : IEqualityComparer<IPackageSearchMetadata>, IComparer<IPackageSearchMetadata> {
-      public static PackageSearchMetadataComparer Default => new PackageSearchMetadataComparer();
+      public static PackageSearchMetadataComparer Default => new();
       private readonly PackageIdentityComparer identityComparer = PackageIdentityComparer.Default;
-      public bool Equals(IPackageSearchMetadata x, IPackageSearchMetadata y) {
-        return identityComparer.Equals(x.Identity, y.Identity);
+      public bool Equals(IPackageSearchMetadata? x, IPackageSearchMetadata? y) {
+        return identityComparer.Equals(x?.Identity, y?.Identity);
       }
       public int GetHashCode(IPackageSearchMetadata obj) {
         return identityComparer.GetHashCode(obj.Identity);
       }
-      public int Compare(IPackageSearchMetadata x, IPackageSearchMetadata y) {
-        return identityComparer.Compare(x.Identity, y.Identity);
+      public int Compare(IPackageSearchMetadata? x, IPackageSearchMetadata? y) {
+        return identityComparer.Compare(x?.Identity, y?.Identity);
       }
     }
     #endregion

@@ -29,20 +29,20 @@ namespace HEAL.Bricks {
     public string ToFullString() {
       return nuGetVersion.ToFullString();
     }
-    public bool Equals(PackageVersion other) {
-      return nuGetVersion.Equals(other.nuGetVersion);
+    public bool Equals(PackageVersion? other) {
+      return nuGetVersion.Equals(other?.nuGetVersion);
     }
-    public override bool Equals(object obj) {
+    public override bool Equals(object? obj) {
       return nuGetVersion.Equals(obj);
     }
     public override int GetHashCode() {
       return nuGetVersion.GetHashCode();
     }
-    public int CompareTo(object obj) {
+    public int CompareTo(object? obj) {
       return nuGetVersion.CompareTo(obj);
     }
-    public int CompareTo(PackageVersion other) {
-      return nuGetVersion.CompareTo(other.nuGetVersion);
+    public int CompareTo(PackageVersion? other) {
+      return nuGetVersion.CompareTo(other?.nuGetVersion);
     }
   }
 }

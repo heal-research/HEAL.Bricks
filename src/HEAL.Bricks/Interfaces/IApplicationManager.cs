@@ -14,10 +14,10 @@ namespace HEAL.Bricks {
     IPackageManager PackageManager { get; }
     IEnumerable<ApplicationInfo> InstalledApplications { get; }
 
-    Task RunAsync(ApplicationInfo application, string arguments = null, CancellationToken cancellationToken = default);
-    Task RunAutoStartAsync(string arguments = null, CancellationToken cancellationToken = default);
+    Task RunAsync(ApplicationInfo application, string arguments = "", CancellationToken cancellationToken = default);
+    Task RunAutoStartAsync(string arguments = "", CancellationToken cancellationToken = default);
     Task ReloadAsync(CancellationToken cancellationToken = default);
 
-    IChannel CreateRunnerChannel(Isolation isolation, string dockerImage = null);
+    IChannel CreateRunnerChannel(Isolation isolation, string dockerImage = "");
   }
 }

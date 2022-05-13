@@ -22,7 +22,7 @@ namespace HEAL.Bricks {
                                                         .Member(s => s.DockerCommand, x => x.NotNull().NotEmpty().NotWhiteSpace())
                                                         .Member(s => s.DefaultDockerImage, x => x.NotNull().NotEmpty().NotWhiteSpace());
 
-      ApplicationManager applicationManager = new ApplicationManager(new OptionsWrapper<BricksOptions>(options), Bricks.PackageManager.Create(options));
+      ApplicationManager applicationManager = new(new OptionsWrapper<BricksOptions>(options), Bricks.PackageManager.Create(options));
       await applicationManager.InitializeAsync(reloadApplications, cancellationToken);
       return applicationManager;
     }
@@ -30,7 +30,7 @@ namespace HEAL.Bricks {
       return CreateAsync(options, reloadApplications).Result;
     }
     internal static IApplicationManager CreateForTests(BricksOptions options, IPackageManager packageManager) {
-      ApplicationManager applicationManager = new ApplicationManager(new OptionsWrapper<BricksOptions>(options), packageManager);
+      ApplicationManager applicationManager = new(new OptionsWrapper<BricksOptions>(options), packageManager);
       applicationManager.InitializeAsync(true, default).Wait();
       return applicationManager;
     }
@@ -53,7 +53,7 @@ namespace HEAL.Bricks {
       }
     }
 
-    public async Task RunAsync(ApplicationInfo applicationInfo, string arguments = null, CancellationToken cancellationToken = default) {
+    public async Task RunAsync(ApplicationInfo applicationInfo, string arguments = "", CancellationToken cancellationToken = default) {
       Guard.Argument(applicationInfo, nameof(applicationInfo)).NotNull();
 
       //if (!Options.ApplicationSettings.Contains(applicationInfo)) {
@@ -65,14 +65,16 @@ namespace HEAL.Bricks {
       //  ApplicationRunner applicationRunner = new ApplicationRunner(PackageManager.GetPackageLoadInfos(), applicationInfo, arguments);
       //  await applicationRunner.RunAsync(channel, cancellationToken);
       //}
+      await Task.CompletedTask;
     }
 
-    public async Task RunAutoStartAsync(string arguments = null, CancellationToken cancellationToken = default) {
+    public async Task RunAutoStartAsync(string arguments = "", CancellationToken cancellationToken = default) {
       //List<Task> tasks = new List<Task>();
       //foreach (ApplicationSettings appSettings in Options.ApplicationSettings.Where(x => x.AutoStart)) {
       //  tasks.Add(RunAsync(appSettings.ApplicationInfo, arguments, cancellationToken));
       //}
       //await Task.WhenAll(tasks);
+      await Task.CompletedTask;
     }
 
     public async Task ReloadAsync(CancellationToken cancellationToken = default) {
@@ -94,16 +96,17 @@ namespace HEAL.Bricks {
       //    Options.ApplicationSettings.Add(settings);
       //  }
       //}
+      await Task.CompletedTask;
     }
 
-    public IChannel CreateRunnerChannel(Isolation isolation, string dockerImage = null) {
+    public IChannel CreateRunnerChannel(Isolation isolation, string dockerImage = "") {
       if (string.IsNullOrWhiteSpace(dockerImage)) dockerImage = Options.DefaultDockerImage;
 
       switch (isolation) {
         case Isolation.Default:
           return CreateRunnerChannel(Options.DefaultIsolation, dockerImage);
         case Isolation.None:
-          return new MemoryChannel((channel, token) => MemoryChannelClientCode(channel, token).Wait());
+          return new MemoryChannel((channel, token) => MemoryChannelClientCode(channel, token).Wait(token));
         case Isolation.AnonymousPipes:
           if (RuntimeInfo.CurrentRuntimeIsNETFramework) {
             return new AnonymousPipesProcessChannel(Options.StarterAssembly);

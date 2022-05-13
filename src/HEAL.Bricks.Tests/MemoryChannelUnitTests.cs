@@ -13,7 +13,7 @@ namespace HEAL.Bricks.Tests {
   public class MemoryChannelUnitTests {
     [Fact]
     public void Constructor_WithParameterIsNull_ThrowsArgumentNullException() {
-      var e = Assert.Throws<ArgumentNullException>(() => new MemoryChannel(null));
+      var e = Assert.Throws<ArgumentNullException>(() => new MemoryChannel(null!));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }

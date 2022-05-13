@@ -17,7 +17,7 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void CreateFromCLIArguments_WithNullParameter_ThrowsArgumentNullException() {
-      var e = Assert.Throws<ArgumentNullException>(() => ProcessChannel.CreateFromCLIArguments(null));
+      var e = Assert.Throws<ArgumentNullException>(() => ProcessChannel.CreateFromCLIArguments(null!));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }

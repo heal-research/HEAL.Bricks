@@ -16,7 +16,7 @@ namespace HEAL.Bricks {
   [Serializable]
   public sealed class DiscoverApplicationsRunner : PackageLoaderRunner {
     [NonSerialized]
-    private ApplicationInfo[] applicationInfos;
+    private ApplicationInfo[] applicationInfos = Array.Empty<ApplicationInfo>();
 
     public DiscoverApplicationsRunner(IEnumerable<PackageLoadInfo> packages) : base(packages) { }
 

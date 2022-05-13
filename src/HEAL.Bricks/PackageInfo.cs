@@ -38,17 +38,17 @@ namespace HEAL.Bricks {
       return packageIdentity.ToString();
     }
 
-    public bool Equals(PackageInfo other) {
-      return packageIdentity.Equals(other.packageIdentity);
+    public bool Equals(PackageInfo? other) {
+      return packageIdentity.Equals(other?.packageIdentity);
     }
-    public override bool Equals(object obj) {
+    public override bool Equals(object? obj) {
       return packageIdentity.Equals(obj);
     }
     public override int GetHashCode() {
       return packageIdentity.GetHashCode();
     }
-    public int CompareTo(PackageInfo other) {
-      return packageIdentity.CompareTo(other.packageIdentity);
+    public int CompareTo(PackageInfo? other) {
+      return packageIdentity.CompareTo(other?.packageIdentity);
     }
   }
 }

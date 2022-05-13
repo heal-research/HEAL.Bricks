@@ -83,19 +83,19 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void GetTypes_WithNullType_ThrowsArgumentNullException() {
-      Type type = null;
+      Type? type = null;
       ITypeDiscoverer td = new TypeDiscoverer();
 
-      var e = Assert.Throws<ArgumentNullException>(() => td.GetTypes(type));
+      var e = Assert.Throws<ArgumentNullException>(() => td.GetTypes(type!));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
     [Fact]
     public void GetTypes_WithNullTypeEnumerable_ThrowsArgumentNullException() {
-      Type[] types = null;
+      Type[]? types = null;
       ITypeDiscoverer td = new TypeDiscoverer();
 
-      var e = Assert.Throws<ArgumentNullException>(() => td.GetTypes(types));
+      var e = Assert.Throws<ArgumentNullException>(() => td.GetTypes(types!));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
@@ -103,11 +103,11 @@ namespace HEAL.Bricks.Tests {
     [InlineData(null, null)]
     [InlineData(null, "ExecutingAssembly")]
     [InlineData(typeof(object), null)]
-    public void GetTypes_WithNullTypeOrAssembly_ThrowsArgumentNullException(Type type, string assemblyName) {
-      Assembly assembly = assemblyName == null ? null : Assembly.GetExecutingAssembly();
+    public void GetTypes_WithNullTypeOrAssembly_ThrowsArgumentNullException(Type? type, string? assemblyName) {
+      Assembly? assembly = assemblyName == null ? null : Assembly.GetExecutingAssembly();
       ITypeDiscoverer td = new TypeDiscoverer();
 
-      var e = Assert.Throws<ArgumentNullException>(() => td.GetTypes(type, assembly));
+      var e = Assert.Throws<ArgumentNullException>(() => td.GetTypes(type!, assembly!));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
@@ -115,11 +115,11 @@ namespace HEAL.Bricks.Tests {
     [InlineData(null, null)]
     [InlineData(null, "ExecutingAssembly")]
     [InlineData(new[] { typeof(object) }, null)]
-    public void GetTypes_WithNullTypeEnumerableOrAssembly_ThrowsArgumentNullException(Type[] types, string assemblyName) {
-      Assembly assembly = assemblyName == null ? null : Assembly.GetExecutingAssembly();
+    public void GetTypes_WithNullTypeEnumerableOrAssembly_ThrowsArgumentNullException(Type[]? types, string? assemblyName) {
+      Assembly? assembly = assemblyName == null ? null : Assembly.GetExecutingAssembly();
       ITypeDiscoverer td = new TypeDiscoverer();
 
-      var e = Assert.Throws<ArgumentNullException>(() => td.GetTypes(types, assembly));
+      var e = Assert.Throws<ArgumentNullException>(() => td.GetTypes(types!, assembly!));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
@@ -127,10 +127,10 @@ namespace HEAL.Bricks.Tests {
     [InlineData(true)]
     [InlineData(false)]
     public void GetTypes_WithTypesIsEmptyOrContainsNull_ThrowsArgumentException(bool typesIsEmpty) {
-      Type[] types = typesIsEmpty ? new Type[0] : new Type[] { null };
+      Type?[] types = typesIsEmpty ? Array.Empty<Type?>() : new Type?[] { null };
       ITypeDiscoverer td = new TypeDiscoverer();
 
-      var e = Assert.Throws<ArgumentException>(() => td.GetTypes(types));
+      var e = Assert.Throws<ArgumentException>(() => td.GetTypes(types!));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
@@ -138,11 +138,11 @@ namespace HEAL.Bricks.Tests {
     [InlineData(true)]
     [InlineData(false)]
     public void GetTypes_WithTypesIsEmptyOrContainsNullAndAssembly_ThrowsArgumentException(bool typesIsEmpty) {
-      Type[] types = typesIsEmpty ? new Type[0] : new Type[] { null };
+      Type?[] types = typesIsEmpty ? Array.Empty<Type?>() : new Type?[] { null };
       Assembly assembly = Assembly.GetExecutingAssembly();
       ITypeDiscoverer td = new TypeDiscoverer();
 
-      var e = Assert.Throws<ArgumentException>(() => td.GetTypes(types, assembly));
+      var e = Assert.Throws<ArgumentException>(() => td.GetTypes(types!, assembly));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
@@ -191,10 +191,10 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void GetInstances_WithNullParameter_ThrowsArgumentNullException() {
-      Type type = null;
+      Type? type = null;
       ITypeDiscoverer td = new TypeDiscoverer();
 
-      var e = Assert.Throws<ArgumentNullException>(() => td.GetInstances(type));
+      var e = Assert.Throws<ArgumentNullException>(() => td.GetInstances(type!));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }

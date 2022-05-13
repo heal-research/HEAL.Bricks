@@ -60,19 +60,20 @@ namespace HEAL.Bricks.Tests {
         }
       };
       var repositories = packages.Select((x, i) => Mock.CreateSourceRepositoryMock($"PS{i}", x));
-      var expectedPackage = packages.SelectMany(x => x).Where(x => (x.Id.Id == packageId) && (x.Id.Version.ToString() == version)).FirstOrDefault();
+      var (expectedId, expectedDependencies) = packages.SelectMany(x => x).Where(x => (x.Id.Id == packageId) && (x.Id.Version.ToString() == version)).FirstOrDefault();
       NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, repositories, logger);
 
-      RemotePackageInfo result = await nuGetConnector.GetRemotePackageAsync(packageId, version, default);
+      RemotePackageInfo? result = await nuGetConnector.GetRemotePackageAsync(packageId, version, default);
 
-      if (expectedPackage.Id == null) {
+      if (expectedId == null) {
         Assert.Null(result);
       } else {
-        Assert.Equal(expectedPackage.Id.Id, result.Id);
-        Assert.Equal(expectedPackage.Id.Version.ToString(), result.Version.ToString());
+        Assert.NotNull(result);
+        Assert.Equal(expectedId.Id, result!.Id);
+        Assert.Equal(expectedId.Version.ToString(), result!.Version.ToString());
 
-        Assert.Equal(expectedPackage.Dependencies.Length, result.Dependencies.Count());
-        Assert.All(expectedPackage.Dependencies.Zip(result.Dependencies), x => {
+        Assert.Equal(expectedDependencies.Length, result!.Dependencies.Count());
+        Assert.All(expectedDependencies.Zip(result!.Dependencies), x => {
           Assert.Equal(x.First.Id, x.Second.Id);
           Assert.Equal(x.First.VersionRange.MinVersion?.ToString(), x.Second.VersionRange.MinVersion?.ToString());
           Assert.Equal(x.First.VersionRange.MaxVersion?.ToString(), x.Second.VersionRange.MaxVersion?.ToString());

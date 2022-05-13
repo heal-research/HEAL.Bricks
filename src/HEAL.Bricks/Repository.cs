@@ -21,11 +21,11 @@ namespace HEAL.Bricks {
     }
 
     protected internal virtual SourceRepository CreateSourceRepository() {
-      PackageSource packageSource = new PackageSource(Source);
+      PackageSource packageSource = new(Source);
       return NuGetRepository.CreateSource(NuGetRepository.Provider.GetCoreV3(), packageSource);
     }
 
-    public override bool Equals(object obj) {
+    public override bool Equals(object? obj) {
       if (obj is Repository repository) {
         return repository.Source == Source;
       } else {

@@ -26,7 +26,7 @@ namespace HEAL.Bricks.Tests {
 
     #region INuGetConnector
     internal static NuGetConnector EmptyNuGetConnector() {
-      Mock<NuGetConnector> mock = new Mock<NuGetConnector>();
+      Mock<NuGetConnector> mock = new();
       mock.Setup(m => m.GetLocalPackages(It.IsAny<string>())).Returns(Enumerable.Empty<LocalPackageInfo>());
       return mock.Object;
     }
@@ -70,7 +70,7 @@ namespace HEAL.Bricks.Tests {
     public static Mock<PackageMetadataResource> GetMetadataAsync(this Mock<PackageMetadataResource> mock, params IPackageSearchMetadata[] packages) {
       mock.Setup(x => x.GetMetadataAsync(It.IsAny<PackageIdentity>(), It.IsAny<SourceCacheContext>(), It.IsAny<ILogger>(), It.IsAny<CancellationToken>()))
           .Returns<PackageIdentity, SourceCacheContext, ILogger, CancellationToken>((id, cache, logger, token) => {
-            IPackageSearchMetadata package = packages.Where(p => p.Identity.Equals(id)).FirstOrDefault();
+            IPackageSearchMetadata? package = packages.Where(p => p.Identity.Equals(id)).FirstOrDefault();
             if (package == null) {
               logger.Log(LogLevel.Warning, $"Package '{id}' not found.");
             } else {
@@ -84,7 +84,7 @@ namespace HEAL.Bricks.Tests {
             if (!includePrerelease) {
               matches = matches.Where(x => !x.Identity.Version.IsPrerelease);
             }
-            if (matches.Count() == 0) {
+            if (!matches.Any()) {
               logger.Log(LogLevel.Warning, $"Package '{id}' not found.");
             } else {
               logger.Log(LogLevel.Information, $"Returned IPackageSearchMetadata of package '{id}'.");
@@ -96,7 +96,7 @@ namespace HEAL.Bricks.Tests {
     public static Mock<DependencyInfoResource> ResolvePackage(this Mock<DependencyInfoResource> mock, params SourcePackageDependencyInfo[] dependencies) {
       mock.Setup(x => x.ResolvePackage(It.IsAny<PackageIdentity>(), It.IsAny<NuGetFramework>(), It.IsAny<SourceCacheContext>(), It.IsAny<ILogger>(), It.IsAny<CancellationToken>()))
           .Returns<PackageIdentity, NuGetFramework, SourceCacheContext, ILogger, CancellationToken>((id, framework, cache, logger, token) => {
-            SourcePackageDependencyInfo dependency = dependencies.Where(d => (d.Id == id.Id) && (d.Version.Equals(id.Version))).FirstOrDefault();
+            SourcePackageDependencyInfo? dependency = dependencies.Where(d => (d.Id == id.Id) && (d.Version.Equals(id.Version))).FirstOrDefault();
             if (dependency == null) {
               logger.Log(LogLevel.Warning, $"Dependencies of package '{id}' not found.");
             } else {
@@ -110,7 +110,7 @@ namespace HEAL.Bricks.Tests {
       mock.Setup(x => x.ResolvePackages(It.IsAny<string>(), It.IsAny<NuGetFramework>(), It.IsAny<SourceCacheContext>(), It.IsAny<ILogger>(), It.IsAny<CancellationToken>()))
           .Returns<string, NuGetFramework, SourceCacheContext, ILogger, CancellationToken>((id, framework, cache, logger, token) => {
             var result = dependencies.Where(d => d.Id == id);
-            if (result.Count() == 0) {
+            if (!result.Any()) {
               logger.Log(LogLevel.Warning, $"Dependencies of package '{id}' not found.");
             } else {
               logger.Log(LogLevel.Information, $"Returned SourcePackageDependencyInfos of package '{id}'.");
@@ -126,7 +126,7 @@ namespace HEAL.Bricks.Tests {
             if (!filters.IncludePrerelease) {
               matches = matches.Where(x => !x.Identity.Version.IsPrerelease);
             }
-            if (matches.Count() == 0) {
+            if (!matches.Any()) {
               logger.Log(LogLevel.Warning, $"Search for '{searchTerm}' returned no packages.");
             } else {
               logger.Log(LogLevel.Information, $"Search for '{searchTerm}' returned {matches.Count()} packages.");
@@ -139,7 +139,7 @@ namespace HEAL.Bricks.Tests {
     public static Mock<MetadataResource> GetLatestVersions(this Mock<MetadataResource> mock, params IPackageSearchMetadata[] packages) {
       mock.Setup(x => x.GetLatestVersions(It.IsAny<IEnumerable<string>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<SourceCacheContext>(), It.IsAny<ILogger>(), It.IsAny<CancellationToken>()))
           .Returns<IEnumerable<string>, bool, bool, SourceCacheContext, ILogger, CancellationToken>((packageIds, includePrerelease, includeUnlisted, cache, logger, token) => {
-            Dictionary<string, NuGetVersion> latestVersions = new Dictionary<string, NuGetVersion>();
+            Dictionary<string, NuGetVersion> latestVersions = new();
 
             foreach (string id in packageIds) {
               var filtered = packages.Where(x => x.Identity.Id == id);
@@ -147,7 +147,7 @@ namespace HEAL.Bricks.Tests {
                 filtered = filtered.Where(x => !x.Identity.Version.IsPrerelease);
               }
               filtered = filtered.OrderByDescending(x => x.Identity.Version);
-              NuGetVersion version = filtered.Select(x => x.Identity.Version).FirstOrDefault();
+              NuGetVersion? version = filtered.Select(x => x.Identity.Version).FirstOrDefault();
 
               if (version == null) {
                 logger.Log(LogLevel.Warning, $"Latest version of package '{id}' not found.");
@@ -175,7 +175,7 @@ namespace HEAL.Bricks.Tests {
     private static IPackageSearchMetadata CreatePackageSearchMetadata(PackageIdentity id) {
       return PackageSearchMetadataBuilder.FromIdentity(id).Build();
     }
-    private static SourcePackageDependencyInfo CreateSourcePackageDependenyInfo(PackageIdentity id, IEnumerable<NuGetPackageDependency> dependencies, SourceRepository repository = null) {
+    private static SourcePackageDependencyInfo CreateSourcePackageDependenyInfo(PackageIdentity id, IEnumerable<NuGetPackageDependency>? dependencies, SourceRepository? repository = null) {
       return new SourcePackageDependencyInfo(id.Id, id.Version, dependencies, false, repository);
     }
     #endregion

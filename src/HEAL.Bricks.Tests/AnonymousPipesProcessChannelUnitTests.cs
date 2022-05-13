@@ -18,7 +18,7 @@ namespace HEAL.Bricks.Tests {
     public void Constructor_WithParameterIsNullOrEmptyOrWhiteSpace_ThrowsArgumentException(string programPath, Type expectedExceptionType) {
       var e = Assert.Throws(expectedExceptionType, () => new AnonymousPipesProcessChannel(programPath));
       Assert.False(string.IsNullOrEmpty(e.Message));
-      Assert.False(string.IsNullOrEmpty((e as ArgumentException).ParamName));
+      Assert.False(string.IsNullOrEmpty(((ArgumentException)e).ParamName));
     }
   }
 }

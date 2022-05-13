@@ -39,7 +39,7 @@ namespace HEAL.Bricks {
 
       Id = package.Id;
       Version = package.Version.ToString();
-      PackagesPath = packagesPath.StartsWith(appPath) ? packagesPath.Substring(appPath.Length + 1) : packagesPath;
+      PackagesPath = packagesPath.StartsWith(appPath) ? packagesPath[(appPath.Length + 1)..] : packagesPath;
       assemblyPaths = package.ReferenceItems.ToArray();
       files = package.Files.ToArray();
     }

@@ -15,7 +15,6 @@ namespace HEAL.Bricks {
   [Serializable]
   public class DataMessage<T> : Message {
     public T Data { get; }
-    public DataMessage() => Data = default;
     public DataMessage(T data) => Data = data;
   }
 

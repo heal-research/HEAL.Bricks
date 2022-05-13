@@ -19,21 +19,19 @@ namespace HEAL.Bricks {
     public ApplicationInfo ApplicationInfo { get; }
     public string[] Arguments { get; }
 
-    public ApplicationRunner(IEnumerable<PackageLoadInfo> packages, ApplicationInfo applicationInfo, string[] args = null) : base(packages) {
+    public ApplicationRunner(IEnumerable<PackageLoadInfo> packages, ApplicationInfo applicationInfo, string[]? args = null) : base(packages) {
       ApplicationInfo = Guard.Argument(applicationInfo, nameof(applicationInfo)).NotNull();
-      Arguments = args;
+      Arguments = args ?? Array.Empty<string>();
     }
 
     protected override async Task ExecuteOnClientAsync(IChannel channel, CancellationToken cancellationToken) {
       await base.ExecuteOnClientAsync(channel, cancellationToken);
       ITypeDiscoverer typeDiscoverer = new TypeDiscoverer();
-      Type applicationType = typeDiscoverer.GetTypes(typeof(IApplication)).Where(x => x.FullName == ApplicationInfo.TypeName).SingleOrDefault();
+      Type applicationType = typeDiscoverer.GetTypes(typeof(IApplication))
+                                           .Where(x => x.FullName == ApplicationInfo.TypeName)
+                                           .SingleOrDefault() ?? throw new InvalidOperationException($"Cannot find application {ApplicationInfo.Name}.");
 
-      if (applicationType == null) {
-        throw new InvalidOperationException($"Cannot find application {ApplicationInfo.Name}.");
-      }
-
-      IApplication application = Activator.CreateInstance(applicationType) as IApplication;
+      IApplication application = (IApplication?)Activator.CreateInstance(applicationType) ?? throw new InvalidOperationException($"Cannot create application {ApplicationInfo.Name}.");
       await application.StartAsync(Arguments, cancellationToken);
     }
 
@@ -66,7 +64,7 @@ namespace HEAL.Bricks {
         //}, cancellationToken);
 
         Task writer = Task.Run(() => {
-          string s = Console.ReadLine();
+          string? s = Console.ReadLine();
           while ((s != null) && !cancellationToken.IsCancellationRequested) {
             processChannel.StandardInput.WriteLine(s);
             s = Console.ReadLine();

@@ -10,47 +10,47 @@ using System;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public abstract class StreamChannel : IChannel {
-    protected Stream inputStream = null, outputStream = null;
+    protected Stream? inputStream = null, outputStream = null;
 
     public virtual void Open(out Task channelTerminated, CancellationToken cancellationToken = default) {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Operation((inputStream == null) && (outputStream == null));
-      channelTerminated = null;
+      channelTerminated = Task.CompletedTask;
     }
     public void Close() {
       Guard.Operation(((inputStream != null) && (outputStream != null)) || ObjectIsDisposed);
       Dispose(disposing: true);
-      GC.SuppressFinalize(this);
     }
 
-    public async Task SendMessageAsync(IMessage message, CancellationToken cancellationToken = default) {
+    public async Task SendMessageAsync<T>(T message, CancellationToken cancellationToken = default) where T : class, IMessage {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Argument(message, nameof(message)).NotNull();
       Guard.Operation((outputStream != null) && outputStream.CanWrite);
 
       await Task.Run(() => {
         cancellationToken.ThrowIfCancellationRequested();
-        IFormatter serializer = new BinaryFormatter();
-        serializer.Serialize(outputStream, message);
+        IFormatter formatter = new BinaryFormatter();
+        formatter.Serialize(outputStream ?? throw new InvalidOperationException("Output stream is null"), message);
+        //JsonSerializer.Serialize(outputStream ?? throw new InvalidOperationException("Output stream is null"), message, message.GetType());
         outputStream.Flush();
       }, cancellationToken).ConfigureAwait(false);
     }
-    public Task<IMessage> ReceiveMessageAsync(CancellationToken cancellationToken = default) => ReceiveMessageAsync<IMessage>(cancellationToken);
     public async Task<T> ReceiveMessageAsync<T>(CancellationToken cancellationToken = default) where T : class, IMessage {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Operation((inputStream != null) && inputStream.CanRead);
 
       return await Task.Run<T>(() => {
         cancellationToken.ThrowIfCancellationRequested();
-        IFormatter serializer = new BinaryFormatter();
-        object message = serializer.Deserialize(inputStream);
-        T t = (T)message;
-        return t;
+        IFormatter formatter = new BinaryFormatter();
+        T message = (T)formatter.Deserialize(inputStream ?? throw new InvalidOperationException("Input stream is null"));
+        //T? message = JsonSerializer.Deserialize<T>(inputStream ?? throw new InvalidOperationException("Input stream is null"));
+        return message ?? throw new InvalidOperationException("Deserialized message is null");
       }, cancellationToken).ConfigureAwait(false);
     }
 

@@ -24,7 +24,7 @@ namespace HEAL.Bricks {
     /// <param name="protoType"></param>
     /// <returns>The constructed type, a generic type definition or null, if a type construction is not possible</returns>
     /// <remarks>This method does not work with nested generic types</remarks>
-    internal static Type BuildType(this Type type, Type protoType) {
+    internal static Type? BuildType(this Type type, Type protoType) {
       if (type == null) throw new ArgumentNullException(nameof(type));
       if (protoType == null) throw new ArgumentNullException(nameof(protoType));
 

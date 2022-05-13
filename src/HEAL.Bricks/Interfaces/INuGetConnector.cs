@@ -16,7 +16,7 @@ namespace HEAL.Bricks {
 
     IEnumerable<LocalPackageInfo> GetLocalPackages(string packagesPath);
 
-    Task<RemotePackageInfo> GetRemotePackageAsync(string packageId, string version, CancellationToken ct);
+    Task<RemotePackageInfo?> GetRemotePackageAsync(string packageId, string version, CancellationToken ct);
 
     Task<IEnumerable<RemotePackageInfo>> GetRemotePackagesAsync(string packageId, bool includePreReleases, CancellationToken ct);
 

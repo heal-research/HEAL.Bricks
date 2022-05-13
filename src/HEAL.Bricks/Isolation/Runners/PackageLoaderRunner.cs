@@ -25,7 +25,7 @@ namespace HEAL.Bricks {
     }
 
     protected override Task ExecuteOnClientAsync(IChannel channel, CancellationToken cancellationToken) {
-      PackageLoader.Instance.LoadPackageAssemblies(packageLoadInfos);
+      PackageLoader.LoadPackageAssemblies(packageLoadInfos);
       return Task.CompletedTask;
     }
   }

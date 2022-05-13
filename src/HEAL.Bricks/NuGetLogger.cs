@@ -14,7 +14,7 @@ namespace HEAL.Bricks {
   internal class NuGetLogger : LoggerBase {
     public static ILogger NoLogger => NullLogger.Instance;
 
-    private readonly List<string> log = new List<string>();
+    private readonly List<string> log = new();
 
     public NuGetLogger(LogLevel verbosityLevel = LogLevel.Verbose) : base(verbosityLevel) { }
 

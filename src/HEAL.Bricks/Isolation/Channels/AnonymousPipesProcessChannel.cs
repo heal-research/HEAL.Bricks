@@ -16,9 +16,9 @@ namespace HEAL.Bricks {
     public static string InputConnectionArgument => "--InputConnection=";
     public static string OutputConnectionArgument => "--OutputConnection=";
 
-    private AnonymousPipeServerStream anonymousPipeOutputStream, anonymousPipeInputStream;
+    private AnonymousPipeServerStream? anonymousPipeOutputStream, anonymousPipeInputStream;
 
-    public AnonymousPipesProcessChannel(string programPath, string arguments = null) : base(programPath, arguments) { }
+    public AnonymousPipesProcessChannel(string programPath, string arguments = "") : base(programPath, arguments) { }
     protected AnonymousPipesProcessChannel() {
       // used to create a new channel on the client-side
     }
@@ -51,9 +51,9 @@ namespace HEAL.Bricks {
 
     protected override void PostStartActions() {
       base.PostStartActions();
-      anonymousPipeOutputStream.DisposeLocalCopyOfClientHandle();
+      anonymousPipeOutputStream?.DisposeLocalCopyOfClientHandle();
       outputStream = anonymousPipeOutputStream;
-      anonymousPipeInputStream.DisposeLocalCopyOfClientHandle();
+      anonymousPipeInputStream?.DisposeLocalCopyOfClientHandle();
       inputStream = anonymousPipeInputStream;
     }
 

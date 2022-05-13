@@ -3,7 +3,7 @@ stages:
   - test
   - deploy
   
-image: mcr.microsoft.com/dotnet/core/sdk:3.1
+image: mcr.microsoft.com/dotnet/sdk:6.0
   
 build:
   stage: build
@@ -41,7 +41,9 @@ test:linux:
     - build
   artifacts:
     reports:
-      cobertura: "**/coverage.cobertura.xml"
+      coverage_report:
+        coverage_format: cobertura
+        path: "**/coverage.cobertura.xml"
   script:
     # explicit restore is required, because each new container has an empty package cache
     - dotnet restore src/HEAL.Bricks.Tests

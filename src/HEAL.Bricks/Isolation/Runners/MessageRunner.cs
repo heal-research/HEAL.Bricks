@@ -14,7 +14,7 @@ namespace HEAL.Bricks {
   public abstract class MessageRunner : Runner {
     protected sealed override async Task ExecuteOnClientAsync(IChannel channel, CancellationToken cancellationToken) {
       while (!cancellationToken.IsCancellationRequested) {
-        IMessage message = await channel.ReceiveMessageAsync(cancellationToken);
+        IMessage message = await channel.ReceiveMessageAsync<IMessage>(cancellationToken);
         switch (message) {
           case null:
             return;
@@ -30,12 +30,12 @@ namespace HEAL.Bricks {
 
     protected sealed override async Task ExecuteOnHostAsync(IChannel channel, CancellationToken cancellationToken) {
       while (!cancellationToken.IsCancellationRequested) {
-        IMessage message = null;
+        IMessage? message = null;
         try {
-          message = await channel.ReceiveMessageAsync(cancellationToken);
+          message = await channel.ReceiveMessageAsync<IMessage>(cancellationToken);
         }
-        catch (Exception e) {
-          if (!cancellationToken.IsCancellationRequested) throw e;
+        catch (Exception) {
+          if (!cancellationToken.IsCancellationRequested) throw;
         }
         switch (message) {
           case null:

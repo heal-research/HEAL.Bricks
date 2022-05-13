@@ -32,7 +32,7 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void Constructor_CreatesValidInstance() {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       Assert.NotNull(options);
       var validation = BricksOptionsValidator.Check(options);
@@ -43,8 +43,8 @@ namespace HEAL.Bricks.Tests {
     #region Repositories
     [Fact]
     public void Repositories_AddRepository_Succeeds() {
-      Repository repository = new Repository("repository");
-      BricksOptions options = new BricksOptions();
+      Repository repository = new("repository");
+      BricksOptions options = new();
 
       options.Repositories.Add(repository);
 
@@ -57,7 +57,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData("C:/absolute/path")]
     [InlineData("relative/path")]
     public void PackagesPath_SetAbsoluteOrRelativePath_Succeeds(string path) {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       options.PackagesPath = path;
 
@@ -66,9 +66,9 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void PackagesPath_SetNull_ThrowsArgumentNullException() {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
-      var e = Assert.Throws<ArgumentNullException>(() => options.PackagesPath = null);
+      var e = Assert.Throws<ArgumentNullException>(() => options.PackagesPath = null!);
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
@@ -76,7 +76,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData("")]
     [InlineData("   ")]
     public void PackagesPath_SetEmptyString_ThrowsArgumentException(string path) {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       var e = Assert.Throws<ArgumentException>(() => options.PackagesPath = path);
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -89,7 +89,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData("C:/absolute/path")]
     [InlineData("relative/path")]
     public void PackagesCachePath_SetAbsoluteOrRelativePath_Succeeds(string path) {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       options.PackagesCachePath = path;
 
@@ -98,9 +98,9 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void PackagesCachePath_SetNull_ThrowsArgumentNullException() {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
-      var e = Assert.Throws<ArgumentNullException>(() => options.PackagesCachePath = null);
+      var e = Assert.Throws<ArgumentNullException>(() => options.PackagesCachePath = null!);
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
@@ -108,7 +108,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData("")]
     [InlineData("   ")]
     public void PackagesCachePath_SetEmptyString_ThrowsArgumentException(string path) {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       var e = Assert.Throws<ArgumentException>(() => options.PackagesCachePath = path);
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -120,7 +120,7 @@ namespace HEAL.Bricks.Tests {
     [Fact]
     public void Isolation_SetValue_Succeeds() {
       Isolation isolation = Isolation.Docker;
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       options.DefaultIsolation = isolation;
 
@@ -132,7 +132,7 @@ namespace HEAL.Bricks.Tests {
     [Fact]
     public void DotnetCommand_SetString_Succeeds() {
       string path = "path/to/dotnet.exe";
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       options.DotnetCommand = path;
 
@@ -140,9 +140,9 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void DotnetCommand_SetNull_ThrowsArgumentNullException() {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
-      var e = Assert.Throws<ArgumentNullException>(() => options.DotnetCommand = null);
+      var e = Assert.Throws<ArgumentNullException>(() => options.DotnetCommand = null!);
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
@@ -150,7 +150,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData("")]
     [InlineData("   ")]
     public void DotnetCommand_SetEmptyString_ThrowsArgumentException(string command) {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       var e = Assert.Throws<ArgumentException>(() => options.DotnetCommand = command);
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -162,7 +162,7 @@ namespace HEAL.Bricks.Tests {
     [Fact]
     public void DockerCommand_SetString_Succeeds() {
       string path = "path/to/docker.exe";
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       options.DockerCommand = path;
 
@@ -170,9 +170,9 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void DockerCommand_SetNull_ThrowsArgumentNullException() {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
-      var e = Assert.Throws<ArgumentNullException>(() => options.DockerCommand = null);
+      var e = Assert.Throws<ArgumentNullException>(() => options.DockerCommand = null!);
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
@@ -180,7 +180,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData("")]
     [InlineData("   ")]
     public void DockerCommand_SetEmptyString_ThrowsArgumentException(string command) {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       var e = Assert.Throws<ArgumentException>(() => options.DockerCommand = command);
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -192,7 +192,7 @@ namespace HEAL.Bricks.Tests {
     [Fact]
     public void DockerImage_SetString_Succeeds() {
       string image = "my.dockerimage.com/url/image:1.0";
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       options.DefaultDockerImage = image;
 
@@ -200,9 +200,9 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void DockerImage_SetNull_ThrowsArgumentNullException() {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
-      var e = Assert.Throws<ArgumentNullException>(() => options.DefaultDockerImage = null);
+      var e = Assert.Throws<ArgumentNullException>(() => options.DefaultDockerImage = null!);
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
@@ -210,7 +210,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData("")]
     [InlineData("   ")]
     public void DockerImage_SetEmptyString_ThrowsArgumentException(string command) {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       var e = Assert.Throws<ArgumentException>(() => options.DefaultDockerImage = command);
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -222,7 +222,7 @@ namespace HEAL.Bricks.Tests {
     [Fact]
     public void StarterAssembly_SetRelativePath_Succeeds() {
       string path = "relative/path";
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       options.StarterAssembly = path;
 
@@ -230,9 +230,9 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void StarterAssembly_SetNull_ThrowsArgumentNullException() {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
-      var e = Assert.Throws<ArgumentNullException>(() => options.StarterAssembly = null);
+      var e = Assert.Throws<ArgumentNullException>(() => options.StarterAssembly = null!);
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
@@ -240,7 +240,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData("")]
     [InlineData("   ")]
     public void StarterAssembly_SetEmptyString_ThrowsArgumentException(string path) {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       var e = Assert.Throws<ArgumentException>(() => options.StarterAssembly = path);
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -255,7 +255,7 @@ namespace HEAL.Bricks.Tests {
         Platform.FreeBSD => "/absolute/path",
         _ => throw new NotSupportedException($"Platform {Constants.Platform} is not supported.")
       };
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       var e = Assert.Throws<ArgumentException>(() => options.StarterAssembly = path);
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -267,7 +267,7 @@ namespace HEAL.Bricks.Tests {
     [Fact]
     public void SetAppPath_WithAbsolutePath_Succeeds() {
       string path = Path.GetTempPath();
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       options.SetAppPath(path);
 
@@ -275,9 +275,9 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void SetAppPath_WithNull_ThrowsArgumentNullException() {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
-      var e = Assert.Throws<ArgumentNullException>(() => options.SetAppPath(null));
+      var e = Assert.Throws<ArgumentNullException>(() => options.SetAppPath(null!));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
@@ -286,7 +286,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData("   ")]
     [InlineData("relative/path")]
     public void SetAppPath_WithEmptyOrRelativePath_ThrowsArgumentException(string path) {
-      BricksOptions options = new BricksOptions();
+      BricksOptions options = new();
 
       var e = Assert.Throws<ArgumentException>(() => options.SetAppPath(path));
       Assert.False(string.IsNullOrEmpty(e.Message));

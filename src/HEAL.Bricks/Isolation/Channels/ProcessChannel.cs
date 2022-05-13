@@ -18,35 +18,36 @@ namespace HEAL.Bricks {
   public abstract class ProcessChannel : StreamChannel {
     public static string ChannelTypeArgument => "--ChannelType";
     
-    internal StreamWriter StandardInput => process?.StandardInput;
-    internal StreamReader StandardOutput => process?.StandardOutput;
+    internal StreamWriter StandardInput => process?.StandardInput ?? throw new InvalidOperationException($"{nameof(process)} is null");
+    internal StreamReader StandardOutput => process?.StandardOutput ?? throw new InvalidOperationException($"{nameof(process)} is null");
 
-    public static ProcessChannel CreateFromCLIArguments(string[] arguments) {
+    public static ProcessChannel? CreateFromCLIArguments(string[] arguments) {
       Guard.Argument(arguments, nameof(arguments)).NotNull();
 
-      ProcessChannel channel = null;
+      ProcessChannel? channel = null;
       if (arguments.Any(x => x.StartsWith(ChannelTypeArgument))) {
         try {
           string channelTypeName = arguments.Where(x => x.StartsWith(ChannelTypeArgument)).Select(x => x.Split('=')[1]).Single();
-          Type channelType = Type.GetType(channelTypeName);
-          channel = (ProcessChannel)Activator.CreateInstance(channelType, nonPublic: true);
+          Type channelType = Type.GetType(channelTypeName) ?? throw new InvalidOperationException($"Cannot resolve {nameof(channelTypeName)}");
+          channel = Activator.CreateInstance(channelType, nonPublic: true) as ProcessChannel;
         }
         catch (Exception e) {
           throw new ArgumentException("Cannot create instance of channel type.", nameof(arguments), e);
         }
-        channel.ReadCLIArguments(arguments);
+        channel?.ReadCLIArguments(arguments);
       }
       return channel;
     }
 
-    private readonly string programPath, arguments;
+    private readonly string programPath = string.Empty, arguments = string.Empty;
 
-    protected Process process = null;
+    protected Process? process = null;
 
-    public ProcessChannel(string programPath, string arguments = null) {
+    public ProcessChannel(string programPath, string? arguments = null) {
       this.programPath = Guard.Argument(programPath, nameof(programPath)).NotNull().NotEmpty().NotWhiteSpace();
       this.arguments = arguments ?? string.Empty;
     }
+
     protected ProcessChannel() { }
 
     public override void Open(out Task channelTerminated, CancellationToken cancellationToken = default) {
@@ -57,11 +58,11 @@ namespace HEAL.Bricks {
       };
       var tcs = new TaskCompletionSource<int>();
       process.Exited += (s, e) => {
-        Process p = s as Process;
-        if (p.ExitCode == 0) {
+        Process? p = s as Process;
+        if (p?.ExitCode == 0) {
           tcs.SetResult(0);
         } else {
-          tcs.SetException(new Exception($"Process terminated with exit code {p.ExitCode}." + Environment.NewLine + p.StandardError.ReadToEnd()));
+          tcs.SetException(new Exception($"Process terminated with exit code {p?.ExitCode}." + Environment.NewLine + p?.StandardError.ReadToEnd()));
         }
       };
       cancellationToken.Register(() => { Close(); });

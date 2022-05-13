@@ -15,7 +15,7 @@ namespace HEAL.Bricks {
   [Serializable]
   public sealed class EchoRunner : MessageRunner {
     [NonSerialized]
-    private readonly BlockingCollection<string> responses = new BlockingCollection<string>();
+    private readonly BlockingCollection<string> responses = new();
 
     protected override async Task ProcessRunnerMessageOnClientAsync(IMessage message, IChannel channel, CancellationToken cancellationToken) {
       switch (message) {
@@ -36,7 +36,7 @@ namespace HEAL.Bricks {
           responses.CompleteAdding();
           break;
         case TextMessage textMessage:
-          responses.Add(textMessage.Data);
+          responses.Add(textMessage.Data, cancellationToken);
           break;
         case ExceptionMessage exceptionMessage:
           throw exceptionMessage.Data;
@@ -46,13 +46,13 @@ namespace HEAL.Bricks {
       return Task.CompletedTask;
     }
 
-    public async Task SendAsync(string text, IChannel channel, CancellationToken cancellationToken = default) {
+    public static async Task SendAsync(string text, IChannel channel, CancellationToken cancellationToken = default) {
       try {
         await channel.SendMessageAsync(new TextMessage(text), cancellationToken);
       }
       catch (OperationCanceledException) { }
     }
-    public async Task<string> ReceiveAsync(CancellationToken cancellationToken = default) {
+    public async Task<string?> ReceiveAsync(CancellationToken cancellationToken = default) {
       try {
         return await Task.Run<string>(() => {
           return responses.Take(cancellationToken);
@@ -62,7 +62,7 @@ namespace HEAL.Bricks {
       return null;
     }
 
-    public async Task SendCancel(IChannel channel, CancellationToken cancellationToken = default) {
+    public static async Task SendCancel(IChannel channel, CancellationToken cancellationToken = default) {
       try {
         await channel.SendMessageAsync(new CancelMessage(), cancellationToken);
       }

@@ -19,8 +19,8 @@ using NuGet.Versioning;
 
 namespace HEAL.Bricks.Tests {
   public class NuGetConnectorStub : INuGetConnector {
-    private readonly List<LocalPackageInfo> localPackages = new List<LocalPackageInfo>();
-    private readonly List<RemotePackageInfo> remotePackages = new List<RemotePackageInfo>();
+    private readonly List<LocalPackageInfo> localPackages = new();
+    private readonly List<RemotePackageInfo> remotePackages = new();
 
     public NuGetConnectorStub() { }
     public NuGetConnectorStub(IEnumerable<LocalPackageInfo> localPackages) : this(localPackages, Enumerable.Empty<RemotePackageInfo>()) { }
@@ -34,7 +34,7 @@ namespace HEAL.Bricks.Tests {
       return localPackages;
     }
 
-    public Task<RemotePackageInfo> GetRemotePackageAsync(string packageId, string version, CancellationToken ct) {
+    public Task<RemotePackageInfo?> GetRemotePackageAsync(string packageId, string version, CancellationToken ct) {
       return Task.FromResult(remotePackages.Where(x => (x.Id == packageId) && (x.Version.ToString() == version)).SingleOrDefault());
     }
 
@@ -61,15 +61,15 @@ namespace HEAL.Bricks.Tests {
     }
 
     public Task<IEnumerable<RemotePackageInfo>> GetMissingDependenciesAsync(IEnumerable<LocalPackageInfo> packages, CancellationToken ct) {
-      List<PackageInfo> pkgs = new List<PackageInfo>(packages);
-      List<RemotePackageInfo> missing = new List<RemotePackageInfo>();
+      List<PackageInfo> pkgs = new(packages);
+      List<RemotePackageInfo> missing = new();
       bool newMissingFound;
       do {
         newMissingFound = false;
         foreach (var package in pkgs) {
           foreach (var dependency in package.Dependencies) {
             if (!pkgs.Any(x => (x.Id == dependency.Id) && dependency.VersionRange.Satiesfies(x.Version))) {
-              PackageVersion bestVersion = dependency.VersionRange.FindBestMatch(remotePackages.Where(x => x.Id == dependency.Id).Select(x => x.Version));
+              PackageVersion? bestVersion = dependency.VersionRange.FindBestMatch(remotePackages.Where(x => x.Id == dependency.Id).Select(x => x.Version));
               if (bestVersion != null) {
                 missing.Add(remotePackages.Where(x => (x.Id == dependency.Id) && (x.Version.Equals(bestVersion))).Single());
                 newMissingFound = true;
@@ -85,9 +85,9 @@ namespace HEAL.Bricks.Tests {
     }
 
     public Task<IEnumerable<RemotePackageInfo>> GetPackageUpdatesAsync(IEnumerable<LocalPackageInfo> packages, bool includePreReleases, CancellationToken ct) {
-      List<RemotePackageInfo> updates = new List<RemotePackageInfo>();
+      List<RemotePackageInfo> updates = new();
       foreach (var package in packages) {
-        RemotePackageInfo update = remotePackages.Where(x => (x.Id == package.Id) && (x.Version.CompareTo(package.Version) > 0) && (includePreReleases || !x.Version.IsPrerelease))
+        RemotePackageInfo? update = remotePackages.Where(x => (x.Id == package.Id) && (x.Version.CompareTo(package.Version) > 0) && (includePreReleases || !x.Version.IsPrerelease))
                                                  .OrderByDescending(x => x.Version).FirstOrDefault();
         if (update != null) updates.Add(update);
       }

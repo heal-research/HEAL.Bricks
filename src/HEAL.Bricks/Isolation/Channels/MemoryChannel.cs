@@ -13,11 +13,11 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public class MemoryChannel : IChannel {
-    private Channel<IMessage> channel = null;
-    protected ChannelReader<IMessage> input = null;
-    protected ChannelWriter<IMessage> output = null;
-    private readonly Action<MemoryChannel, CancellationToken> clientCode;
-    private CancellationTokenSource clientCTS;
+    private Channel<IMessage>? channel = null;
+    protected ChannelReader<IMessage>? input = null;
+    protected ChannelWriter<IMessage>? output = null;
+    private readonly Action<MemoryChannel, CancellationToken>? clientCode;
+    private CancellationTokenSource? clientCTS;
 
     public MemoryChannel(Action<MemoryChannel, CancellationToken> clientCode) {
       Guard.Argument(clientCode, nameof(clientCode)).NotNull();
@@ -42,34 +42,32 @@ namespace HEAL.Bricks {
         SingleWriter = true
       });
       output = channel.Writer;
-      MemoryChannel client = new MemoryChannel(channel.Reader);
-      input = client.channel.Reader;
+      MemoryChannel client = new(channel.Reader);
+      input = client.channel?.Reader;
 
       clientCTS = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
       CancellationToken clientToken = clientCTS.Token;
 
-      channelTerminated = Task.Run(() => { clientCode(client, clientToken); }, clientToken);
+      channelTerminated = Task.Run(() => { clientCode?.Invoke(client, clientToken); }, clientToken);
     }
     public void Close() {
       Guard.Operation(((channel != null) && (output != null)) || ObjectIsDisposed);
       Dispose(disposing: true);
-      GC.SuppressFinalize(this);
     }
 
-    public async Task SendMessageAsync(IMessage message, CancellationToken cancellationToken = default) {
+    public async Task SendMessageAsync<T>(T message, CancellationToken cancellationToken = default) where T : class, IMessage {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Argument(message, nameof(message)).NotNull();
       Guard.Operation(output != null);
 
-      await output.WriteAsync(message, cancellationToken);
+      await (output?.WriteAsync(message, cancellationToken) ?? ValueTask.CompletedTask);
     }
 
-    public Task<IMessage> ReceiveMessageAsync(CancellationToken cancellationToken = default) => ReceiveMessageAsync<IMessage>(cancellationToken);
     public async Task<T> ReceiveMessageAsync<T>(CancellationToken cancellationToken = default) where T : class, IMessage {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Operation(input != null);
 
-      return await input.ReadAsync(cancellationToken).ConfigureAwait(false) as T;
+      return (T)await (input?.ReadAsync(cancellationToken).ConfigureAwait(false) ?? throw new InvalidOperationException("input is null"));
     }
 
     protected virtual void DisposeMembers() {

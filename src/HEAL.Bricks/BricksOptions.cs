@@ -13,8 +13,8 @@ using Dawn;
 
 namespace HEAL.Bricks {
   public class BricksOptions {
-    public static Repository PublicNuGetRepository => new Repository("https://api.nuget.org/v3/index.json");
-    public static BricksOptions Default => new BricksOptions(PublicNuGetRepository);
+    public static Repository PublicNuGetRepository => new("https://api.nuget.org/v3/index.json");
+    public static BricksOptions Default => new(PublicNuGetRepository);
 
     private string packagesPath;
     private string packagesCachePath;
@@ -61,15 +61,15 @@ namespace HEAL.Bricks {
 
     public BricksOptions() {
       Repositories = new List<Repository>();
-      AppPath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-      PackagesPath = "packages";
-      PackagesCachePath = "packages_cache";
+      AppPath = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location) ?? string.Empty;
+      packagesPath = Path.Combine(AppPath, "packages");
+      packagesCachePath = Path.Combine(AppPath, "packages_cache");
       DefaultIsolation = Isolation.AnonymousPipes;
-      DotnetCommand = "dotnet";
-      DockerCommand = "docker";
-      DefaultDockerImage = RuntimeInfo.CurrentRuntimeIsNETFramework ? "mcr.microsoft.com/dotnet/framework/runtime:4.7.2" : "mcr.microsoft.com/dotnet/runtime:latest";
+      dotnetCommand = "dotnet";
+      dockerCommand = "docker";
+      dockerImage = RuntimeInfo.CurrentRuntimeIsNETFramework ? "mcr.microsoft.com/dotnet/framework/runtime:4.7.2" : "mcr.microsoft.com/dotnet/runtime:latest";
       UseWindowsContainer = RuntimeInfo.CurrentRuntimeIsNETFramework;
-      StarterAssembly = Path.GetFileName(Assembly.GetEntryAssembly().Location);
+      starterAssembly = Path.GetFileName(Assembly.GetEntryAssembly()?.Location) ?? string.Empty;
     }
     public BricksOptions(params Repository[] repositories) : this() {
       Guard.Argument(repositories, nameof(repositories)).NotNull().DoesNotContainNull();
