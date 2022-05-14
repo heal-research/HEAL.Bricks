@@ -46,7 +46,7 @@ namespace HEAL.Bricks {
       return Task.CompletedTask;
     }
 
-    public static async Task SendAsync(string text, IChannel channel, CancellationToken cancellationToken = default) {
+    public async Task SendAsync(string text, IChannel channel, CancellationToken cancellationToken = default) {
       try {
         await channel.SendMessageAsync(new TextMessage(text), cancellationToken);
       }
@@ -62,7 +62,7 @@ namespace HEAL.Bricks {
       return null;
     }
 
-    public static async Task SendCancel(IChannel channel, CancellationToken cancellationToken = default) {
+    public async Task SendCancel(IChannel channel, CancellationToken cancellationToken = default) {
       try {
         await channel.SendMessageAsync(new CancelMessage(), cancellationToken);
       }

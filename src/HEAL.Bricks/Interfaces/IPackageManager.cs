@@ -37,11 +37,5 @@ namespace HEAL.Bricks {
 
     PackageLoadInfo GetPackageLoadInfo(LocalPackageInfo package);
     IEnumerable<PackageLoadInfo> GetPackageLoadInfos();
-
-    bool LoggingEnabled { get; }
-    void EnableLogging(bool logDebugInfo = false);
-    void DisableLogging();
-    string[] GetLog();
-    void ClearLog();
   }
 }

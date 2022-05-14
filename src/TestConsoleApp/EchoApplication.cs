@@ -13,7 +13,7 @@ namespace TestApp {
       await Task.Run(() => {
         Console.WriteLine("EchoApplication started");
         Console.Write("message > ");
-        string message = Console.ReadLine();
+        string? message = Console.ReadLine();
         while (!string.IsNullOrEmpty(message)) {
           cancellationToken.ThrowIfCancellationRequested();
           Console.WriteLine("echo > " + message);

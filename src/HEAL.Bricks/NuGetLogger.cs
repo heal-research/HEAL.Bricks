@@ -5,29 +5,27 @@
  */
 #endregion
 
+using Microsoft.Extensions.Logging;
 using NuGet.Common;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   internal class NuGetLogger : LoggerBase {
-    public static ILogger NoLogger => NullLogger.Instance;
+    public static NuGet.Common.ILogger NoLogger => NullLogger.Instance;
 
-    private readonly List<string> log = new();
+    private readonly Microsoft.Extensions.Logging.ILogger logger;
 
-    public NuGetLogger(LogLevel verbosityLevel = LogLevel.Verbose) : base(verbosityLevel) { }
-
-    public string[] GetLog() {
-      return log.ToArray();
-    }
-    public void Clear() {
-      log.Clear();
+    public NuGetLogger(Microsoft.Extensions.Logging.ILogger logger) : base(NuGet.Common.LogLevel.Verbose) {
+      this.logger = logger;
     }
 
+    [SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "Log messages are forwarded and not created.")]
     public override void Log(ILogMessage message) {
       if (DisplayMessage(message.Level)) {
-        log.Add($"[{message.Time}] {message.Level}: {message.FormatWithCode()}");
+        logger.Log(ConvertLogLevel(message.Level), message.FormatWithCode());
       }
     }
     public override async Task LogAsync(ILogMessage message) {
@@ -35,7 +33,19 @@ namespace HEAL.Bricks {
     }
 
     public override void LogInformationSummary(string data) {
-      Log(LogLevel.Information, $"[Summary] {data}");
+      Log(NuGet.Common.LogLevel.Information, $"[Summary] {data}");
+    }
+
+    private static Microsoft.Extensions.Logging.LogLevel ConvertLogLevel(NuGet.Common.LogLevel level) {
+      return level switch {
+        NuGet.Common.LogLevel.Debug       => Microsoft.Extensions.Logging.LogLevel.Debug,
+        NuGet.Common.LogLevel.Verbose     => Microsoft.Extensions.Logging.LogLevel.Debug,
+        NuGet.Common.LogLevel.Information => Microsoft.Extensions.Logging.LogLevel.Information,
+        NuGet.Common.LogLevel.Minimal     => Microsoft.Extensions.Logging.LogLevel.Information,
+        NuGet.Common.LogLevel.Warning     => Microsoft.Extensions.Logging.LogLevel.Warning,
+        NuGet.Common.LogLevel.Error       => Microsoft.Extensions.Logging.LogLevel.Error,
+        _ => throw new InvalidOperationException("unknown log level.")
+      };
     }
   }
 }

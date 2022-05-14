@@ -7,7 +7,6 @@
 
 namespace HEAL.Bricks {
   public enum Isolation {
-    Default,
     None,
     AnonymousPipes,
     StdInOut,

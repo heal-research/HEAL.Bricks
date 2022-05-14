@@ -6,6 +6,7 @@
 #endregion
 
 using Dawn;
+using Microsoft.Extensions.Options;
 using NuGet.Common;
 using System;
 using System.Collections.Generic;
@@ -16,32 +17,22 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public sealed class PackageManager : IPackageManager {
-    public static IPackageManager Create(BricksOptions options) {
-      Guard.Argument(options, nameof(options)).NotNull().Member(s => s.Repositories, x => x.NotNull().NotEmpty().DoesNotContainNull())
-                                                        .Member(s => s.PackagesPath, x => x.NotNull().NotEmpty().NotWhiteSpace().AbsolutePath())
-                                                        .Member(s => s.PackagesCachePath, x => x.NotNull().NotEmpty().NotWhiteSpace().AbsolutePath());
-      return new PackageManager(options);
-    }
-    internal static IPackageManager CreateForTests(BricksOptions options, INuGetConnector nuGetConnector) {
-      return new PackageManager(options, nuGetConnector);
-    }
-
     private readonly INuGetConnector nuGetConnector;
-    private ILogger logger = NuGetLogger.NoLogger;
+    private readonly NuGet.Common.ILogger logger;
 
     public BricksOptions Options { get; }
     public IEnumerable<LocalPackageInfo> InstalledPackages { get; private set; } = Enumerable.Empty<LocalPackageInfo>();
     public PackageManagerStatus Status { get; private set; } = PackageManagerStatus.Undefined;
 
-    private PackageManager(BricksOptions options) {
-      Options = options;
-      nuGetConnector = new NuGetConnector(options.Repositories, logger);
-      Initialize();
-    }
-    private PackageManager(BricksOptions options, INuGetConnector nuGetConnector) {
-      // only used for unit tests, if a mocked NuGetConnector has to be used
-      Options = options;
-      this.nuGetConnector = nuGetConnector;
+    public PackageManager(IOptions<BricksOptions> options, Microsoft.Extensions.Logging.ILoggerFactory loggerFactory) :
+      this(options.Value, nuGetConnector: null, new NuGetLogger(loggerFactory.CreateLogger($"{nameof(HEAL)}.{nameof(Bricks)}.{nameof(PackageManager)}"))) { }
+    public PackageManager(BricksOptions options) : this(options, nuGetConnector: null, logger: null) { }
+    internal PackageManager(BricksOptions options, INuGetConnector? nuGetConnector = null, NuGet.Common.ILogger? logger = null) {
+      Options = Guard.Argument(options, nameof(options)).NotNull().Member(s => s.Repositories, x => x.NotNull().NotEmpty().DoesNotContainNull())
+                                                                  .Member(s => s.PackagesPath, x => x.NotNull().NotEmpty().NotWhiteSpace().AbsolutePath())
+                                                                  .Member(s => s.PackagesCachePath, x => x.NotNull().NotEmpty().NotWhiteSpace().AbsolutePath());
+      this.logger = logger ?? NuGetLogger.NoLogger;
+      this.nuGetConnector = nuGetConnector ?? new NuGetConnector(options, this.logger);
       Initialize();
     }
 
@@ -146,22 +137,6 @@ namespace HEAL.Bricks {
     public IEnumerable<PackageLoadInfo> GetPackageLoadInfos() {
       return InstalledPackages.Where(x => x.Status == PackageStatus.OK).Select(x => GetPackageLoadInfo(x)).ToArray();
     }
-
-    #region Logging
-    public bool LoggingEnabled => logger != NuGetLogger.NoLogger;
-    public void EnableLogging(bool logDebugInfo = false) {
-      logger = new NuGetLogger(logDebugInfo ? LogLevel.Debug : LogLevel.Information);
-    }
-    public void DisableLogging() {
-      logger = NuGetLogger.NoLogger;
-    }
-    public string[] GetLog() {
-      return (logger as NuGetLogger)?.GetLog() ?? Array.Empty<string>();
-    }
-    public void ClearLog() {
-      (logger as NuGetLogger)?.Clear();
-    }
-    #endregion
 
     #region Helpers
     private static void SetPackageAndDependencyStatus(IEnumerable<LocalPackageInfo> packages) {

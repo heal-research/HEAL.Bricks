@@ -18,7 +18,6 @@ namespace HEAL.Bricks {
 
     private string packagesPath;
     private string packagesCachePath;
-    private Isolation defaultIsolation;
     private string dotnetCommand;
     private string dockerCommand;
     private string dockerImage;
@@ -34,13 +33,7 @@ namespace HEAL.Bricks {
       get { return packagesCachePath; }
       set { packagesCachePath = Guard.Argument(value, nameof(PackagesCachePath)).NotNull().NotEmpty().NotWhiteSpace().Modify(s => Path.IsPathRooted(s) ? s : Path.Combine(AppPath, s)); }
     }
-    public Isolation DefaultIsolation {
-      get { return defaultIsolation; }
-      set {
-        if (value == Isolation.Default) throw new ArgumentException($"{nameof(DefaultIsolation)} cannot be set to {nameof(Isolation.Default)}.", nameof(DefaultIsolation));
-        defaultIsolation = value;
-      }
-    }
+    public Isolation DefaultIsolation { get; set; }
     public string DotnetCommand {
       get { return dotnetCommand; }
       set { dotnetCommand = Guard.Argument(value, nameof(DotnetCommand)).NotNull().NotEmpty().NotWhiteSpace(); }

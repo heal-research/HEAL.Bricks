@@ -26,16 +26,16 @@ namespace HEAL.Bricks.Tests {
     public void Constructor_ReturnsInstanceWhereFrameworkIsCorrect() {
       string expectedCurrentFrameworkName = Constants.netCoreApp21FrameworkName;
 
-      INuGetConnector nuGetConnector = new NuGetConnector(Enumerable.Empty<Repository>(), logger);
+      NuGetConnector nuGetConnector = new(BricksOptions.Default, logger);
 
       Assert.Equal(expectedCurrentFrameworkName, nuGetConnector.CurrentFramework.DotNetFrameworkName);
     }
     [Theory]
     [InlineData(Constants.netCoreApp31FrameworkName)]
-    [InlineData(Constants.netFramework472FrameworkName)]
+    [InlineData(Constants.netCoreApp60FrameworkName)]
     [InlineData(Constants.netStandard20FrameworkName)]
     public void CreateForTests_WithFrameworkName_ReturnsInstanceWhereFrameworkIsCorrect(string frameworkName) {
-      INuGetConnector nuGetConnector = NuGetConnector.CreateForTests(frameworkName, Enumerable.Empty<Repository>(), logger);
+      NuGetConnector nuGetConnector = new(frameworkName, Enumerable.Empty<Repository>(), logger);
 
       Assert.Equal(frameworkName, nuGetConnector.CurrentFramework.DotNetFrameworkName);
     }
@@ -61,7 +61,7 @@ namespace HEAL.Bricks.Tests {
       };
       var repositories = packages.Select((x, i) => Mock.CreateSourceRepositoryMock($"PS{i}", x));
       var (expectedId, expectedDependencies) = packages.SelectMany(x => x).Where(x => (x.Id.Id == packageId) && (x.Id.Version.ToString() == version)).FirstOrDefault();
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, repositories, logger);
+      NuGetConnector nuGetConnector = new(Constants.netCoreApp31FrameworkName, repositories, logger);
 
       RemotePackageInfo? result = await nuGetConnector.GetRemotePackageAsync(packageId, version, default);
 
@@ -97,7 +97,7 @@ namespace HEAL.Bricks.Tests {
         Mock.CreatePackage("b", "3.0.0-alpha", ("a", "1.0.0")),
       };
       var repository = Mock.CreateSourceRepositoryMock("PS", packages);
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
+      NuGetConnector nuGetConnector = new(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
 
       var result = await nuGetConnector.GetRemotePackagesAsync(packageId, includePreReleases, default);
 
@@ -131,7 +131,7 @@ namespace HEAL.Bricks.Tests {
         }
       };
       var repositories = packages.Select((x, i) => Mock.CreateSourceRepositoryMock($"PS{i}", x));
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, repositories, logger);
+      NuGetConnector nuGetConnector = new(Constants.netCoreApp31FrameworkName, repositories, logger);
 
       var result = await nuGetConnector.SearchRemotePackagesAsync(searchString, skip, take, includePreReleases, default);
 
@@ -162,7 +162,7 @@ namespace HEAL.Bricks.Tests {
       };
       var localPackage = LocalPackageInfo.CreateForTests(localPackageId, localVersion);
       var repository = Mock.CreateSourceRepositoryMock("PS", packages);
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
+      NuGetConnector nuGetConnector = new(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
 
       var result = await nuGetConnector.GetMissingDependenciesAsync(new[] { localPackage }, default);
 
@@ -190,7 +190,7 @@ namespace HEAL.Bricks.Tests {
       };
       var localPackage = LocalPackageInfo.CreateForTests(localPackageId, localVersion);
       var repository = Mock.CreateSourceRepositoryMock("PS", packages);
-      NuGetConnector nuGetConnector = NuGetConnector.CreateForTests(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
+      NuGetConnector nuGetConnector = new(Constants.netCoreApp31FrameworkName, new[] { repository }, logger);
 
       var result = await nuGetConnector.GetPackageUpdatesAsync(new[] { localPackage }, includePreReleases, default);
 

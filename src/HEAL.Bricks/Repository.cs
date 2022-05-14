@@ -14,13 +14,15 @@ using NuGetRepository = NuGet.Protocol.Core.Types.Repository;
 namespace HEAL.Bricks {
   public class Repository {
     public string Source { get; }
+    internal SourceRepository SourceRepository { get; }
 
     [JsonConstructor]
     public Repository(string source) {
       Source = Guard.Argument(source, nameof(source)).NotNull().NotEmpty().NotWhiteSpace();
+      SourceRepository = CreateSourceRepository();
     }
 
-    protected internal virtual SourceRepository CreateSourceRepository() {
+    protected virtual SourceRepository CreateSourceRepository() {
       PackageSource packageSource = new(Source);
       return NuGetRepository.CreateSource(NuGetRepository.Provider.GetCoreV3(), packageSource);
     }

@@ -5,6 +5,8 @@
  */
 #endregion
 
+using Dawn;
+using Microsoft.Extensions.Options;
 using NuGet.Common;
 using NuGet.Configuration;
 using NuGet.Frameworks;
@@ -25,35 +27,31 @@ using NuGetPackageDependency = NuGet.Packaging.Core.PackageDependency;
 
 namespace HEAL.Bricks {
   internal class NuGetConnector : INuGetConnector {
-    private IEnumerable<SourceRepository> repositories = Enumerable.Empty<SourceRepository>();
-    private ILogger logger = NuGetLogger.NoLogger;
+    private readonly BricksOptions options;
+    private readonly ILogger logger = NuGetLogger.NoLogger;
+    private readonly IEnumerable<SourceRepository>? repositories = null;
+    private IEnumerable<SourceRepository> Repositories => repositories ?? options.Repositories.Select(x => x.SourceRepository);
 
-    public NuGetFramework CurrentFramework { get; private set; } = GetFrameworkFromEntryAssembly();
+    public NuGetFramework CurrentFramework { get; } = GetFrameworkFromEntryAssembly();
 
-    private NuGetConnector() { }
-    public NuGetConnector(IEnumerable<Repository> repositories, ILogger logger) {
-      this.repositories = repositories.Select(r => r.CreateSourceRepository()).ToArray();
+    public NuGetConnector(BricksOptions options, ILogger logger) {
+      this.options = Guard.Argument(options, nameof(options)).NotNull().Member(s => s.Repositories, x => x.NotNull().NotEmpty().DoesNotContainNull());
       this.logger = logger;
     }
-
-    internal static NuGetConnector CreateForTests(string frameworkName, IEnumerable<Repository> repositories, ILogger logger) {
-      // only used for tests to create a specifically initialized NuGetConnector
-      return CreateForTests(frameworkName, repositories.Select(r => r.CreateSourceRepository()).ToArray(), logger);
-    }
-    internal static NuGetConnector CreateForTests(string frameworkName, IEnumerable<SourceRepository> repositories, ILogger logger) {
+    internal NuGetConnector(string frameworkName, IEnumerable<Repository> repositories, ILogger logger) : this(frameworkName, repositories.Select(r => r.SourceRepository), logger) { }
+    internal NuGetConnector(string frameworkName, IEnumerable<SourceRepository> repositories, ILogger logger) {
       // only used for tests to create a specifically initialized NuGetConnector
       // frameworkName: In unit tests, TargetFrameworkAttribute.FrameworkName of the entry assembly (testhost.dll) returns
-      // ".NETCoreApp,Version=v1.0" (MSTest) or ".NETCoreApp,Version=v1.0" (xUnit). Consequently, GetFrameworkFromEntryAssembly
-      // returns .NET Core 1.0 or .NET Core 2.1 as the current .NET framework for NuGet packages. As HEAL.Bricks is a .NET
-      // Standard 2.0 library and applications using HEAL.Bricks therefore have to be at least .NET Core 2.0 or
-      // .NET Framework 4.6.1, the detected NuGet framework is wrong and has to be defined explicitly. Otherwise, dependency
-      // resolution does not work correctly, as NuGet looks for dependencies of .NET Core 1.0 or .NET Core 2.1.
+      // ".NETCoreApp,Version=v1.0" (MSTest) or ".NETCoreApp,Version=v2.1" (xUnit). Consequently, GetFrameworkFromEntryAssembly
+      // returns .NET Core 1.0 or .NET Core 2.1 as the current .NET framework for NuGet packages. As HEAL.Bricks is a .NET 6.0
+      // library and applications using HEAL.Bricks therefore have to be at least .NET 6.0, the detected NuGet framework is
+      // wrong and has to be defined explicitly. Otherwise, dependency resolution does not work correctly, as NuGet looks for
+      // dependencies of .NET Core 1.0 or .NET Core 2.1.
       // repositories: used to initialize NuGetConnector with mocked instances of SourceRepository.
-      return new NuGetConnector {
-        repositories = repositories,
-        logger = logger,
-        CurrentFramework = GetFrameworkFromName(frameworkName)
-      };
+      this.options = new();
+      this.logger = logger;
+      this.repositories = repositories;
+      CurrentFramework = GetFrameworkFromName(frameworkName);
     }
 
     #region INuGetConnector Methods
@@ -135,7 +133,7 @@ namespace HEAL.Bricks {
       List<IPackageSearchMetadata> packages = new();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (PackageIdentity identity in identities) {
-          foreach (SourceRepository sourceRepository in repositories) {
+          foreach (SourceRepository sourceRepository in Repositories) {
             PackageMetadataResource packageMetadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>(ct);
             IPackageSearchMetadata package = await packageMetadataResource.GetMetadataAsync(identity, cacheContext, logger, ct);
             if (package != null) {
@@ -158,7 +156,7 @@ namespace HEAL.Bricks {
       List<IPackageSearchMetadata> packages = new();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
         foreach (string packageId in packageIds) {
-          foreach (SourceRepository sourceRepository in repositories) {
+          foreach (SourceRepository sourceRepository in Repositories) {
             PackageMetadataResource packageMetadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>(ct);
             packages.AddRange(await packageMetadataResource.GetMetadataAsync(packageId, includePreReleases, false, cacheContext, logger, ct));
           }
@@ -174,7 +172,7 @@ namespace HEAL.Bricks {
                                                                                                                     CancellationToken ct) {
       List<(string Repository, IPackageSearchMetadata Package)> packages = new();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
-        foreach (SourceRepository sourceRepository in repositories) {
+        foreach (SourceRepository sourceRepository in Repositories) {
           PackageSearchResource packageSearchResource = await sourceRepository.GetResourceAsync<PackageSearchResource>(ct);
           SearchFilter filter = new(includePreReleases);
           IEnumerable<IPackageSearchMetadata> searchResult = await packageSearchResource.SearchAsync(searchString, filter, skip, take, logger, ct);
@@ -200,7 +198,7 @@ namespace HEAL.Bricks {
           if (foundDependencies.Contains(identity)) continue;
 
           bool found = false;
-          foreach (SourceRepository sourceRepository in repositories) {
+          foreach (SourceRepository sourceRepository in Repositories) {
             DependencyInfoResource dependencyInfoResource = await sourceRepository.GetResourceAsync<DependencyInfoResource>(ct);
             SourcePackageDependencyInfo dependency = await dependencyInfoResource.ResolvePackage(identity, CurrentFramework, cacheContext, logger, ct);
             if (dependency != null) {
@@ -237,7 +235,7 @@ namespace HEAL.Bricks {
                                                    CancellationToken ct) {
       foreach (NuGetPackageDependency dependency in dependencies) {
         HashSet<SourcePackageDependencyInfo> satisfyingPackages = new(PackageIdentityComparer.Default);
-        foreach (SourceRepository sourceRepository in repositories) {
+        foreach (SourceRepository sourceRepository in Repositories) {
           // find all satisfying packages
           DependencyInfoResource dependencyInfoResource = await sourceRepository.GetResourceAsync<DependencyInfoResource>(ct);
           satisfyingPackages.AddRange((await dependencyInfoResource.ResolvePackages(dependency.Id, CurrentFramework, cacheContext, logger, ct)).Where(x => dependency.VersionRange.Satisfies(x.Version)));
@@ -279,7 +277,7 @@ namespace HEAL.Bricks {
                                                                   Enumerable.Empty<PackageReference>(),
                                                                   existingPackages,
                                                                   availablePackages,
-                                                                  repositories.Select(x => x.PackageSource),
+                                                                  Repositories.Select(x => x.PackageSource),
                                                                   logger);
       PackageResolver resolver = new();
       IEnumerable<PackageIdentity> resolvedIdentities = Enumerable.Empty<PackageIdentity>();
@@ -304,7 +302,7 @@ namespace HEAL.Bricks {
     public virtual async Task<IPackageDownloader?> GetPackageDownloaderAsync(PackageIdentity identity,
                                                                             CancellationToken cancellationToken) {
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
-        foreach (SourceRepository sourceRepository in repositories) {
+        foreach (SourceRepository sourceRepository in Repositories) {
           FindPackageByIdResource findPackageByIdResource = await sourceRepository.GetResourceAsync<FindPackageByIdResource>(cancellationToken);
           IPackageDownloader downloader = await findPackageByIdResource.GetPackageDownloaderAsync(identity, cacheContext, logger, cancellationToken);
           if (downloader != null) return downloader;
@@ -348,7 +346,7 @@ namespace HEAL.Bricks {
                                                                                                             CancellationToken cancellationToken) {
       List<KeyValuePair<string, NuGetVersion>> versions = new();
       using (SourceCacheContext cacheContext = CreateSourceCacheContext()) {
-        foreach (SourceRepository sourceRepository in repositories) {
+        foreach (SourceRepository sourceRepository in Repositories) {
           MetadataResource metadataResource = await sourceRepository.GetResourceAsync<MetadataResource>(cancellationToken);
           versions.AddRange(await metadataResource.GetLatestVersions(packageIds, includePreReleases, false, cacheContext, logger, cancellationToken));
         }

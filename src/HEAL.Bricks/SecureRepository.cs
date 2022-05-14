@@ -22,7 +22,7 @@ namespace HEAL.Bricks {
       Password = Guard.Argument(password, nameof(password)).NotNull();
     }
 
-    protected internal override SourceRepository CreateSourceRepository() {
+    protected override SourceRepository CreateSourceRepository() {
       PackageSource packageSource = new(Source) {
         Credentials = PackageSourceCredential.FromUserInput(Source, Username, Password, storePasswordInClearText: true, validAuthenticationTypesText: string.Empty)
       };

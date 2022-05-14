@@ -16,31 +16,25 @@ using System.Threading.Tasks;
 namespace HEAL.Bricks {
   public sealed class ApplicationManager : IApplicationManager {
     public static async Task<IApplicationManager> CreateAsync(BricksOptions options, bool reloadApplications = true, CancellationToken cancellationToken = default) {
-      Guard.Argument(options, nameof(options)).NotNull().Member(s => s.DefaultIsolation, x => x.Defined())
-                                                        .Member(s => s.DotnetCommand, x => x.NotNull().NotEmpty().NotWhiteSpace())
-                                                        .Member(s => s.StarterAssembly, x => x.NotNull().NotEmpty().NotWhiteSpace().RelativePath())
-                                                        .Member(s => s.DockerCommand, x => x.NotNull().NotEmpty().NotWhiteSpace())
-                                                        .Member(s => s.DefaultDockerImage, x => x.NotNull().NotEmpty().NotWhiteSpace());
-
-      ApplicationManager applicationManager = new(new OptionsWrapper<BricksOptions>(options), Bricks.PackageManager.Create(options));
+      ApplicationManager applicationManager = new(options, new PackageManager(options));
       await applicationManager.InitializeAsync(reloadApplications, cancellationToken);
       return applicationManager;
     }
     public static IApplicationManager Create(BricksOptions options, bool reloadApplications = true) {
       return CreateAsync(options, reloadApplications).Result;
     }
-    internal static IApplicationManager CreateForTests(BricksOptions options, IPackageManager packageManager) {
-      ApplicationManager applicationManager = new(new OptionsWrapper<BricksOptions>(options), packageManager);
-      applicationManager.InitializeAsync(true, default).Wait();
-      return applicationManager;
-    }
 
     private BricksOptions Options { get; }
     public IPackageManager PackageManager { get; private set; }
     public IEnumerable<ApplicationInfo> InstalledApplications { get; private set; } = Enumerable.Empty<ApplicationInfo>();
 
-    private ApplicationManager(IOptions<BricksOptions> options, IPackageManager packageManager) {
-      Options = options.Value;
+    public ApplicationManager(IOptions<BricksOptions> options, IPackageManager packageManager) : this(options.Value, packageManager) { }
+    public ApplicationManager(BricksOptions options, IPackageManager packageManager) {
+      Options = Guard.Argument(options, nameof(options)).NotNull().Member(s => s.DefaultIsolation, x => x.Defined())
+                                                                  .Member(s => s.DotnetCommand, x => x.NotNull().NotEmpty().NotWhiteSpace())
+                                                                  .Member(s => s.StarterAssembly, x => x.NotNull().NotEmpty().NotWhiteSpace().RelativePath())
+                                                                  .Member(s => s.DockerCommand, x => x.NotNull().NotEmpty().NotWhiteSpace())
+                                                                  .Member(s => s.DefaultDockerImage, x => x.NotNull().NotEmpty().NotWhiteSpace());
       PackageManager = packageManager;
     }
 
@@ -103,8 +97,6 @@ namespace HEAL.Bricks {
       if (string.IsNullOrWhiteSpace(dockerImage)) dockerImage = Options.DefaultDockerImage;
 
       switch (isolation) {
-        case Isolation.Default:
-          return CreateRunnerChannel(Options.DefaultIsolation, dockerImage);
         case Isolation.None:
           return new MemoryChannel((channel, token) => MemoryChannelClientCode(channel, token).Wait(token));
         case Isolation.AnonymousPipes:

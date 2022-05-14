@@ -23,47 +23,45 @@ namespace HEAL.Bricks.Tests {
       this.output = output;
     }
 
-    #region Create
+    #region Constructor
     [Fact]
-    public void Create_WithNullParameter_ThrowsArgumentNullException() {
-      var e = Assert.Throws<ArgumentNullException>(() => PackageManager.Create(null!));
+    public void Constructor_WithNullParameter_ThrowsArgumentNullException() {
+      var e = Assert.Throws<ArgumentNullException>(() => new PackageManager(null!));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
     [Fact]
-    public void Create_WithOptionsWhereRepositoriesIsEmpty_ThrowsArgumentException() {
+    public void Constructor_WithOptionsWhereRepositoriesIsEmpty_ThrowsArgumentException() {
       BricksOptions options = new();
       options.Repositories.Clear();
 
-      var e = Assert.Throws<ArgumentException>(() => PackageManager.Create(options));
+      var e = Assert.Throws<ArgumentException>(() => new PackageManager(options));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
     [Fact]
-    public void Create_WithOptionsWhereRepositoriesContainsNull_ThrowsArgumentException() {
+    public void Constructor_WithOptionsWhereRepositoriesContainsNull_ThrowsArgumentException() {
       BricksOptions options = new();
       options.Repositories.Clear();
       options.Repositories.Add(null!);
 
-      var e = Assert.Throws<ArgumentException>(() => PackageManager.Create(options));
+      var e = Assert.Throws<ArgumentException>(() => new PackageManager(options));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
     #endregion
 
-    #region CreateForTests
+    #region Internal constructor for tests
     [Fact]
-    public void CreateForTests_ReturnsInstanceWhereStatusIsOK() {
-      BricksOptions options = new() {
-        PackagesPath = Path.GetTempPath()
-      };
+    public void Constructor_ReturnsInstanceWhereStatusIsOK() {
+      BricksOptions options = BricksOptions.Default;
+      options.PackagesPath = Path.GetTempPath();
       LocalPackageInfo[] packages = new[] {
         LocalPackageInfo.CreateForTests("a", "1.0.0")
       };
       Mock<INuGetConnector> nuGetConnectorMock = new();
       nuGetConnectorMock.Setup(x => x.GetLocalPackages(options.PackagesPath)).Returns(packages);
-
-      IPackageManager pm = PackageManager.CreateForTests(options, nuGetConnectorMock.Object);
+      PackageManager pm = new(options, nuGetConnectorMock.Object);
 
       WriteInstalledPackagesToOutput(pm);
       nuGetConnectorMock.VerifyAll();
@@ -74,22 +72,20 @@ namespace HEAL.Bricks.Tests {
       Assert.Equal(PackageManagerStatus.OK, pm.Status);
     }
     [Fact]
-    public void CreateForTests_WithoutPackages_ReturnsInstanceWhereStatusIsOK() {
+    public void Constructor_WithoutPackages_ReturnsInstanceWhereStatusIsOK() {
       INuGetConnector nuGetConnector = new NuGetConnectorStub();
-
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnector);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnector);
 
       Assert.Empty(pm.InstalledPackages);
       Assert.Equal(PackageManagerStatus.OK, pm.Status);
     }
     [Fact]
-    public void CreateForTests_WithSinglePackage_ReturnsInstanceWhereStatusIsOK() {
+    public void Constructor_WithSinglePackage_ReturnsInstanceWhereStatusIsOK() {
       LocalPackageInfo[] localPackages = new[] {
         LocalPackageInfo.CreateForTests("a", "1.0.0")
       };
       INuGetConnector nuGetConnector = new NuGetConnectorStub(localPackages);
-
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnector);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnector);
 
       WriteInstalledPackagesToOutput(pm);
       Assert.Equal(localPackages.OrderBy(x => x), pm.InstalledPackages.OrderBy(x => x));
@@ -97,14 +93,13 @@ namespace HEAL.Bricks.Tests {
       Assert.Equal(PackageManagerStatus.OK, pm.Status);
     }
     [Fact]
-    public void CreateForTests_WithDependencies_ReturnsInstanceWhereStatusIsOK() {
+    public void Constructor_WithDependencies_ReturnsInstanceWhereStatusIsOK() {
       LocalPackageInfo[] localPackages = new[] {
         LocalPackageInfo.CreateForTests("a", "2.0.0"),
         LocalPackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }),
       };
       INuGetConnector nuGetConnector = new NuGetConnectorStub(localPackages);
-
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnector);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnector);
 
       WriteInstalledPackagesToOutput(pm);
       Assert.Equal(localPackages.OrderBy(x => x), pm.InstalledPackages.OrderBy(x => x));
@@ -113,15 +108,14 @@ namespace HEAL.Bricks.Tests {
       Assert.Equal(PackageManagerStatus.OK, pm.Status);
     }
     [Fact]
-    public void CreateForTests_WithOutdatedPackages_ReturnsInstanceWhereStatusIsOK() {
+    public void Constructor_WithOutdatedPackages_ReturnsInstanceWhereStatusIsOK() {
       LocalPackageInfo[] localPackages = new[] {
         LocalPackageInfo.CreateForTests("a", "1.0.0"),
         LocalPackageInfo.CreateForTests("a", "2.0.0-alpha.1"),
         LocalPackageInfo.CreateForTests("a", "2.0.0")
       };
       INuGetConnector nuGetConnector = new NuGetConnectorStub(localPackages);
-
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnector);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnector);
 
       WriteInstalledPackagesToOutput(pm);
       Assert.Equal(localPackages.OrderBy(x => x), pm.InstalledPackages.OrderBy(x => x));
@@ -131,7 +125,7 @@ namespace HEAL.Bricks.Tests {
       Assert.Equal(PackageManagerStatus.OK, pm.Status);
     }
     [Fact]
-    public void CreateForTests_WithMissingDependencies_ReturnsInstanceWhereStatusIsInvalidPackages() {
+    public void Constructor_WithMissingDependencies_ReturnsInstanceWhereStatusIsInvalidPackages() {
       LocalPackageInfo[] localPackages = new[] {
         LocalPackageInfo.CreateForTests("a", "2.0.0"),
         LocalPackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "2.1.0") }),
@@ -139,8 +133,7 @@ namespace HEAL.Bricks.Tests {
         LocalPackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "0.9.0") }),
       };
       INuGetConnector nuGetConnector = new NuGetConnectorStub(localPackages);
-
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnector);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnector);
 
       WriteInstalledPackagesToOutput(pm);
       Assert.Equal(localPackages.OrderBy(x => x), pm.InstalledPackages.OrderBy(x => x));
@@ -154,14 +147,13 @@ namespace HEAL.Bricks.Tests {
       Assert.Equal(PackageManagerStatus.InvalidPackages, pm.Status);
     }
     [Fact]
-    public void CreateForTests_WithIncompatiblePackages_ReturnsInstanceWhereStatusIsInvalidPackages() {
+    public void Constructor_WithIncompatiblePackages_ReturnsInstanceWhereStatusIsInvalidPackages() {
       LocalPackageInfo[] localPackages = new[] {
         LocalPackageInfo.CreateForTests("a", "2.0.0", frameworkNotSupported: true),
         LocalPackageInfo.CreateForTests("b", "1.0.0", new[] { PackageDependency.CreateForTests("a", "1.0.0") }),
       };
       INuGetConnector nuGetConnector = new NuGetConnectorStub(localPackages);
-
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnector);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnector);
 
       WriteInstalledPackagesToOutput(pm);
       Assert.Equal(localPackages.OrderBy(x => x), pm.InstalledPackages.OrderBy(x => x));
@@ -186,7 +178,7 @@ namespace HEAL.Bricks.Tests {
         RemotePackageInfo.CreateForTests("c", "1.0.0")
       };
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnectorStub);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnectorStub);
 
       IEnumerable<string> result = (await pm.SearchRemotePackagesAsync(searchString, 0, 10)).Select(x => x.Package.Id);
 
@@ -194,7 +186,7 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public async Task SearchRemotePackagesAsync_WithNullParameter_ThrowsArgumentNullException() {
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = await Assert.ThrowsAsync<ArgumentNullException>(() => pm.SearchRemotePackagesAsync(null!, 10, 5));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -214,7 +206,7 @@ namespace HEAL.Bricks.Tests {
         RemotePackageInfo.CreateForTests("c", "1.0.0")
       };
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnectorStub);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnectorStub);
 
       RemotePackageInfo? result = await pm.GetRemotePackageAsync(packageId, version);
 
@@ -226,7 +218,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData(null, "1.0.0")]
     [InlineData("a", null)]
     public async Task GetRemotePackageAsync_WithNullParameter_ThrowsArgumentNullException(string packageId, string version) {
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = await Assert.ThrowsAsync<ArgumentNullException>(() => pm.GetRemotePackageAsync(packageId, version));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -239,7 +231,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData("a", "")]
     [InlineData("a", "invalid")]
     public async Task GetRemotePackageAsync_WithEmptyOrInvalidParameter_ThrowsArgumentException(string packageId, string version) {
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = await Assert.ThrowsAsync<ArgumentException>(() => pm.GetRemotePackageAsync(packageId, version));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -257,7 +249,7 @@ namespace HEAL.Bricks.Tests {
         RemotePackageInfo.CreateForTests("b", "1.0.0"),
       };
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnectorStub);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnectorStub);
 
       IEnumerable<RemotePackageInfo> result = await pm.GetRemotePackagesAsync(packageId, includePreReleases);
 
@@ -270,7 +262,7 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public async Task GetRemotePackagesAsync_WithNullParameter_ThrowsArgumentNullException() {
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = await Assert.ThrowsAsync<ArgumentNullException>(() => pm.GetRemotePackagesAsync(null!));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -278,7 +270,7 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public async Task GetRemotePackagesAsync_WithEmptyParameter_ThrowsArgumentException() {
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = await Assert.ThrowsAsync<ArgumentException>(() => pm.GetRemotePackagesAsync(""));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -302,7 +294,7 @@ namespace HEAL.Bricks.Tests {
       RemotePackageInfo packageToInstall = remotePackages.Where(x => x.Id == packageNameToInstall).Single();
       LocalPackageInfo[] expectedPackages = expectedPackageNames.Select((n, i) => LocalPackageInfo.CreateForTests(n, expectedVersions[i])).ToArray();
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnectorStub);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnectorStub);
 
       await pm.InstallRemotePackageAsync(packageToInstall, installMissingDependencies: installMissingDependencies);
 
@@ -312,7 +304,7 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public async Task InstallRemotePackageAsync_WithNullParameter_ThrowsArgumentNullException() {
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = await Assert.ThrowsAsync<ArgumentNullException>(() => pm.InstallRemotePackageAsync(null!));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -329,7 +321,7 @@ namespace HEAL.Bricks.Tests {
         RemotePackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "1.0.0") })
       };
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnectorStub);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnectorStub);
       IEnumerable<RemotePackageInfo> packagesToInstall = remotePackages.Where(x => packageNamesToInstall.Contains(x.Id));
       LocalPackageInfo[] expectedPackages = expectedPackageNames.Select((n, i) => LocalPackageInfo.CreateForTests(n, expectedVersions[i])).ToArray();
 
@@ -341,7 +333,7 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public async Task InstallRemotePackagesAsync_WithNullParameter_ThrowsArgumentNullException() {
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = await Assert.ThrowsAsync<ArgumentNullException>(() => pm.InstallRemotePackagesAsync(null!));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -349,7 +341,7 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public async Task InstallRemotePackagesAsync_WithEmptyParameter_ThrowsArgumentException() {
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = await Assert.ThrowsAsync<ArgumentException>(() => pm.InstallRemotePackagesAsync(Enumerable.Empty<RemotePackageInfo>()));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -357,7 +349,7 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public async Task InstallRemotePackagesAsync_WithParameterContainsNull_ThrowsArgumentException() {
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = await Assert.ThrowsAsync<ArgumentException>(() => pm.InstallRemotePackagesAsync(new RemotePackageInfo[] { null! }));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -376,7 +368,7 @@ namespace HEAL.Bricks.Tests {
         LocalPackageInfo.CreateForTests("c", "1.0.0", new[] { PackageDependency.CreateForTests("b", "1.0.0") }, packagePath: "packagePath")
       };
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnectorStub);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnectorStub);
       LocalPackageInfo packageToRemove = localPackages.Where(x => x.Id == packageNameToRemove).Single();
 
       pm.RemoveInstalledPackage(packageToRemove);
@@ -393,14 +385,14 @@ namespace HEAL.Bricks.Tests {
       };
       LocalPackageInfo packageToRemove = LocalPackageInfo.CreateForTests("x", "1.0.0", packagePath: "packagePath");
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnectorStub);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnectorStub);
 
       var e = Assert.Throws<InvalidOperationException>(() => pm.RemoveInstalledPackage(packageToRemove));
       Assert.False(string.IsNullOrEmpty(e.Message));
     }
     [Fact]
     public void RemoveInstalledPackage_WithNullParameter_ThrowsArgumentNullException() {
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = Assert.Throws<ArgumentNullException>(() => pm.RemoveInstalledPackage(null!));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -415,7 +407,7 @@ namespace HEAL.Bricks.Tests {
         packagePath = (Constants.Platform == Platform.Windows ? "C:/" : "/") + packagePath;
       }
       LocalPackageInfo package = LocalPackageInfo.CreateForTests("a", "1.0.0", packagePath: packagePath);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = Assert.Throws<ArgumentException>(() => pm.RemoveInstalledPackage(package));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -431,7 +423,7 @@ namespace HEAL.Bricks.Tests {
         LocalPackageInfo.CreateForTests("c", "1.0.0", new[] { PackageDependency.CreateForTests("b", "1.0.0") }, packagePath: "packagePath")
       };
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnectorStub);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnectorStub);
       LocalPackageInfo[] packagesToRemove = localPackages.Where(x => packageNamesToRemove.Contains(x.Id)).ToArray();
 
       pm.RemoveInstalledPackages(packagesToRemove);
@@ -453,7 +445,7 @@ namespace HEAL.Bricks.Tests {
         LocalPackageInfo.CreateForTests("x", "1.0.0", packagePath: "packagePath")
       };
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnectorStub);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnectorStub);
 
       var e = Assert.Throws<InvalidOperationException>(() => pm.RemoveInstalledPackages(packagesToRemove));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -463,7 +455,7 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void RemoveInstalledPackages_WithNullParameter_ThrowsArgumentNullException() {
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = Assert.Throws<ArgumentNullException>(() => pm.RemoveInstalledPackages(null!));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -471,7 +463,7 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void RemoveInstalledPackages_WithEmptyParameter_ThrowsArgumentException() {
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = Assert.Throws<ArgumentException>(() => pm.RemoveInstalledPackages(Array.Empty<LocalPackageInfo>()));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -479,7 +471,7 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void RemoveInstalledPackages_WithParameterContainsNull_ThrowsArgumentException() {
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = Assert.Throws<ArgumentException>(() => pm.RemoveInstalledPackages(new LocalPackageInfo[] { null! }));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -494,7 +486,7 @@ namespace HEAL.Bricks.Tests {
         packagePath = (Constants.Platform == Platform.Windows ? "C:/" : "/") + packagePath;
       }
       LocalPackageInfo[] packages = new[] { LocalPackageInfo.CreateForTests("a", "1.0.0", packagePath: packagePath) };
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = Assert.Throws<ArgumentException>(() => pm.RemoveInstalledPackages(packages));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -515,7 +507,7 @@ namespace HEAL.Bricks.Tests {
         RemotePackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "1.0.0") })
       };
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages, remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnectorStub);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnectorStub);
       RemotePackageInfo[] expectedDependencies = new[] {
         RemotePackageInfo.CreateForTests("a", "1.0.0"),
         RemotePackageInfo.CreateForTests("b", "1.0.0"),
@@ -541,7 +533,7 @@ namespace HEAL.Bricks.Tests {
         RemotePackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "1.0.0") })
       };
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages, remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnectorStub);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnectorStub);
 
       IEnumerable<RemotePackageInfo> result = await pm.GetMissingDependenciesAsync();
 
@@ -559,7 +551,7 @@ namespace HEAL.Bricks.Tests {
         RemotePackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "1.0.0") })
       };
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages, remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnectorStub);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnectorStub);
       LocalPackageInfo[] expectedPackages = new[] {
         LocalPackageInfo.CreateForTests("a", "1.0.0"),
         LocalPackageInfo.CreateForTests("b", "1.0.0"),
@@ -587,7 +579,7 @@ namespace HEAL.Bricks.Tests {
         RemotePackageInfo.CreateForTests("d", "1.0.0", new[] { PackageDependency.CreateForTests("c", "1.0.0") })
       };
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages, remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnectorStub);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnectorStub);
 
       await pm.InstallMissingDependenciesAsync();
 
@@ -616,7 +608,7 @@ namespace HEAL.Bricks.Tests {
       };
       LocalPackageInfo localPackage = LocalPackageInfo.CreateForTests(packageToUpdate, versionToUpdate);
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnectorStub);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnectorStub);
 
       RemotePackageInfo? result = await pm.GetPackageUpdateAsync(localPackage, includePreReleases: includePreReleases);
 
@@ -648,7 +640,7 @@ namespace HEAL.Bricks.Tests {
       };
       RemotePackageInfo[] expectedPackages = expectedPackageNames.Select((n, i) => RemotePackageInfo.CreateForTests(n, expectedVersions[i])).ToArray();
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages, remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnectorStub);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnectorStub);
 
       IEnumerable<RemotePackageInfo> result = await pm.GetPackageUpdatesAsync(includePreReleases: includePreReleases);
 
@@ -679,7 +671,7 @@ namespace HEAL.Bricks.Tests {
       };
       LocalPackageInfo[] expectedPackages = expectedPackageNames.Select((n, i) => LocalPackageInfo.CreateForTests(n, expectedVersions[i])).ToArray();
       INuGetConnector nuGetConnectorStub = new NuGetConnectorStub(localPackages, remotePackages);
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, nuGetConnectorStub);
+      PackageManager pm = new(BricksOptions.Default, nuGetConnectorStub);
 
       await pm.InstallPackageUpdatesAsync(installMissingDependencies: installMissingDependencies, includePreReleases: includePreReleases);
 
@@ -695,7 +687,7 @@ namespace HEAL.Bricks.Tests {
       LocalPackageInfo[] localPackages = new[] {
         LocalPackageInfo.CreateForTests("a", "1.0.0", referenceItems: new[] { "path/to/assemblyA1", "path/to/assemblyA1" })
       };
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub(localPackages));
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub(localPackages));
 
       PackageLoadInfo result = pm.GetPackageLoadInfo(localPackages[0]);
 
@@ -705,7 +697,7 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void GetPackageLoadInfo_WithNullParameter_ThrowsArgumentNullException() {
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = Assert.Throws<ArgumentNullException>(() => pm.GetPackageLoadInfo(null!));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -720,7 +712,7 @@ namespace HEAL.Bricks.Tests {
     public void GetPackageLoadInfo_WithPackageWhereStatusIsNotOK_ThrowsArgumentException(PackageStatus packageStatus) {
       LocalPackageInfo packageToLoad = LocalPackageInfo.CreateForTests("a", "1.0.0");
       packageToLoad.Status = packageStatus;
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       var e = Assert.Throws<ArgumentException>(() => pm.GetPackageLoadInfo(packageToLoad));
       Assert.False(string.IsNullOrEmpty(e.Message));
@@ -733,7 +725,7 @@ namespace HEAL.Bricks.Tests {
         LocalPackageInfo.CreateForTests("b", "1.0.0", referenceItems: new[] { "path/to/assemblyB1", "path/to/assemblyB2" }),
         LocalPackageInfo.CreateForTests("c", "1.0.0", referenceItems: new[] { "path/to/assemblyC1", "path/to/assemblyC2" }, frameworkNotSupported: true)
       };
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub(localPackages));
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub(localPackages));
 
       IEnumerable<PackageLoadInfo> result = pm.GetPackageLoadInfos();
 
@@ -752,7 +744,7 @@ namespace HEAL.Bricks.Tests {
     }
     [Fact]
     public void GetPackageLoadInfos_WhenNoPackagesAvailable_ReturnsEmpty() {
-      IPackageManager pm = PackageManager.CreateForTests(BricksOptions.Default, new NuGetConnectorStub());
+      PackageManager pm = new(BricksOptions.Default, new NuGetConnectorStub());
 
       IEnumerable<PackageLoadInfo> result = pm.GetPackageLoadInfos();
 
