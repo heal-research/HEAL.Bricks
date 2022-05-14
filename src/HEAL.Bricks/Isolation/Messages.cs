@@ -55,9 +55,9 @@ namespace HEAL.Bricks {
   }
 
   [Serializable]
-  public class DiscoveredApplicationsMessage : DataMessage<ApplicationInfo[]> {
-    public DiscoveredApplicationsMessage(ApplicationInfo[] applicationInfos) : base(applicationInfos) {
-      Guard.Argument(applicationInfos, nameof(applicationInfos)).NotNull();
+  public class DiscoveredRunnablesMessage : DataMessage<RunnableInfo[]> {
+    public DiscoveredRunnablesMessage(RunnableInfo[] runnableInfos) : base(runnableInfos) {
+      Guard.Argument(runnableInfos, nameof(runnableInfos)).NotNull();
     }
   }
 }

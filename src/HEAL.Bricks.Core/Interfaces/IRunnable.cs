@@ -6,5 +6,11 @@
 #endregion
 
 namespace HEAL.Bricks {
-  public interface IRunnable { }
+  public interface IRunnable {
+    string Name { get; }
+    string Description { get; }
+    string Version { get; }
+    string DockerImage { get; }
+    bool AutoStart { get; }
+  }
 }

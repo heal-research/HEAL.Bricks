@@ -1,4 +1,4 @@
-#region License Information
+﻿#region License Information
 /*
  * This file is part of HEAL.Bricks which is licensed under the MIT license.
  * See the LICENSE file in the project root for more information.
@@ -6,9 +6,8 @@
 #endregion
 
 namespace HEAL.Bricks {
-  public interface IApplication : IRunnable {
-    ApplicationKind Kind { get; }
-
-    Task StartAsync(string[] args, CancellationToken cancellationToken);
+  [Serializable]
+  public class ServiceInfo : RunnableInfo {
+    public ServiceInfo(IService service) : base(service) { }
   }
 }

@@ -15,18 +15,20 @@ using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
   public sealed class ApplicationManager : IApplicationManager {
-    public static async Task<IApplicationManager> CreateAsync(BricksOptions options, bool reloadApplications = true, CancellationToken cancellationToken = default) {
+    public static async Task<IApplicationManager> CreateAsync(BricksOptions options, CancellationToken cancellationToken = default) {
       ApplicationManager applicationManager = new(options, new PackageManager(options));
-      await applicationManager.InitializeAsync(reloadApplications, cancellationToken);
+      await applicationManager.InitializeAsync(cancellationToken);
       return applicationManager;
     }
-    public static IApplicationManager Create(BricksOptions options, bool reloadApplications = true) {
-      return CreateAsync(options, reloadApplications).Result;
+    public static IApplicationManager Create(BricksOptions options) {
+      return CreateAsync(options).Result;
     }
 
     private BricksOptions Options { get; }
     public IPackageManager PackageManager { get; private set; }
     public IEnumerable<ApplicationInfo> InstalledApplications { get; private set; } = Enumerable.Empty<ApplicationInfo>();
+    public IEnumerable<ServiceInfo> InstalledServices { get; private set; } = Enumerable.Empty<ServiceInfo>();
+    public IReadOnlyDictionary<RunnableInfo, RunnableSettings> RunnableSettings { get; private set; } = new Dictionary<RunnableInfo, RunnableSettings>();
 
     public ApplicationManager(IOptions<BricksOptions> options, IPackageManager packageManager) : this(options.Value, packageManager) { }
     public ApplicationManager(BricksOptions options, IPackageManager packageManager) {
@@ -38,91 +40,53 @@ namespace HEAL.Bricks {
       PackageManager = packageManager;
     }
 
-    private async Task InitializeAsync(bool reloadApplications, CancellationToken cancellationToken) {
-      if (reloadApplications) {
-        await ReloadAsync(cancellationToken);
-      }
-      else {
-        //InstalledApplications = Options.ApplicationSettings.Select(x => x.ApplicationInfo).OrderBy(x => x.Name).ThenByDescending(x => x.Version).ToArray();
-      }
+    private async Task InitializeAsync(CancellationToken cancellationToken) {
+      await ReloadAsync(cancellationToken);
     }
 
-    public async Task RunAsync(ApplicationInfo applicationInfo, string arguments = "", CancellationToken cancellationToken = default) {
+    public async Task RunAsync(ApplicationInfo applicationInfo, string[]? args = null, CancellationToken cancellationToken = default) {
       Guard.Argument(applicationInfo, nameof(applicationInfo)).NotNull();
 
-      //if (!Options.ApplicationSettings.Contains(applicationInfo)) {
-      //  Options.ApplicationSettings.Add(new ApplicationSettings(applicationInfo));
-      //}
-      //ApplicationSettings appSettings = Options.ApplicationSettings[applicationInfo];
-
-      //using (IChannel channel = CreateRunnerChannel(appSettings.Isolation, appSettings.ApplicationInfo.DockerImage)) {
-      //  ApplicationRunner applicationRunner = new ApplicationRunner(PackageManager.GetPackageLoadInfos(), applicationInfo, arguments);
-      //  await applicationRunner.RunAsync(channel, cancellationToken);
-      //}
-      await Task.CompletedTask;
+      using IChannel channel = CreateRunnerChannel(RunnableSettings[applicationInfo].Isolation, applicationInfo.DockerImage);
+      ApplicationRunner applicationRunner = new(PackageManager.GetPackageLoadInfos(), applicationInfo, args);
+      await applicationRunner.RunAsync(channel, cancellationToken);
     }
 
-    public async Task RunAutoStartAsync(string arguments = "", CancellationToken cancellationToken = default) {
-      //List<Task> tasks = new List<Task>();
-      //foreach (ApplicationSettings appSettings in Options.ApplicationSettings.Where(x => x.AutoStart)) {
-      //  tasks.Add(RunAsync(appSettings.ApplicationInfo, arguments, cancellationToken));
-      //}
-      //await Task.WhenAll(tasks);
-      await Task.CompletedTask;
+    public async Task RunAutoStartAsync(string[]? args = null, CancellationToken cancellationToken = default) {
+      List<Task> tasks = new();
+      foreach (var runnable in RunnableSettings.Where(x => x.Value.AutoStart).Select(x => x.Key).OfType<ApplicationInfo>()) {
+        tasks.Add(RunAsync(runnable, args, cancellationToken));
+      }
+      await Task.WhenAll(tasks);
     }
 
     public async Task ReloadAsync(CancellationToken cancellationToken = default) {
-      //using (IChannel channel = CreateRunnerChannel(Options.DefaultIsolation)) {
-      //  DiscoverApplicationsRunner discoverApplicationsRunner = new DiscoverApplicationsRunner(PackageManager.GetPackageLoadInfos());
-      //  InstalledApplications = await discoverApplicationsRunner.GetApplicationsAsync(channel, cancellationToken);
+      using IChannel channel = CreateRunnerChannel(Options.DefaultIsolation);
+      DiscoverRunnablesRunner discoverRunnablesRunner = new(PackageManager.GetPackageLoadInfos());
+      RunnableInfo[] runnables = await discoverRunnablesRunner.GetRunnablesAsync(channel, cancellationToken);
+      InstalledApplications = runnables.OfType<ApplicationInfo>().OrderBy(x => x.Name).ToArray();
+      InstalledServices = runnables.OfType<ServiceInfo>().OrderBy(x => x.Name).ToArray();
 
-      //  List<ApplicationSettings> appSettings = new List<ApplicationSettings>();
-      //  foreach (ApplicationInfo appInfo in InstalledApplications) {
-      //    if (Options.ApplicationSettings.Contains(appInfo)) {
-      //      appSettings.Add(new ApplicationSettings(appInfo, Options.ApplicationSettings[appInfo]));
-      //    }
-      //    else {
-      //      appSettings.Add(new ApplicationSettings(appInfo));
-      //    }
-      //  }
-      //  Options.ApplicationSettings.Clear();
-      //  foreach (ApplicationSettings settings in appSettings) {
-      //    Options.ApplicationSettings.Add(settings);
-      //  }
-      //}
-      await Task.CompletedTask;
+      Dictionary<RunnableInfo, RunnableSettings> settings = new();
+      foreach (var runnable in runnables) {
+        settings.Add(runnable, new RunnableSettings {
+          Isolation = Options.DefaultIsolation,
+          AutoStart = runnable.AutoStart
+        });
+      }
+      RunnableSettings = settings;
     }
 
     public IChannel CreateRunnerChannel(Isolation isolation, string dockerImage = "") {
       if (string.IsNullOrWhiteSpace(dockerImage)) dockerImage = Options.DefaultDockerImage;
 
-      switch (isolation) {
-        case Isolation.None:
-          return new MemoryChannel((channel, token) => MemoryChannelClientCode(channel, token).Wait(token));
-        case Isolation.AnonymousPipes:
-          if (RuntimeInfo.CurrentRuntimeIsNETFramework) {
-            return new AnonymousPipesProcessChannel(Options.StarterAssembly);
-          }
-          else {
-            return new AnonymousPipesProcessChannel(Options.DotnetCommand, $"\"{Options.StarterAssembly}\"");
-          }
-        case Isolation.StdInOut:
-          if (RuntimeInfo.CurrentRuntimeIsNETFramework) {
-            return new StdInOutProcessChannel(Options.StarterAssembly);
-          }
-          else {
-            return new StdInOutProcessChannel(Options.DotnetCommand, $"\"{Options.StarterAssembly}\"");
-          }
-        case Isolation.Docker:
-          if (RuntimeInfo.CurrentRuntimeIsNETFramework) {
-            return new DockerChannel(Options.DockerCommand, dockerImage, Options.UseWindowsContainer, Options.AppPath, Options.StarterAssembly);
-          }
-          else {
-            return new DockerChannel(Options.DockerCommand, dockerImage, Options.UseWindowsContainer, Options.AppPath, "dotnet", $"\"{Options.StarterAssembly}\"");
-          }
-        default:
-          throw new NotSupportedException($"Isolation {Options.DefaultIsolation} is not supported.");
-      }
+      return isolation switch {
+        Isolation.None => new MemoryChannel((channel, token) => MemoryChannelClientCode(channel, token).Wait(token)),
+        Isolation.AnonymousPipes => new AnonymousPipesProcessChannel(Options.DotnetCommand, $"\"{Options.StarterAssembly}\""),
+        Isolation.StdInOut => new StdInOutProcessChannel(Options.DotnetCommand, $"\"{Options.StarterAssembly}\""),
+        Isolation.Docker => new DockerChannel(Options.DockerCommand, dockerImage, Options.UseWindowsContainer, Options.AppPath, "dotnet", $"\"{Options.StarterAssembly}\""),
+        _ => throw new NotSupportedException($"Isolation {isolation} is not supported."),
+      };
     }
 
     #region Helpers

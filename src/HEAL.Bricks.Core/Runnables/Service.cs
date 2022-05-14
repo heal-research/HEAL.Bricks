@@ -5,13 +5,9 @@
  */
 #endregion
 
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace HEAL.Bricks {
-  public abstract class Service : IService {
-    public abstract string Name { get; }
-    public virtual string Description => string.Empty;
+  public abstract class Service : Runnable, IService {
+    public override bool AutoStart => true;
 
     public abstract Task StartAsync(string[] args, CancellationToken cancellationToken);
     public abstract Task StopAsync(string[] args, CancellationToken cancellationToken);

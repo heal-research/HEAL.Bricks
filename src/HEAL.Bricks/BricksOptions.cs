@@ -5,9 +5,6 @@
  */
 #endregion
 
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
 using Dawn;
 
@@ -60,8 +57,8 @@ namespace HEAL.Bricks {
       DefaultIsolation = Isolation.AnonymousPipes;
       dotnetCommand = "dotnet";
       dockerCommand = "docker";
-      dockerImage = RuntimeInfo.CurrentRuntimeIsNETFramework ? "mcr.microsoft.com/dotnet/framework/runtime:4.7.2" : "mcr.microsoft.com/dotnet/runtime:latest";
-      UseWindowsContainer = RuntimeInfo.CurrentRuntimeIsNETFramework;
+      dockerImage = "mcr.microsoft.com/dotnet/runtime:latest";
+      UseWindowsContainer = false;
       starterAssembly = Path.GetFileName(Assembly.GetEntryAssembly()?.Location) ?? string.Empty;
     }
     public BricksOptions(params Repository[] repositories) : this() {

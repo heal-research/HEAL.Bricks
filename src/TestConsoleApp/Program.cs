@@ -9,7 +9,7 @@ using (IChannel? channel = ProcessChannel.CreateFromCLIArguments(args)) {
 }
 
 BricksOptions options = BricksOptions.Default;
-options.DefaultIsolation = Isolation.None;
+options.DefaultIsolation = Isolation.StdInOut;
 options.Repositories.Add(new Repository(@"C:\00-Daten\NuGet"));
 Directory.CreateDirectory(Path.Combine(options.AppPath, options.PackagesPath));
 Directory.CreateDirectory(options.PackagesCachePath);

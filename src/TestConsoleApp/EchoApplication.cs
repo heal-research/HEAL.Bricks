@@ -4,12 +4,12 @@ using System.Threading.Tasks;
 using HEAL.Bricks;
 
 namespace TestApp {
-  class EchoApplication : IApplication {
-    public string Name => "EchoApplication";
-    public string Description => "Reads strings and returns their echo.";
-    public ApplicationKind Kind => ApplicationKind.Console;
+  class EchoApplication : Application {
+    public override string Name => "EchoApplication";
+    public override string Description => "Reads strings and returns their echo.";
+    public override ApplicationKind Kind => ApplicationKind.Console;
 
-    public async Task StartAsync(string[] args, CancellationToken cancellationToken = default) {
+    public override async Task StartAsync(string[] args, CancellationToken cancellationToken = default) {
       await Task.Run(() => {
         Console.WriteLine("EchoApplication started");
         Console.Write("message > ");
