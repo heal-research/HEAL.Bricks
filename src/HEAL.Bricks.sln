@@ -20,11 +20,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinFormsTestApp", "WinForms
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HEAL.Bricks.Tests", "HEAL.Bricks.Tests\HEAL.Bricks.Tests.csproj", "{78D276AD-9B37-4FA2-9062-A3020371996A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HEAL.Bricks.Core", "HEAL.Bricks.Core\HEAL.Bricks.Core.csproj", "{799F1D2B-FCCF-4A07-8D72-F09392C0B5FD}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HEAL.Bricks.UI.WindowsForms", "HEAL.Bricks.UI.WindowsForms\HEAL.Bricks.UI.WindowsForms.csproj", "{0EAC53C1-C7FE-4C68-911A-AEB429646497}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsoleApp", "TestConsoleApp\TestConsoleApp.csproj", "{8D548C5C-8DF8-47C7-8BB1-AA93D1743F4B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestConsoleApp", "TestConsoleApp\TestConsoleApp.csproj", "{8D548C5C-8DF8-47C7-8BB1-AA93D1743F4B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HEAL.Bricks.Abstractions", "HEAL.Bricks.Abstractions\HEAL.Bricks.Abstractions.csproj", "{EE5C6684-7474-436D-BDFF-1F2D700E59C2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -48,10 +48,6 @@ Global
 		{78D276AD-9B37-4FA2-9062-A3020371996A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{78D276AD-9B37-4FA2-9062-A3020371996A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{78D276AD-9B37-4FA2-9062-A3020371996A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{799F1D2B-FCCF-4A07-8D72-F09392C0B5FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{799F1D2B-FCCF-4A07-8D72-F09392C0B5FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{799F1D2B-FCCF-4A07-8D72-F09392C0B5FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{799F1D2B-FCCF-4A07-8D72-F09392C0B5FD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0EAC53C1-C7FE-4C68-911A-AEB429646497}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0EAC53C1-C7FE-4C68-911A-AEB429646497}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0EAC53C1-C7FE-4C68-911A-AEB429646497}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -60,6 +56,10 @@ Global
 		{8D548C5C-8DF8-47C7-8BB1-AA93D1743F4B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D548C5C-8DF8-47C7-8BB1-AA93D1743F4B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8D548C5C-8DF8-47C7-8BB1-AA93D1743F4B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE5C6684-7474-436D-BDFF-1F2D700E59C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE5C6684-7474-436D-BDFF-1F2D700E59C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE5C6684-7474-436D-BDFF-1F2D700E59C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE5C6684-7474-436D-BDFF-1F2D700E59C2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -32,10 +32,6 @@
 		<PackageReference Include="System.Threading.Channels" Version="4.7.1" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\HEAL.Bricks.Core\HEAL.Bricks.Core.csproj" />
-	</ItemGroup>
-
 	<ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
 		<PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
 		<PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
@@ -46,6 +42,10 @@
 
 	<ItemGroup>
 		<None Include="..\..\LICENSE.txt" Pack="true" PackagePath="" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\HEAL.Bricks.Abstractions\HEAL.Bricks.Abstractions.csproj" />
 	</ItemGroup>
 
 </Project>
