@@ -8,7 +8,7 @@ image: mcr.microsoft.com/dotnet/sdk:6.0
 build:
   stage: build
   tags:
-    - windows
+    - docker
   dependencies: []
   artifacts:
     name: $CI_JOB_NAME-$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA
@@ -29,7 +29,7 @@ build:
 test:windows:
   stage: test
   tags:
-    - windows
+    - docker
   dependencies:
     - build
   script:
