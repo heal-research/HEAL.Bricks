@@ -43,7 +43,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
     }
 
     private BricksOptions GetOptions() {
-      BricksOptions options = new BricksOptions {
+      BricksOptions options = new() {
         PackagesPath = packagesPathTextBox.Text.Trim(),
         PackagesCachePath = packagesCachePathTextBox.Text.Trim(),
         DefaultIsolation = (Isolation)isolationComboBox.SelectedItem,
@@ -101,7 +101,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
     }
 
     private void AddRepositoryOnClick(object sender, EventArgs e) {
-      EditRepositoryDialog dialog = new EditRepositoryDialog();
+      EditRepositoryDialog dialog = new();
       if ((dialog.ShowDialog(this) == DialogResult.OK) && (!string.IsNullOrWhiteSpace(dialog.Repository))) {
         repositoriesListView.Items.Add(new ListViewItem(new[] { dialog.Repository, dialog.Username }) { Tag = dialog.Password });
         EnableDisableControls();
@@ -114,7 +114,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
 
     private void EditRepositoryOnClick(object sender, EventArgs e) {
       ListViewItem selected = repositoriesListView.SelectedItems[0];
-      EditRepositoryDialog dialog = new EditRepositoryDialog(selected.SubItems[0].Text, selected.SubItems[1].Text, selected.Tag as string);
+      EditRepositoryDialog dialog = new(selected.SubItems[0].Text, selected.SubItems[1].Text, selected.Tag as string);
       if ((dialog.ShowDialog(this) == DialogResult.OK) && (!string.IsNullOrWhiteSpace(dialog.Repository))) {
         selected.SubItems[0].Text = dialog.Repository;
         selected.SubItems[1].Text = dialog.Username;

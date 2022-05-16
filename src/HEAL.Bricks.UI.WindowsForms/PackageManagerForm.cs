@@ -19,7 +19,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
     private int searchSkipPackages = 0;
     private readonly int searchTakePackages = 10;
     private CancellationTokenSource searchCTS;
-    private SemaphoreSlim searchSemaphore = new SemaphoreSlim(1, 1);
+    private SemaphoreSlim searchSemaphore = new(1, 1);
 
     public PackageManagerForm() {
       InitializeComponent();
@@ -121,7 +121,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
       await LoadUpdatesAsync();
     }
     private async void InstallPackagesOnClick(object sender, EventArgs e) {
-      List<RemotePackageInfo> packages = new List<RemotePackageInfo>();
+      List<RemotePackageInfo> packages = new();
       foreach (ListViewItem item in browsePackagesListView.SelectedItems) {
         packages.Add(item.Tag as RemotePackageInfo);
       }
@@ -129,7 +129,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
     }
 
     private async void UpdatePackagesOnClick(object sender, EventArgs e) {
-      List<RemotePackageInfo> packages = new List<RemotePackageInfo>();
+      List<RemotePackageInfo> packages = new();
       foreach (ListViewItem item in updatePackagesListView.SelectedItems) {
         packages.Add(item.Tag as RemotePackageInfo);
       }
@@ -137,7 +137,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
     }
 
     private async void RemovePackagesOnClick(object sender, EventArgs e) {
-      List<LocalPackageInfo> packages = new List<LocalPackageInfo>();
+      List<LocalPackageInfo> packages = new();
       foreach (ListViewItem item in installedPackagesListView.SelectedItems) {
         packages.Add(item.Tag as LocalPackageInfo);
       }
@@ -161,7 +161,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
 
     private async void ReloadRemotePackages(object sender, EventArgs e) {
       searchCTS?.Cancel();
-      using (CancellationTokenSource cts = new CancellationTokenSource()) {
+      using (CancellationTokenSource cts = new()) {
         try {
           searchCTS = cts;
           await searchSemaphore.WaitAsync();

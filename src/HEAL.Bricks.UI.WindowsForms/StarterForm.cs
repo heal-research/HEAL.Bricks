@@ -15,7 +15,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
   public partial class StarterForm : Form {
     private BricksOptions options;
     private IApplicationManager appMan;
-    private readonly Dictionary<ApplicationInfo, List<CancellationTokenSource>> appCTS = new Dictionary<ApplicationInfo, List<CancellationTokenSource>>();
+    private readonly Dictionary<ApplicationInfo, List<CancellationTokenSource>> appCTS = new();
     private int runningApplications = 0;
 
     public string DefaultApplicationImageKey { get; set; } = "Package";
@@ -52,21 +52,20 @@ namespace HEAL.Bricks.UI.WindowsForms {
     }
 
     private async Task StartApplicationAsync(ApplicationInfo appInfo) {
-      using (CancellationTokenSource cts = new CancellationTokenSource()) {
-        appCTS[appInfo].Add(cts);
-        runningApplications++;
+      using CancellationTokenSource cts = new();
+      appCTS[appInfo].Add(cts);
+      runningApplications++;
+      EnableDisableControls();
+      try {
+        await appMan.RunAsync(appInfo, cancellationToken: cts.Token);
+      }
+      catch (Exception) {
+        if (!cts.IsCancellationRequested) throw;
+      }
+      finally {
+        appCTS[appInfo].Remove(cts);
+        runningApplications--;
         EnableDisableControls();
-        try {
-          await appMan.RunAsync(appInfo, cancellationToken: cts.Token);
-        }
-        catch (Exception exception) {
-          if (!cts.IsCancellationRequested) throw exception;
-        }
-        finally {
-          appCTS[appInfo].Remove(cts);
-          runningApplications--;
-          EnableDisableControls();
-        }
       }
     }
 

@@ -15,8 +15,9 @@ namespace WinFormsTestApp {
     public override ApplicationKind Kind => ApplicationKind.GUI;
 
     public override Task StartAsync(string[] args, CancellationToken cancellationToken = default) {
-      var form = new ApplicationForm();
-      form.Text = "WinFormsApplication";
+      var form = new ApplicationForm {
+        Text = "WinFormsApplication"
+      };
       cancellationToken.Register(() => { form.Close(); });
       System.Windows.Forms.Application.Run(form);
       return Task.CompletedTask;
