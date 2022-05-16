@@ -78,9 +78,9 @@ namespace HEAL.Bricks.Tests {
 
     #region InstallRemotePackageAsync
     [Theory]
-    [InlineData(Constants.netCoreApp31FrameworkName,    "TestPackage.Depends.SupportingMultipleFrameworks", "1.2.0", false,  new[] { "TestPackage.Depends.SupportingMultipleFrameworks" },                                             new[] { "1.2.0" },          PackageManagerStatus.InvalidPackages)]
-    [InlineData(Constants.netCoreApp31FrameworkName,    "TestPackage.Depends.SupportingMultipleFrameworks", "1.2.0", true,   new[] { "TestPackage.Depends.SupportingMultipleFrameworks", "TestPackage.SupportingMultipleFrameworks" }, new[] { "1.2.0", "1.0.0" }, PackageManagerStatus.InvalidPackages)]
-    [InlineData(Constants.netCoreApp31FrameworkName,    "TestPackage.SupportingMultipleFrameworks",         "1.2.0", true,   new[] { "TestPackage.SupportingMultipleFrameworks" },                                                     new[] { "1.2.0" },          PackageManagerStatus.InvalidPackages)]
+    [InlineData(Constants.netCoreApp60FrameworkName, "TestPackage.Depends.SupportingMultipleFrameworks", "1.2.0", false,  new[] { "TestPackage.Depends.SupportingMultipleFrameworks" },                                             new[] { "1.2.0" },          PackageManagerStatus.InvalidPackages)]
+    [InlineData(Constants.netCoreApp60FrameworkName, "TestPackage.Depends.SupportingMultipleFrameworks", "1.2.0", true,   new[] { "TestPackage.Depends.SupportingMultipleFrameworks", "TestPackage.SupportingMultipleFrameworks" }, new[] { "1.2.0", "1.0.0" }, PackageManagerStatus.InvalidPackages)]
+    [InlineData(Constants.netCoreApp60FrameworkName, "TestPackage.SupportingMultipleFrameworks",         "1.2.0", true,   new[] { "TestPackage.SupportingMultipleFrameworks" },                                                     new[] { "1.2.0" },          PackageManagerStatus.InvalidPackages)]
     public async Task InstallRemotePackageAsync_WithPackage(string currentFramework, string packageId, string version, bool installMissingDependencies, string[] expectedPackageNames, string[] expectedVersions, PackageManagerStatus expectedStatus) {
       NuGetConnector nuGetConnector = new(currentFramework, Options.Repositories, new XunitLogger(output));
       PackageManager pm = new(Options, nuGetConnector);
@@ -130,25 +130,26 @@ namespace HEAL.Bricks.Tests {
     #endregion
 
     #region GetPackageLoadInfos
-    [Theory(Skip = "WIP")]
-    [InlineData(Constants.netCoreApp31FrameworkName,  "SimSharp", "3.3.2", new[] { "SimSharp.dll" })]
-    [InlineData(Constants.netCoreApp60FrameworkName,  "SimSharp", "3.3.2", new[] { "SimSharp.dll" })]
-    [InlineData(Constants.netStandard10FrameworkName, "SimSharp", "3.3.2", new string[0])]
+    [Theory]
+    [InlineData(Constants.netCoreApp60FrameworkName, "SimSharp", "3.3.2", new[] { "SimSharp.dll" })]
+    [InlineData(Constants.netCoreApp60FrameworkName, "Dawn.Guard", "1.12.0", new[] { "Dawn.Guard.dll" })]
+    [InlineData(Constants.netCoreApp60FrameworkName, "System.Drawing.Common", "6.0.0", new[] { "System.Drawing.Common.dll", "Microsoft.Win32.SystemEvents.dll" })]
     public async Task GetPackageLoadInfos_ReturnsPackageLoadInfos(string currentFramework, string packageId, string version, string[] expectedAssemblies) {
       NuGetConnector nuGetConnector = new(currentFramework, Options.Repositories, new XunitLogger(output));
       PackageManager pm = new(Options, nuGetConnector);
       RemotePackageInfo remotePackage = await pm.GetRemotePackageAsync(packageId, version) ?? throw new InvalidOperationException("Cannot resolve remote package to install");
-      await pm.InstallRemotePackageAsync(remotePackage, installMissingDependencies: false);
+      await pm.InstallRemotePackageAsync(remotePackage, installMissingDependencies: true);
 
       IEnumerable<PackageLoadInfo> result = pm.GetPackageLoadInfos();
 
       if (expectedAssemblies.Length == 0) {
         Assert.Empty(result);
       } else {
-        Assert.Collection(result, x => {
+        Assert.All(result, x => {
+          Assert.Single(x.AssemblyPaths);
           Assert.All(x.AssemblyPaths, y => Path.IsPathRooted(y));
-          Assert.Equal(expectedAssemblies.OrderBy(y => y), x.AssemblyPaths.Select(y => Path.GetFileName(y)).OrderBy(y => y));
         });
+        Assert.Equal(expectedAssemblies.OrderBy(x => x), result.Select(x => x.AssemblyPaths.Single()).Select(x => Path.GetFileName(x)).OrderBy(x => x));
       }
     }
     #endregion

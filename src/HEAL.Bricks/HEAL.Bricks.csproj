@@ -24,12 +24,12 @@
 	<ItemGroup>
 		<PackageReference Include="Dawn.Guard" Version="1.12.0" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
-		<PackageReference Include="Nerdbank.GitVersioning" Version="3.2.31">
+		<PackageReference Include="Nerdbank.GitVersioning" Version="3.5.104">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="NuGet.Resolver" Version="5.4.0" />
-		<PackageReference Include="System.Threading.Channels" Version="4.7.1" />
+		<PackageReference Include="NuGet.Resolver" Version="6.2.0" />
+		<PackageReference Include="System.Threading.Channels" Version="6.0.0" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
