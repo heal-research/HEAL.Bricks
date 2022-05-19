@@ -12,5 +12,7 @@ namespace HEAL.Bricks {
     public virtual string Version => GetType().Assembly.GetName().Version?.ToString() ?? string.Empty;
     public virtual string DockerImage => "mcr.microsoft.com/dotnet/runtime:latest";
     public virtual bool AutoStart => false;
+
+    public abstract Task StartAsync(string[] args, CancellationToken cancellationToken);
   }
 }

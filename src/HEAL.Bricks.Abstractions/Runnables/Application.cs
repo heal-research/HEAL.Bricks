@@ -8,7 +8,5 @@
 namespace HEAL.Bricks {
   public abstract class Application : Runnable, IApplication {
     public abstract ApplicationKind Kind { get; }
-
-    public abstract Task StartAsync(string[] args, CancellationToken cancellationToken);
   }
 }

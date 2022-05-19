@@ -7,7 +7,6 @@
 
 namespace HEAL.Bricks {
   public interface IService : IRunnable {
-    Task StartAsync(string[] args, CancellationToken cancellationToken);
     Task StopAsync(string[] args, CancellationToken cancellationToken);
   }
 }

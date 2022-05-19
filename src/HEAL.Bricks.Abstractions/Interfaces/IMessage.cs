@@ -5,8 +5,11 @@
  */
 #endregion
 
-using System;
-
 namespace HEAL.Bricks {
-  public interface IMessage { }
+  public interface IMessage {
+    string Command { get; }
+    string Payload { get; }
+
+    public T DeserializePayload<T>();
+  }
 }

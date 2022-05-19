@@ -15,7 +15,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
   public partial class StarterForm : Form {
     private BricksOptions options;
     private IApplicationManager appMan;
-    private readonly Dictionary<ApplicationInfo, List<CancellationTokenSource>> appCTS = new();
+    private readonly Dictionary<RunnableInfo, List<CancellationTokenSource>> appCTS = new();
     private int runningApplications = 0;
 
     public string DefaultApplicationImageKey { get; set; } = "Package";
@@ -39,8 +39,8 @@ namespace HEAL.Bricks.UI.WindowsForms {
       reloadButton.Enabled = runningApplications == 0;
 
       if (startStopButton.Enabled) {
-        ApplicationInfo appInfo = applicationsListView.SelectedItems[0].Tag as ApplicationInfo;
-        if (appCTS[appInfo].Count == 0) {
+        RunnableInfo runnableInfo = applicationsListView.SelectedItems[0].Tag as RunnableInfo;
+        if (appCTS[runnableInfo].Count == 0) {
           startStopButton.Text = "&Start";
           startStopButton.ImageKey = "Play";
         }
@@ -51,19 +51,19 @@ namespace HEAL.Bricks.UI.WindowsForms {
       }
     }
 
-    private async Task StartApplicationAsync(ApplicationInfo appInfo) {
+    private async Task StartApplicationAsync(RunnableInfo runnableInfo) {
       using CancellationTokenSource cts = new();
-      appCTS[appInfo].Add(cts);
+      appCTS[runnableInfo].Add(cts);
       runningApplications++;
       EnableDisableControls();
       try {
-        await appMan.RunAsync(appInfo, cancellationToken: cts.Token);
+        await appMan.RunAsync(runnableInfo, cancellationToken: cts.Token);
       }
       catch (Exception) {
         if (!cts.IsCancellationRequested) throw;
       }
       finally {
-        appCTS[appInfo].Remove(cts);
+        appCTS[runnableInfo].Remove(cts);
         runningApplications--;
         EnableDisableControls();
       }
@@ -75,20 +75,20 @@ namespace HEAL.Bricks.UI.WindowsForms {
 
     private async void StartStopApplicationOnClick(object sender, EventArgs e) {
       if (applicationsListView.SelectedItems.Count != 0) {
-        ApplicationInfo appInfo = applicationsListView.SelectedItems[0].Tag as ApplicationInfo;
-        if (appCTS[appInfo].Count > 0) {
-          foreach (CancellationTokenSource cts in appCTS[appInfo].ToArray()) {
+        RunnableInfo runnableInfo = applicationsListView.SelectedItems[0].Tag as RunnableInfo;
+        if (appCTS[runnableInfo].Count > 0) {
+          foreach (CancellationTokenSource cts in appCTS[runnableInfo].ToArray()) {
             cts.Cancel();
           }
         } else {
-          await StartApplicationAsync(appInfo);
+          await StartApplicationAsync(runnableInfo);
         }
       }
     }
 
     private async void StartApplicationOnItemActivate(object sender, EventArgs e) {
       if (applicationsListView.SelectedItems.Count != 0) {
-        await StartApplicationAsync(applicationsListView.SelectedItems[0].Tag as ApplicationInfo);
+        await StartApplicationAsync(applicationsListView.SelectedItems[0].Tag as RunnableInfo);
       }
     }
 
@@ -119,14 +119,14 @@ namespace HEAL.Bricks.UI.WindowsForms {
 
       applicationsListView.Items.Clear();
       appCTS.Clear();
-      foreach (ApplicationInfo application in appMan.InstalledApplications) {
+      foreach (RunnableInfo runnable in appMan.InstalledRunnables) {
         applicationsListView.Items.Add(new ListViewItem {
-          Text = application.ToString(),
+          Text = runnable.ToString(),
           ImageKey = DefaultApplicationImageKey,
-          Tag = application,
-          ToolTipText = application.Description
+          Tag = runnable,
+          ToolTipText = runnable.Description
         });
-        appCTS.Add(application, new List<CancellationTokenSource>());
+        appCTS.Add(runnable, new List<CancellationTokenSource>());
       }
       EnableDisableControls();
       if (applicationsListView.Items.Count > 0) applicationsListView.Items[0].Selected = true;

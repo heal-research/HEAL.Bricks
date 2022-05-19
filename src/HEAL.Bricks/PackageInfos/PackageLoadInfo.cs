@@ -9,6 +9,7 @@ using Dawn;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace HEAL.Bricks {
   [Serializable]
@@ -19,16 +20,19 @@ namespace HEAL.Bricks {
 
     public string Id { get; }
     public string Version { get; }
-    
     public string PackagesPath { get; }
+    public IEnumerable<string> AssemblyPaths { get; }
+    public IEnumerable<string> Files { get; }
 
-    private readonly string[] assemblyPaths;
-    public IEnumerable<string> AssemblyPaths => assemblyPaths;
-
-    private readonly string[] files;
-    public IEnumerable<string> Files => files;
-
-
+    [JsonConstructor]
+    public PackageLoadInfo(string id, string version, string packagesPath, IEnumerable<string> assemblyPaths, IEnumerable<string> files) {
+      // required for JSON serialization and unit tests
+      Id = Guard.Argument(id, nameof(id)).NotNull().NotEmpty().NotWhiteSpace().Value;
+      Version = Guard.Argument(version, nameof(version)).NotNull().Value;
+      PackagesPath = Guard.Argument(packagesPath, nameof(packagesPath)).NotNull().NotEmpty().NotWhiteSpace().Value;
+      AssemblyPaths = Guard.Argument(assemblyPaths, nameof(assemblyPaths)).NotNull().DoesNotContainNull().Value;
+      Files = Guard.Argument(files, nameof(files)).NotNull().DoesNotContainNull().Value;
+    }
     internal PackageLoadInfo(LocalPackageInfo package, string packagesPath, string appPath) {
       Guard.Argument(package, nameof(package)).NotNull()
                                               .Member(p => p.Id, i => i.NotNull().NotEmpty().NotWhiteSpace())
@@ -40,16 +44,8 @@ namespace HEAL.Bricks {
       Id = package.Id;
       Version = package.Version.ToString();
       PackagesPath = packagesPath.StartsWith(appPath) ? packagesPath[(appPath.Length + 1)..] : packagesPath;
-      assemblyPaths = package.ReferenceItems.ToArray();
-      files = package.Files.ToArray();
-    }
-    private PackageLoadInfo(string id, string version, string packagesPath, string[] assemblyPaths, string[] files) {
-      // required for unit tests
-      Id = id;
-      Version = version;
-      PackagesPath = packagesPath;
-      this.assemblyPaths = assemblyPaths;
-      this.files = files;
+      AssemblyPaths = package.ReferenceItems.ToArray();
+      Files = package.Files.ToArray();
     }
   }
 }

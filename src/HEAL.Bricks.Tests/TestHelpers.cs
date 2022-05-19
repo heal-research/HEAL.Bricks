@@ -30,15 +30,17 @@ namespace HEAL.Bricks.Tests {
       }
       return channel ?? throw new InvalidOperationException($"Cannot create channel of type {channelType.Name}");
     }
+
     public static async Task TestChannelAsync(IChannel channel, CancellationToken cancellationToken) {
-      IMessage message = await channel.ReceiveMessageAsync<IMessage>(cancellationToken);
-      while (message is not CancelMessage && !cancellationToken.IsCancellationRequested) {
+      IMessage message = await channel.ReceiveMessageAsync(cancellationToken);
+      while (message.Command != Message.Commands.Terminate && !cancellationToken.IsCancellationRequested) {
         await channel.SendMessageAsync(message, cancellationToken);
-        message = await channel.ReceiveMessageAsync<IMessage>(cancellationToken);
+        message = await channel.ReceiveMessageAsync(cancellationToken);
       }
     }
-    public static async Task TestRunnerAsync(IChannel channel, CancellationToken cancellationToken) {
-      await Runner.ReceiveAndExecuteAsync(channel, cancellationToken);
+
+    public static async Task TestMessageHandler(IChannel channel, CancellationToken cancellationToken) {
+      await MessageHandler.Factory.ClientMessageHandler().ReceiveMessagesAsync(channel, cancellationToken);
     }
   }
 }

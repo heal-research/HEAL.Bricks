@@ -105,7 +105,7 @@ namespace HEAL.Bricks.Tests {
     public void Close_WhenClientExited(Type channelType) {
       IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
       channel.Open(out Task clientTerminated);
-      channel.SendMessageAsync(new CancelMessage()).Wait();
+      channel.SendMessageAsync(Message.Commands.Terminate).Wait();
       clientTerminated.Wait();
 
       channel.Close();
@@ -120,7 +120,7 @@ namespace HEAL.Bricks.Tests {
     public async Task SendMessageAsync_WithNullParameter_ThrowsArgumentNullException(Type channelType) {
       IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
 
-      var e = await Assert.ThrowsAsync<ArgumentNullException>(() => channel.SendMessageAsync<IMessage>(null!));
+      var e = await Assert.ThrowsAsync<ArgumentNullException>(() => channel.SendMessageAsync(message: null!));
       Assert.False(string.IsNullOrEmpty(e.Message));
       Assert.False(string.IsNullOrEmpty(e.ParamName));
     }
@@ -129,7 +129,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData(typeof(StdInOutProcessChannel))]
     [InlineData(typeof(MemoryChannel))]
     public async Task SendMessageAsync_WhenChannelNotOpened_ThrowsInvalidOperationException(Type channelType) {
-      TextMessage message = new("TestMessage");
+      IMessage message = Message.Factory.CustomMessage("TestMessage");
       IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
 
       var e = await Assert.ThrowsAsync<InvalidOperationException>(() => channel.SendMessageAsync(message));
@@ -140,7 +140,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData(typeof(StdInOutProcessChannel))]
     [InlineData(typeof(MemoryChannel))]
     public async Task SendMessageAsync_WhenChannelIsClosed_ThrowsObjectDisposedException(Type channelType) {
-      TextMessage message = new("TestMessage");
+      IMessage message = Message.Factory.CustomMessage("TestMessage");
       IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
       channel.Open(out Task clientTerminated);
       channel.Close();
@@ -159,7 +159,7 @@ namespace HEAL.Bricks.Tests {
     public async Task ReceiveMessageAsync_WhenChannelNotOpened_ThrowsInvalidOperationException(Type channelType) {
       IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
 
-      var e = await Assert.ThrowsAsync<InvalidOperationException>(() => channel.ReceiveMessageAsync<IMessage>());
+      var e = await Assert.ThrowsAsync<InvalidOperationException>(() => channel.ReceiveMessageAsync());
       Assert.False(string.IsNullOrEmpty(e.Message));
     }
     [Theory]
@@ -172,7 +172,7 @@ namespace HEAL.Bricks.Tests {
       channel.Close();
       try { await clientTerminated; } catch { }
 
-      var e = await Assert.ThrowsAsync<ObjectDisposedException>(() => channel.ReceiveMessageAsync<IMessage>());
+      var e = await Assert.ThrowsAsync<ObjectDisposedException>(() => channel.ReceiveMessageAsync());
       Assert.False(string.IsNullOrEmpty(e.Message));
     }
     #endregion
@@ -183,18 +183,18 @@ namespace HEAL.Bricks.Tests {
     [InlineData(typeof(StdInOutProcessChannel))]
     [InlineData(typeof(MemoryChannel))]
     public async Task SendAndReceiveMessageAsync_WithMessage_ReturnsMessage(Type channelType) {
-      TextMessage request = new("TestMessage");
-      TextMessage response;
+      IMessage request = Message.Factory.CustomMessage("TestMessage", "Payload");
+      IMessage response;
 
       using (IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync)) {
         channel.Open(out Task clientTerminated);
         await channel.SendMessageAsync(request);
-        response = await channel.ReceiveMessageAsync<TextMessage>();
-        await channel.SendMessageAsync(new CancelMessage());
+        response = await channel.ReceiveMessageAsync();
+        await channel.SendMessageAsync(Message.Commands.Terminate);
         await clientTerminated;
       }
 
-      Assert.Equal(request.Data, response.Data);
+      Assert.Equal(request.Payload, response.Payload);
     }
     #endregion
   }

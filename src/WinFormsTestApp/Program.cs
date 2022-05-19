@@ -21,7 +21,7 @@ namespace WinFormsTestApp {
 
       using (IChannel channel = ProcessChannel.CreateFromCLIArguments(args)) {
         if (channel != null) {
-          Runner.ReceiveAndExecuteAsync(channel).Wait();
+          MessageHandler.Factory.ClientMessageHandler().ReceiveMessagesAsync(channel).Wait();
           return;
         }
       }

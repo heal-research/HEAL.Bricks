@@ -5,17 +5,17 @@
  */
 #endregion
 
-using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace HEAL.Bricks {
   public interface IChannel : IDisposable {
     void Open(out Task channelTerminated, CancellationToken cancellationToken = default);
     void Close();
 
-    Task SendMessageAsync<T>(T message, CancellationToken cancellationToken = default) where T : class, IMessage;
-    Task<T> ReceiveMessageAsync<T>(CancellationToken cancellationToken = default) where T : class, IMessage;
+    Task SendMessageAsync(string command, CancellationToken cancellationToken = default);
+    Task SendMessageAsync<T>(string command, T payload, CancellationToken cancellationToken = default);
+    Task SendMessageAsync(IMessage message, CancellationToken cancellationToken = default);
+
+    Task ReceiveMessageAsync(string command, CancellationToken cancellationToken = default);
+    Task<T> ReceiveMessageAsync<T>(string command, CancellationToken cancellationToken = default);
+    Task<IMessage> ReceiveMessageAsync(CancellationToken cancellationToken = default);
   }
 }

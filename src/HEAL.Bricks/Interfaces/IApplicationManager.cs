@@ -12,9 +12,9 @@ using System.Threading.Tasks;
 namespace HEAL.Bricks {
   public interface IApplicationManager {
     IPackageManager PackageManager { get; }
-    IEnumerable<ApplicationInfo> InstalledApplications { get; }
+    IEnumerable<RunnableInfo> InstalledRunnables { get; }
 
-    Task RunAsync(ApplicationInfo application, string[]? args = null, CancellationToken cancellationToken = default);
+    Task RunAsync(RunnableInfo runnable, string[]? args = null, CancellationToken cancellationToken = default);
     Task RunAutoStartAsync(string[]? args = null, CancellationToken cancellationToken = default);
     Task ReloadAsync(CancellationToken cancellationToken = default);
 

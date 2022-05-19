@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 
 namespace HEAL.Bricks {
-  public class PackageLoader {
+  public static class PackageLoader {
     public static void LoadPackageAssemblies(PackageLoadInfo package) {
       Guard.Argument(package, nameof(package)).NotNull();
 

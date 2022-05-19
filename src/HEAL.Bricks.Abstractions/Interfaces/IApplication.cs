@@ -8,7 +8,5 @@
 namespace HEAL.Bricks {
   public interface IApplication : IRunnable {
     ApplicationKind Kind { get; }
-
-    Task StartAsync(string[] args, CancellationToken cancellationToken);
   }
 }

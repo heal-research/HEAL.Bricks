@@ -12,5 +12,7 @@ namespace HEAL.Bricks {
     string Version { get; }
     string DockerImage { get; }
     bool AutoStart { get; }
+
+    Task StartAsync(string[] args, CancellationToken cancellationToken);
   }
 }

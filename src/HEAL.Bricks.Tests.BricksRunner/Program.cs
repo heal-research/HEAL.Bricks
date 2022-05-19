@@ -5,10 +5,7 @@
  */
 #endregion
 
-using System;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace HEAL.Bricks.Tests.BricksRunner {
   class Program {
@@ -19,14 +16,14 @@ namespace HEAL.Bricks.Tests.BricksRunner {
 
       if (args.Any(x => x == "--TestChannel")) {
         using ProcessChannel channel = ProcessChannel.CreateFromCLIArguments(args) ?? throw new ArgumentException("Cannot retrieve channel from CLI arguments.", nameof(args));
-        IMessage message = await channel.ReceiveMessageAsync<IMessage>();
-        while (message is not CancelMessage) {
+        IMessage message = await channel.ReceiveMessageAsync();
+        while (message.Command != Message.Commands.Terminate) {
           await channel.SendMessageAsync(message);
-          message = await channel.ReceiveMessageAsync<IMessage>();
+          message = await channel.ReceiveMessageAsync();
         }
-      } else if (args.Any(x => x == "--TestRunner")) {
+      } else if (args.Any(x => x == "--TestMessageHandler")) {
         IChannel channel = ProcessChannel.CreateFromCLIArguments(args) ?? throw new ArgumentException("Cannot retrieve channel from CLI arguments.", nameof(args));
-        await Runner.ReceiveAndExecuteAsync(channel);
+        await MessageHandler.Factory.ClientMessageHandler().ReceiveMessagesAsync(channel);
       } else {
         throw new ArgumentException("Cannot retrieve kind of test from CLI arguments.", nameof(args));
       }

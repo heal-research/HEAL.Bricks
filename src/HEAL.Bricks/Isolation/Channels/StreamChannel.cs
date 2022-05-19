@@ -15,20 +15,20 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
-  public abstract class StreamChannel : IChannel {
+  public abstract class StreamChannel : Channel {
     protected Stream? inputStream = null, outputStream = null;
 
-    public virtual void Open(out Task channelTerminated, CancellationToken cancellationToken = default) {
+    public override void Open(out Task channelTerminated, CancellationToken cancellationToken = default) {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Operation((inputStream == null) && (outputStream == null));
       channelTerminated = Task.CompletedTask;
     }
-    public void Close() {
+    public override void Close() {
       Guard.Operation(((inputStream != null) && (outputStream != null)) || ObjectIsDisposed);
-      Dispose(disposing: true);
+      base.Close();
     }
 
-    public async Task SendMessageAsync<T>(T message, CancellationToken cancellationToken = default) where T : class, IMessage {
+    public override async Task SendMessageAsync(IMessage message, CancellationToken cancellationToken = default) {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Argument(message, nameof(message)).NotNull();
       Guard.Operation((outputStream != null) && outputStream.CanWrite);
@@ -41,40 +41,26 @@ namespace HEAL.Bricks {
         outputStream.Flush();
       }, cancellationToken).ConfigureAwait(false);
     }
-    public async Task<T> ReceiveMessageAsync<T>(CancellationToken cancellationToken = default) where T : class, IMessage {
+
+    public override async Task<IMessage> ReceiveMessageAsync(CancellationToken cancellationToken = default) {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Operation((inputStream != null) && inputStream.CanRead);
 
-      return await Task.Run<T>(() => {
+      return await Task.Run<IMessage>(() => {
         cancellationToken.ThrowIfCancellationRequested();
         IFormatter formatter = new BinaryFormatter();
-        T message = (T)formatter.Deserialize(inputStream ?? throw new InvalidOperationException("Input stream is null"));
+        IMessage message = (IMessage)formatter.Deserialize(inputStream ?? throw new InvalidOperationException("Input stream is null"));
         //T? message = JsonSerializer.Deserialize<T>(inputStream ?? throw new InvalidOperationException("Input stream is null"));
         return message ?? throw new InvalidOperationException("Deserialized message is null");
       }, cancellationToken).ConfigureAwait(false);
     }
 
-    protected virtual void DisposeMembers() {
+    protected override void DisposeMembers() {
       outputStream?.Dispose();
       outputStream = null;
       inputStream?.Dispose();
       inputStream = null;
+      base.DisposeMembers();
     }
-
-    #region Dispose
-    protected bool ObjectIsDisposed { get; private set; } = false;
-    protected virtual void Dispose(bool disposing) {
-      if (!ObjectIsDisposed) {
-        if (disposing) {
-          DisposeMembers();
-        }
-        ObjectIsDisposed = true;
-      }
-    }
-    void IDisposable.Dispose() {
-      Dispose(disposing: true);
-      GC.SuppressFinalize(this);
-    }
-    #endregion
   }
 }

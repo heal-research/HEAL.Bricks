@@ -12,7 +12,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace HEAL.Bricks {
-  public class MemoryChannel : IChannel {
+  public class MemoryChannel : Channel {
     private Channel<IMessage>? channel = null;
     protected ChannelReader<IMessage>? input = null;
     protected ChannelWriter<IMessage>? output = null;
@@ -25,7 +25,7 @@ namespace HEAL.Bricks {
     }
     protected MemoryChannel(ChannelReader<IMessage> input) {
       // used to create a new channel on the client-side
-      channel = Channel.CreateUnbounded<IMessage>(new UnboundedChannelOptions {
+      channel = System.Threading.Channels.Channel.CreateUnbounded<IMessage>(new UnboundedChannelOptions {
         SingleReader = true,
         SingleWriter = true
       });
@@ -33,11 +33,11 @@ namespace HEAL.Bricks {
       this.input = input;
     }
 
-    public virtual void Open(out Task channelTerminated, CancellationToken cancellationToken = default) {
+    public override void Open(out Task channelTerminated, CancellationToken cancellationToken = default) {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Operation((channel == null) && (input == null) && (output == null));
 
-      channel = Channel.CreateUnbounded<IMessage>(new UnboundedChannelOptions {
+      channel = System.Threading.Channels.Channel.CreateUnbounded<IMessage>(new UnboundedChannelOptions {
         SingleReader = true,
         SingleWriter = true
       });
@@ -50,12 +50,12 @@ namespace HEAL.Bricks {
 
       channelTerminated = Task.Run(() => { clientCode?.Invoke(client, clientToken); }, clientToken);
     }
-    public void Close() {
+    public override void Close() {
       Guard.Operation(((channel != null) && (output != null)) || ObjectIsDisposed);
-      Dispose(disposing: true);
+      base.Close();
     }
 
-    public async Task SendMessageAsync<T>(T message, CancellationToken cancellationToken = default) where T : class, IMessage {
+    public override async Task SendMessageAsync(IMessage message, CancellationToken cancellationToken = default) {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Argument(message, nameof(message)).NotNull();
       Guard.Operation(output != null);
@@ -63,37 +63,21 @@ namespace HEAL.Bricks {
       await (output?.WriteAsync(message, cancellationToken) ?? ValueTask.CompletedTask);
     }
 
-    public async Task<T> ReceiveMessageAsync<T>(CancellationToken cancellationToken = default) where T : class, IMessage {
+    public override async Task<IMessage> ReceiveMessageAsync(CancellationToken cancellationToken = default) {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Operation(input != null);
 
-      return (T)await (input?.ReadAsync(cancellationToken).ConfigureAwait(false) ?? throw new InvalidOperationException("input is null"));
+      return await (input?.ReadAsync(cancellationToken).ConfigureAwait(false) ?? throw new InvalidOperationException("input is null"));
     }
 
-    protected virtual void DisposeMembers() {
+    protected override void DisposeMembers() {
       clientCTS?.Cancel();
       clientCTS?.Dispose();
       output?.Complete();
       output = null;
       input = null;
       channel = null;
+      base.DisposeMembers();
     }
-
-    #region Dispose
-    protected bool ObjectIsDisposed { get; private set; } = false;
-    protected virtual void Dispose(bool disposing) {
-      if (!ObjectIsDisposed) {
-        if (disposing) {
-          DisposeMembers();
-        }
-        ObjectIsDisposed = true;
-      }
-    }
-
-    void IDisposable.Dispose() {
-      Dispose(disposing: true);
-      GC.SuppressFinalize(this);
-    }
-    #endregion
   }
 }
