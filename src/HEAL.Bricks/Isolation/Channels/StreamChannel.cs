@@ -46,11 +46,11 @@ namespace HEAL.Bricks {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Operation((inputStream != null) && inputStream.CanRead);
 
-      return await Task.Run<IMessage>(() => {
+      return await Task.Run(() => {
         cancellationToken.ThrowIfCancellationRequested();
         IFormatter formatter = new BinaryFormatter();
         IMessage message = (IMessage)formatter.Deserialize(inputStream ?? throw new InvalidOperationException("Input stream is null"));
-        //T? message = JsonSerializer.Deserialize<T>(inputStream ?? throw new InvalidOperationException("Input stream is null"));
+        //IMessage? message = JsonSerializer.Deserialize<Message>(inputStream ?? throw new InvalidOperationException("Input stream is null"));
         return message ?? throw new InvalidOperationException("Deserialized message is null");
       }, cancellationToken).ConfigureAwait(false);
     }

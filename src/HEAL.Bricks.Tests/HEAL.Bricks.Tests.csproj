@@ -29,16 +29,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\HEAL.Bricks.Tests.BricksRunner\HEAL.Bricks.Tests.BricksRunner.csproj" />
 		<ProjectReference Include="..\HEAL.Bricks\HEAL.Bricks.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<None Update="HEAL.Bricks.Tests.BricksRunner.dll">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Update="HEAL.Bricks.Tests.BricksRunner.runtimeconfig.json">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
 	</ItemGroup>
 
 </Project>
