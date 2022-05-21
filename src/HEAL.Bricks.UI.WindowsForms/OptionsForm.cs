@@ -55,7 +55,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
       };
       options.Repositories.Clear();
       foreach (ListViewItem item in repositoriesListView.Items) {
-        options.Repositories.Add(item.Tag as Repository);
+        options.Repositories.Add((Repository)item.Tag);
       }
       return options;
     }
@@ -88,7 +88,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
     }
 
     private void TextBoxNotNullOrEmptyOrWhiteSpaceOnValidating(object sender, CancelEventArgs e) {
-      TextBox textBox = sender as TextBox;
+      TextBox textBox = (TextBox)sender;
       if (string.IsNullOrWhiteSpace(textBox.Text)) {
         errorProvider.SetError(textBox, "Must not be empty.");
         e.Cancel = true;
@@ -96,7 +96,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
     }
 
     private void RemoveErrorOnValidated(object sender, EventArgs e) {
-      Control control = sender as Control;
+      Control control = (Control)sender;
       errorProvider.SetError(control, string.Empty);
     }
 
@@ -114,7 +114,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
 
     private void EditRepositoryOnClick(object sender, EventArgs e) {
       ListViewItem selected = repositoriesListView.SelectedItems[0];
-      EditRepositoryDialog dialog = new(selected.SubItems[0].Text, selected.SubItems[1].Text, selected.Tag as string);
+      EditRepositoryDialog dialog = new(selected.SubItems[0].Text, selected.SubItems[1].Text, (string)selected.Tag);
       if ((dialog.ShowDialog(this) == DialogResult.OK) && (!string.IsNullOrWhiteSpace(dialog.Repository))) {
         selected.SubItems[0].Text = dialog.Repository;
         selected.SubItems[1].Text = dialog.Username;

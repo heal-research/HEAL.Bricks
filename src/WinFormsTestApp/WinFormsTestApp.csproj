@@ -1,21 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net6.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<UseWindowsForms>true</UseWindowsForms>
+		<ImplicitUsings>enable</ImplicitUsings>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\HEAL.Bricks.UI.WindowsForms\HEAL.Bricks.UI.WindowsForms.csproj" />
-    <ProjectReference Include="..\HEAL.Bricks\HEAL.Bricks.csproj" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <Compile Update="ApplicationForm.cs" />
-    <Compile Update="ApplicationForm.Designer.cs">
-      <DependentUpon>ApplicationForm.cs</DependentUpon>
-    </Compile>
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\HEAL.Bricks.UI.WindowsForms\HEAL.Bricks.UI.WindowsForms.csproj" />
+		<ProjectReference Include="..\HEAL.Bricks\HEAL.Bricks.csproj" />
+	</ItemGroup>
 
 </Project>

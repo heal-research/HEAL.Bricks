@@ -15,16 +15,16 @@ using System.Windows.Forms;
 
 namespace HEAL.Bricks.UI.WindowsForms {
   public partial class PackageManagerForm : Form {
-    private IPackageManager packMan;
+    private readonly IPackageManager? packMan;
     private int searchSkipPackages = 0;
     private readonly int searchTakePackages = 10;
-    private CancellationTokenSource searchCTS;
-    private SemaphoreSlim searchSemaphore = new(1, 1);
+    private CancellationTokenSource? searchCTS;
+    private readonly SemaphoreSlim searchSemaphore = new(1, 1);
 
     public PackageManagerForm() {
       InitializeComponent();
     }
-    public PackageManagerForm(IPackageManager packageManager) : this() {
+    public PackageManagerForm(IPackageManager? packageManager) : this() {
       packMan = packageManager;
     }
 
@@ -99,6 +99,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
     }
 
     private async Task InstallPackagesAsync(IEnumerable<RemotePackageInfo> packages) {
+      if (packMan == null) throw new InvalidOperationException("Package manager is null.");
       Cursor = Cursors.AppStarting;
       await packMan.InstallRemotePackagesAsync(packages, installMissingDependencies: true);
       LoadInstalledPackages();
@@ -108,8 +109,9 @@ namespace HEAL.Bricks.UI.WindowsForms {
     }
 
     private async Task RemovePackagesAsync(IEnumerable<LocalPackageInfo> packages) {
+      if (packMan == null) throw new InvalidOperationException("Package manager is null.");
       Cursor = Cursors.WaitCursor;
-      packMan.RemoveInstalledPackages(packages);
+      packMan?.RemoveInstalledPackages(packages);
       LoadInstalledPackages();
       EnableDisableControls();
       Cursor = Cursors.Default;
@@ -123,7 +125,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
     private async void InstallPackagesOnClick(object sender, EventArgs e) {
       List<RemotePackageInfo> packages = new();
       foreach (ListViewItem item in browsePackagesListView.SelectedItems) {
-        packages.Add(item.Tag as RemotePackageInfo);
+        packages.Add((RemotePackageInfo)item.Tag);
       }
       await InstallPackagesAsync(packages);
     }
@@ -131,7 +133,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
     private async void UpdatePackagesOnClick(object sender, EventArgs e) {
       List<RemotePackageInfo> packages = new();
       foreach (ListViewItem item in updatePackagesListView.SelectedItems) {
-        packages.Add(item.Tag as RemotePackageInfo);
+        packages.Add((RemotePackageInfo)item.Tag);
       }
       await InstallPackagesAsync(packages);
     }
@@ -139,7 +141,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
     private async void RemovePackagesOnClick(object sender, EventArgs e) {
       List<LocalPackageInfo> packages = new();
       foreach (ListViewItem item in installedPackagesListView.SelectedItems) {
-        packages.Add(item.Tag as LocalPackageInfo);
+        packages.Add((LocalPackageInfo)item.Tag);
       }
       await RemovePackagesAsync(packages);
     }
@@ -148,32 +150,31 @@ namespace HEAL.Bricks.UI.WindowsForms {
       EnableDisableControls();
       detailsTextBox.Text = string.Empty;
       if (installedPackagesListView.Visible && (installedPackagesListView.SelectedItems.Count == 1)) {
-        LocalPackageInfo package = installedPackagesListView.SelectedItems[0].Tag as LocalPackageInfo;
+        LocalPackageInfo package = (LocalPackageInfo)installedPackagesListView.SelectedItems[0].Tag;
         detailsTextBox.Text = package.ToStringWithDependencies();
       } else if (browsePackagesListView.Visible && (browsePackagesListView.SelectedItems.Count == 1)) {
-        RemotePackageInfo package = browsePackagesListView.SelectedItems[0].Tag as RemotePackageInfo;
+        RemotePackageInfo package = (RemotePackageInfo)browsePackagesListView.SelectedItems[0].Tag;
         detailsTextBox.Text = package.ToStringWithDependencies();
       } else if (updatePackagesListView.Visible && (updatePackagesListView.SelectedItems.Count == 1)) {
-        RemotePackageInfo package = updatePackagesListView.SelectedItems[0].Tag as RemotePackageInfo;
+        RemotePackageInfo package = (RemotePackageInfo)updatePackagesListView.SelectedItems[0].Tag;
         detailsTextBox.Text = package.ToStringWithDependencies();
       }
     }
 
     private async void ReloadRemotePackages(object sender, EventArgs e) {
       searchCTS?.Cancel();
-      using (CancellationTokenSource cts = new()) {
-        try {
-          searchCTS = cts;
-          await searchSemaphore.WaitAsync();
-          browsePackagesListView.Items.Clear();
-          searchSkipPackages = 0;
-          await LoadRemotePackagesAsync(cts.Token);
-        }
-        catch { }
-        finally {
-          searchSemaphore.Release();
-          if (searchCTS == cts) searchCTS = null;
-        }
+      using CancellationTokenSource cts = new();
+      try {
+        searchCTS = cts;
+        await searchSemaphore.WaitAsync();
+        browsePackagesListView.Items.Clear();
+        searchSkipPackages = 0;
+        await LoadRemotePackagesAsync(cts.Token);
+      }
+      catch { }
+      finally {
+        searchSemaphore.Release();
+        if (searchCTS == cts) searchCTS = null;
       }
     }
 

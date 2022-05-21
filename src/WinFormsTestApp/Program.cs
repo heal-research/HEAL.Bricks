@@ -19,7 +19,7 @@ namespace WinFormsTestApp {
       System.Windows.Forms.Application.EnableVisualStyles();
       System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
 
-      using (IChannel channel = ProcessChannel.CreateFromCLIArguments(args)) {
+      using (IChannel? channel = ProcessChannel.CreateFromCLIArguments(args)) {
         if (channel != null) {
           MessageHandler.Factory.ClientMessageHandler().ReceiveMessagesAsync(channel).Wait();
           return;

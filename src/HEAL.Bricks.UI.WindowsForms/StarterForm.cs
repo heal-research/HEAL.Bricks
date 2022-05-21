@@ -14,21 +14,17 @@ using System.Windows.Forms;
 namespace HEAL.Bricks.UI.WindowsForms {
   public partial class StarterForm : Form {
     private BricksOptions options;
-    private IApplicationManager appMan;
+    private IApplicationManager? appMan;
     private readonly Dictionary<RunnableInfo, List<CancellationTokenSource>> appCTS = new();
     private int runningApplications = 0;
 
     public string DefaultApplicationImageKey { get; set; } = "Package";
-    public ImageList SmallImageList => this.smallImageList;
-    public ImageList LargeImageList => this.largeImageList;
+    public ImageList SmallImageList => smallImageList;
+    public ImageList LargeImageList => largeImageList;
     
-    public StarterForm() {
+    public StarterForm() : this(BricksOptions.Default) { }
+    public StarterForm(BricksOptions options) {
       InitializeComponent();
-      options = new BricksOptions() {
-        DefaultIsolation = Isolation.AnonymousPipes
-      };
-    }
-    public StarterForm(BricksOptions options) : this() {
       this.options = options;
     }
 
@@ -39,7 +35,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
       reloadButton.Enabled = runningApplications == 0;
 
       if (startStopButton.Enabled) {
-        RunnableInfo runnableInfo = applicationsListView.SelectedItems[0].Tag as RunnableInfo;
+        RunnableInfo runnableInfo = (RunnableInfo)applicationsListView.SelectedItems[0].Tag;
         if (appCTS[runnableInfo].Count == 0) {
           startStopButton.Text = "&Start";
           startStopButton.ImageKey = "Play";
@@ -57,7 +53,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
       runningApplications++;
       EnableDisableControls();
       try {
-        await appMan.RunAsync(runnableInfo, cancellationToken: cts.Token);
+        await (appMan?.RunAsync(runnableInfo, cancellationToken: cts.Token) ?? throw new InvalidOperationException("Application manager is null."));
       }
       catch (Exception) {
         if (!cts.IsCancellationRequested) throw;
@@ -75,7 +71,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
 
     private async void StartStopApplicationOnClick(object sender, EventArgs e) {
       if (applicationsListView.SelectedItems.Count != 0) {
-        RunnableInfo runnableInfo = applicationsListView.SelectedItems[0].Tag as RunnableInfo;
+        RunnableInfo runnableInfo = (RunnableInfo)applicationsListView.SelectedItems[0].Tag;
         if (appCTS[runnableInfo].Count > 0) {
           foreach (CancellationTokenSource cts in appCTS[runnableInfo].ToArray()) {
             cts.Cancel();
@@ -88,7 +84,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
 
     private async void StartApplicationOnItemActivate(object sender, EventArgs e) {
       if (applicationsListView.SelectedItems.Count != 0) {
-        await StartApplicationAsync(applicationsListView.SelectedItems[0].Tag as RunnableInfo);
+        await StartApplicationAsync((RunnableInfo)applicationsListView.SelectedItems[0].Tag);
       }
     }
 
@@ -105,7 +101,7 @@ namespace HEAL.Bricks.UI.WindowsForms {
     }
 
     private async void ShowPackageManagerOnClick(object sender, EventArgs e) {
-      var dialog = new PackageManagerForm(appMan.PackageManager);
+      var dialog = new PackageManagerForm(appMan?.PackageManager);
       dialog.ShowDialog(this);
       await LoadApplicationsAsync();
     }
