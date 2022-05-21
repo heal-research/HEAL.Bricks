@@ -17,6 +17,7 @@ namespace HEAL.Bricks.Tests {
     [Theory]
     [InlineData(typeof(AnonymousPipesProcessChannel), false)]
     [InlineData(typeof(StdInOutProcessChannel),       false)]
+    [InlineData(typeof(MemoryChannel),                false)]
     public async Task DiscoverRunnablesAsync_ReturnsRunnables(Type channelType, bool startDebugger) {
       PackageLoadInfo[] packageLoadInfos = new[] {
         PackageLoadInfo.CreateForTests("a", "1.0.0", TestHelpers.GetWorkingDir(), "HEAL.Bricks.Tests.dll")

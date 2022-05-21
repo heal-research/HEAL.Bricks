@@ -10,6 +10,7 @@ using System;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,26 +34,18 @@ namespace HEAL.Bricks {
       Guard.Argument(message, nameof(message)).NotNull();
       Guard.Operation((outputStream != null) && outputStream.CanWrite);
 
-      await Task.Run(() => {
-        cancellationToken.ThrowIfCancellationRequested();
-        IFormatter formatter = new BinaryFormatter();
-        formatter.Serialize(outputStream ?? throw new InvalidOperationException("Output stream is null"), message);
-        //JsonSerializer.Serialize(outputStream ?? throw new InvalidOperationException("Output stream is null"), message, message.GetType());
-        outputStream.Flush();
-      }, cancellationToken).ConfigureAwait(false);
+      string json = JsonSerializer.Serialize(message, message.GetType());
+      using StreamWriter writer = new(outputStream!, leaveOpen: true);
+      await writer.WriteLineAsync(json).ConfigureAwait(false);
     }
 
     public override async Task<IMessage> ReceiveMessageAsync(CancellationToken cancellationToken = default) {
       Guard.Disposal(ObjectIsDisposed);
       Guard.Operation((inputStream != null) && inputStream.CanRead);
 
-      return await Task.Run(() => {
-        cancellationToken.ThrowIfCancellationRequested();
-        IFormatter formatter = new BinaryFormatter();
-        IMessage message = (IMessage)formatter.Deserialize(inputStream ?? throw new InvalidOperationException("Input stream is null"));
-        //IMessage? message = JsonSerializer.Deserialize<Message>(inputStream ?? throw new InvalidOperationException("Input stream is null"));
-        return message ?? throw new InvalidOperationException("Deserialized message is null");
-      }, cancellationToken).ConfigureAwait(false);
+      using StreamReader reader = new(inputStream!, leaveOpen: true);
+      string json = await reader.ReadLineAsync().ConfigureAwait(false) ?? string.Empty;
+      return JsonSerializer.Deserialize<Message>(json) ?? throw new InvalidOperationException("Deserialized message is null");
     }
 
     protected override void DisposeMembers() {
