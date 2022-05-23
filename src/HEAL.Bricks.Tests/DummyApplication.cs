@@ -14,7 +14,11 @@ namespace HEAL.Bricks.Tests {
     public override string Name => "DummyApplication";
     public override string Description => "This is a dummy application for testing.";
     public override ApplicationKind Kind => ApplicationKind.Console;
-    public override Task StartAsync(string[] args, CancellationToken cancellationToken = default) {
+
+    public DummyApplication() : base() { }
+    public DummyApplication(IChannel channel) : base(channel) { }
+
+    public override Task RunAsync(string[] args, CancellationToken cancellationToken = default) {
       throw new NotImplementedException();
     }
   }

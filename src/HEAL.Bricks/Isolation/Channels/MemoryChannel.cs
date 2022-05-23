@@ -48,7 +48,14 @@ namespace HEAL.Bricks {
       clientCTS = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
       CancellationToken clientToken = clientCTS.Token;
 
-      channelTerminated = Task.Run(() => { clientCode?.Invoke(client, clientToken); }, clientToken);
+      channelTerminated = Task.Run(() => {
+        try {
+          clientCode?.Invoke(client, clientToken);
+        }
+        catch (AggregateException ex) {
+          ex.Handle(e => e is TaskCanceledException);
+        }
+      }, clientToken);
     }
     public override void Close() {
       Guard.Operation(((channel != null) && (output != null)) || ObjectIsDisposed);

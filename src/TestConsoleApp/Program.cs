@@ -36,27 +36,4 @@ do {
   }
 } while (index != -1);
 
-//CancellationTokenSource cts = new();
-//CancellationToken token = cts.Token;
-//cts.CancelAfter(2000);
-
-//using (IChannel channel = am.CreateRunnerChannel(options.DefaultIsolation)) {
-//  EchoRunner echoRunner = new();
-//  Task done = echoRunner.RunAsync(channel, token);
-
-//  int i = 0;
-//  while (!token.IsCancellationRequested) {
-//    i++;
-//    Console.Write("Send Hello ... ");
-//    await echoRunner.SendAsync("Hello " + i, channel, token);
-//    Console.WriteLine("done");
-
-//    Console.WriteLine("Receive Echo ... ");
-//    string? message = await echoRunner.ReceiveAsync(token);
-//    Console.WriteLine(message);
-//    Console.WriteLine("... done");
-//  }
-//  try { await done; } catch { }
-//}
-
 Console.WriteLine("Done.");

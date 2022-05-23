@@ -25,9 +25,12 @@ namespace HEAL.Bricks {
       return CreateAsync(options).Result;
     }
 
+    private readonly List<RunningRunnableInfo> runningRunnables = new();
+
     private BricksOptions Options { get; }
     public IPackageManager PackageManager { get; private set; }
     public IEnumerable<RunnableInfo> InstalledRunnables { get; private set; } = Enumerable.Empty<RunnableInfo>();
+    public IEnumerable<RunningRunnableInfo> RunningRunnables => runningRunnables;
     public IReadOnlyDictionary<RunnableInfo, RunnableSettings> RunnableSettings { get; private set; } = new Dictionary<RunnableInfo, RunnableSettings>();
 
     public ApplicationManager(IOptions<BricksOptions> options, IPackageManager packageManager) : this(options.Value, packageManager) { }
@@ -44,20 +47,19 @@ namespace HEAL.Bricks {
       await ReloadAsync(cancellationToken);
     }
 
-    public async Task RunAsync(RunnableInfo runnableInfo, string[]? args = null, CancellationToken cancellationToken = default) {
+    public async Task<RunningRunnableInfo?> RunAsync(RunnableInfo runnableInfo, string[]? args = null, CancellationToken cancellationToken = default) {
       Guard.Argument(runnableInfo, nameof(runnableInfo)).NotNull();
 
-      using IChannel channel = CreateRunnerChannel(RunnableSettings[runnableInfo].Isolation, runnableInfo.DockerImage);
-
       Task? clientTerminated = null;
-      try {
+      if (runnableInfo.Kind == RunnableKind.ConsoleApplication) {
+        using IChannel channel = CreateRunnerChannel(RunnableSettings[runnableInfo].Isolation, runnableInfo.DockerImage);
         channel.Open(out clientTerminated, cancellationToken);
 
-        await channel.SendMessageAsync(Message.Factory.LoadPackages(PackageManager.GetPackageLoadInfos()), cancellationToken);
+        await channel.SendMessageAsync(MessageFactory.LoadPackages(PackageManager.GetPackageLoadInfos()), cancellationToken);
         await channel.ReceiveMessageAsync(Message.Commands.PackagesLoaded, cancellationToken);
-        await channel.SendMessageAsync(Message.Factory.RunRunnable(runnableInfo, args ?? Array.Empty<string>()), cancellationToken);
+        await channel.SendMessageAsync(MessageFactory.RunRunnable(runnableInfo, args ?? Array.Empty<string>()), cancellationToken);
 
-        if ((runnableInfo.Kind == RunnableKind.ConsoleApplication) && (channel is ProcessChannel processChannel)) {
+        if (channel is ProcessChannel processChannel) {
           Task reader = Task.Run(() => {
             int ch = processChannel.StandardOutput.Read();
             while ((ch != -1) && !cancellationToken.IsCancellationRequested) {
@@ -100,21 +102,42 @@ namespace HEAL.Bricks {
 
           // not needed if writer polls
           Console.SetIn(stdIn);
-        } else {
-          var messageHandlerTask = Task.Run(async () => {
-            CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            MessageHandler handler = new();
-            handler.LogAsync = (message) => {
-              return Task.CompletedTask;
-            };
-            await handler.ReceiveMessagesAsync(channel, cts.Token);
-          }, cancellationToken);
         }
         await (clientTerminated ?? throw new InvalidOperationException($"{nameof(clientTerminated)} is null"));
-      }
-      finally {
-        channel.Close();
-        await (clientTerminated ?? Task.CompletedTask);
+        return null;
+      } else {  // not a ConsoleApplication
+        IChannel channel = CreateRunnerChannel(RunnableSettings[runnableInfo].Isolation, runnableInfo.DockerImage);
+        channel.Open(out clientTerminated, cancellationToken);
+
+        await channel.SendMessageAsync(MessageFactory.LoadPackages(PackageManager.GetPackageLoadInfos()), cancellationToken);
+        await channel.ReceiveMessageAsync(Message.Commands.PackagesLoaded, cancellationToken);
+        await channel.SendMessageAsync(MessageFactory.RunRunnable(runnableInfo, args ?? Array.Empty<string>()), cancellationToken);
+
+        CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.Token.Register(async () => {
+          if (!clientTerminated.IsCompleted) {
+            await channel.SendMessageAsync(MessageFactory.Terminate(), cancellationToken);
+          }
+        });
+
+        MessageHandler handler = new();
+        Task messageHandlerTerminated = Task.Run(async () => {
+          await handler.ReceiveMessagesAsync(channel, cts.Token);
+        }, cts.Token);
+
+        Task cleanupTerminated = clientTerminated.ContinueWith(t => {
+          cts.Cancel();
+        }, cts.Token);
+
+        RunningRunnableInfo runningRunnableInfo = new(runnableInfo, channel, handler, cts, clientTerminated);
+        runningRunnables.Add(runningRunnableInfo);
+        Task allTerminated = Task.WhenAll(cleanupTerminated, messageHandlerTerminated).ContinueWith(t => {
+          channel.Close();
+          runningRunnables.Remove(runningRunnableInfo);
+        }, cancellationToken);
+
+        runningRunnableInfo.Terminated = allTerminated;
+        return runningRunnableInfo;
       }
     }
 
@@ -132,11 +155,11 @@ namespace HEAL.Bricks {
       try {
         channel.Open(out clientTerminated, cancellationToken);
 
-        await channel.SendMessageAsync(Message.Factory.LoadPackages(PackageManager.GetPackageLoadInfos()), cancellationToken);
+        await channel.SendMessageAsync(MessageFactory.LoadPackages(PackageManager.GetPackageLoadInfos()), cancellationToken);
         await channel.ReceiveMessageAsync(Message.Commands.PackagesLoaded, cancellationToken);
-        await channel.SendMessageAsync(Message.Factory.DiscoverRunnables(), cancellationToken);
+        await channel.SendMessageAsync(MessageFactory.DiscoverRunnables(), cancellationToken);
         InstalledRunnables = await channel.ReceiveMessageAsync<IEnumerable<RunnableInfo>>(Message.Commands.RunnablesDiscovered, cancellationToken);
-        await channel.SendMessageAsync(Message.Factory.Terminate(), cancellationToken);
+        await channel.SendMessageAsync(MessageFactory.Terminate(), cancellationToken);
         await (clientTerminated ?? throw new InvalidOperationException($"{nameof(clientTerminated)} is null"));
 
         Dictionary<RunnableInfo, RunnableSettings> settings = new();
@@ -154,7 +177,7 @@ namespace HEAL.Bricks {
       }
     }
 
-    public IChannel CreateRunnerChannel(Isolation isolation, string dockerImage = "") {
+    private IChannel CreateRunnerChannel(Isolation isolation, string dockerImage = "") {
       if (string.IsNullOrWhiteSpace(dockerImage)) dockerImage = Options.DefaultDockerImage;
 
       static async Task MemoryChannelClientCode(IChannel channel, CancellationToken cancellationToken) {

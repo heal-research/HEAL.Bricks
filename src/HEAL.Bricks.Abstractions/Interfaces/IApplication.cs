@@ -8,5 +8,15 @@
 namespace HEAL.Bricks {
   public interface IApplication : IRunnable {
     ApplicationKind Kind { get; }
+
+    Task RunAsync(string[] args, CancellationToken cancellationToken);
+
+    Task SendToHostAsync(string command, CancellationToken cancellationToken);
+    Task SendToHostAsync<T>(string command, T payload, CancellationToken cancellationToken);
+    Task SendToHostAsync(IMessage message, CancellationToken cancellationToken);
+
+    Task ReceiveFromHostAsync(string command, CancellationToken cancellationToken);
+    Task<T> ReceiveFromHostAsync<T>(string command, CancellationToken cancellationToken);
+    Task<IMessage> ReceiveFromHostAsync(CancellationToken cancellationToken);
   }
 }

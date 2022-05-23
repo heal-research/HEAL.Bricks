@@ -34,9 +34,9 @@ namespace HEAL.Bricks {
       Guard.Argument(message, nameof(message)).NotNull();
       Guard.Operation((outputStream != null) && outputStream.CanWrite);
 
-      string json = JsonSerializer.Serialize(message, message.GetType());
+      StringBuilder json = new(JsonSerializer.Serialize(message, message.GetType()));
       using StreamWriter writer = new(outputStream!, leaveOpen: true);
-      await writer.WriteLineAsync(json).ConfigureAwait(false);
+      await writer.WriteLineAsync(json, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task<IMessage> ReceiveMessageAsync(CancellationToken cancellationToken = default) {
@@ -44,7 +44,7 @@ namespace HEAL.Bricks {
       Guard.Operation((inputStream != null) && inputStream.CanRead);
 
       using StreamReader reader = new(inputStream!, leaveOpen: true);
-      string json = await reader.ReadLineAsync().ConfigureAwait(false) ?? string.Empty;
+      string json = await reader.ReadLineAsync().WaitAsync(cancellationToken).ConfigureAwait(false) ?? string.Empty;
       return JsonSerializer.Deserialize<Message>(json) ?? throw new InvalidOperationException("Deserialized message is null");
     }
 

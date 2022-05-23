@@ -13,11 +13,11 @@ namespace HEAL.Bricks {
   public interface IApplicationManager {
     IPackageManager PackageManager { get; }
     IEnumerable<RunnableInfo> InstalledRunnables { get; }
+    IReadOnlyDictionary<RunnableInfo, RunnableSettings> RunnableSettings { get; }
+    IEnumerable<RunningRunnableInfo> RunningRunnables { get; }
 
-    Task RunAsync(RunnableInfo runnable, string[]? args = null, CancellationToken cancellationToken = default);
+    Task<RunningRunnableInfo?> RunAsync(RunnableInfo runnable, string[]? args = null, CancellationToken cancellationToken = default);
     Task RunAutoStartAsync(string[]? args = null, CancellationToken cancellationToken = default);
     Task ReloadAsync(CancellationToken cancellationToken = default);
-
-    IChannel CreateRunnerChannel(Isolation isolation, string dockerImage = "");
   }
 }

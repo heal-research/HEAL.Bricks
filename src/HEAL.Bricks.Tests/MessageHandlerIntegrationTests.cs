@@ -22,15 +22,15 @@ namespace HEAL.Bricks.Tests {
       PackageLoadInfo[] packageLoadInfos = new[] {
         PackageLoadInfo.CreateForTests("a", "1.0.0", TestHelpers.GetWorkingDir(), "HEAL.Bricks.Tests.dll")
       };
-      IApplication expectedApplication = new DummyApplication();
       IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, $"HEAL.Bricks.Tests.BricksRunner.dll --TestMessageHandler {(startDebugger ? "--Debug" : "")}", TestHelpers.TestMessageHandler);
+      IApplication expectedApplication = new DummyApplication(channel);
       channel.Open(out Task clientTerminated);
 
-      await channel.SendMessageAsync(Message.Factory.LoadPackages(packageLoadInfos));
+      await channel.SendMessageAsync(MessageFactory.LoadPackages(packageLoadInfos));
       await channel.ReceiveMessageAsync(Message.Commands.PackagesLoaded);
-      await channel.SendMessageAsync(Message.Factory.DiscoverRunnables());
+      await channel.SendMessageAsync(MessageFactory.DiscoverRunnables());
       RunnableInfo[] result = (await channel.ReceiveMessageAsync<IEnumerable<RunnableInfo>>(Message.Commands.RunnablesDiscovered)).ToArray();
-      await channel.SendMessageAsync(Message.Factory.Terminate());
+      await channel.SendMessageAsync(MessageFactory.Terminate());
       await (clientTerminated);
 
       Assert.Collection(result,
@@ -44,14 +44,14 @@ namespace HEAL.Bricks.Tests {
 
     [Theory]
     [InlineData(typeof(MemoryChannel))]
-    public async Task GetApplicationsAsync_WithMemoryChannel_ReturnsApplications(Type channelType) {
-      IApplication expectedApplication = new DummyApplication();
+    public async Task DiscoverRunnablesAsync_WithMemoryChannel_ReturnsRunnables(Type channelType) {
       IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestMessageHandler", TestHelpers.TestMessageHandler);
+      IApplication expectedApplication = new DummyApplication(channel);
       channel.Open(out Task clientTerminated);
 
-      await channel.SendMessageAsync(Message.Factory.DiscoverRunnables());
+      await channel.SendMessageAsync(MessageFactory.DiscoverRunnables());
       RunnableInfo[] result = (await channel.ReceiveMessageAsync<IEnumerable<RunnableInfo>>(Message.Commands.RunnablesDiscovered)).ToArray();
-      await channel.SendMessageAsync(Message.Factory.Terminate());
+      await channel.SendMessageAsync(MessageFactory.Terminate());
       await (clientTerminated);
 
       Assert.Collection(result,
@@ -70,11 +70,11 @@ namespace HEAL.Bricks.Tests {
       IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestMessageHandler", TestHelpers.TestMessageHandler);
       channel.Open(out Task clientTerminated);
 
-      await channel.SendMessageAsync(Message.Factory.LoadPackages(Enumerable.Empty<PackageLoadInfo>()));
+      await channel.SendMessageAsync(MessageFactory.LoadPackages(Enumerable.Empty<PackageLoadInfo>()));
       await channel.ReceiveMessageAsync(Message.Commands.PackagesLoaded);
-      await channel.SendMessageAsync(Message.Factory.DiscoverRunnables());
+      await channel.SendMessageAsync(MessageFactory.DiscoverRunnables());
       RunnableInfo[] result = (await channel.ReceiveMessageAsync<IEnumerable<RunnableInfo>>(Message.Commands.RunnablesDiscovered)).ToArray();
-      await channel.SendMessageAsync(Message.Factory.Terminate());
+      await channel.SendMessageAsync(MessageFactory.Terminate());
       await (clientTerminated);
 
       Assert.Empty(result);

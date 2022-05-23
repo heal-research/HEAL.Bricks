@@ -9,7 +9,10 @@ namespace TestApp {
     public override string Description => "Reads strings and returns their echo.";
     public override ApplicationKind Kind => ApplicationKind.Console;
 
-    public override async Task StartAsync(string[] args, CancellationToken cancellationToken = default) {
+    public EchoApplication() : base() { }
+    public EchoApplication(IChannel channel) : base(channel) { }
+
+    public override async Task RunAsync(string[] args, CancellationToken cancellationToken = default) {
       await Task.Run(() => {
         Console.WriteLine("EchoApplication started");
         Console.Write("message > ");

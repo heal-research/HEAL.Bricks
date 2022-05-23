@@ -14,14 +14,15 @@ namespace WinFormsTestApp {
     ///  The main entry point for the application.
     /// </summary>
     [STAThread]
-    static void Main(string[] args) {
+    static async Task Main(string[] args) {
 //      Application.SetHighDpiMode(HighDpiMode.SystemAware);
       System.Windows.Forms.Application.EnableVisualStyles();
       System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
 
       using (IChannel? channel = ProcessChannel.CreateFromCLIArguments(args)) {
         if (channel != null) {
-          MessageHandler.Factory.ClientMessageHandler().ReceiveMessagesAsync(channel).Wait();
+          //System.Diagnostics.Debugger.Launch();
+          await MessageHandler.Factory.ClientMessageHandler().ReceiveMessagesAsync(channel);
           return;
         }
       }

@@ -1,26 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using HEAL.Bricks;
+﻿using HEAL.Bricks;
+using HEAL.Bricks.UI.WindowsForms;
 
 namespace WinFormsTestApp {
-  class WinFormsApplication : HEAL.Bricks.Application {
+  class WinFormsApplication : WindowsFormsApplication {
     public override string Name => "WinFormsApplication";
-
     public override string Description => "Simple WinForms GUI application.";
 
-    public override ApplicationKind Kind => ApplicationKind.GUI;
+    public WinFormsApplication() : base() { }
+    public WinFormsApplication(IChannel channel) : base(channel) { }
 
-    public override Task StartAsync(string[] args, CancellationToken cancellationToken = default) {
-      var form = new ApplicationForm {
+    public override Form CreateMainForm() {
+      return new ApplicationForm {
         Text = "WinFormsApplication"
       };
-      cancellationToken.Register(() => { form.Close(); });
-      System.Windows.Forms.Application.Run(form);
-      return Task.CompletedTask;
     }
   }
 }

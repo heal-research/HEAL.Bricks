@@ -129,7 +129,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData(typeof(StdInOutProcessChannel))]
     [InlineData(typeof(MemoryChannel))]
     public async Task SendMessageAsync_WhenChannelNotOpened_ThrowsInvalidOperationException(Type channelType) {
-      IMessage message = Message.Factory.CustomMessage("TestMessage");
+      IMessage message = Message.Create("TestMessage");
       IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
 
       var e = await Assert.ThrowsAsync<InvalidOperationException>(() => channel.SendMessageAsync(message));
@@ -140,7 +140,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData(typeof(StdInOutProcessChannel))]
     [InlineData(typeof(MemoryChannel))]
     public async Task SendMessageAsync_WhenChannelIsClosed_ThrowsObjectDisposedException(Type channelType) {
-      IMessage message = Message.Factory.CustomMessage("TestMessage");
+      IMessage message = Message.Create("TestMessage");
       IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync);
       channel.Open(out Task clientTerminated);
       channel.Close();
@@ -183,7 +183,7 @@ namespace HEAL.Bricks.Tests {
     [InlineData(typeof(StdInOutProcessChannel))]
     [InlineData(typeof(MemoryChannel))]
     public async Task SendAndReceiveMessageAsync_WithMessage_ReturnsMessage(Type channelType) {
-      IMessage request = Message.Factory.CustomMessage("TestMessage", "Payload");
+      IMessage request = Message.Create("TestMessage", "Payload");
       IMessage response;
 
       using (IChannel channel = TestHelpers.CreateChannel(channelType, Constants.DotnetExePath, "HEAL.Bricks.Tests.BricksRunner.dll --TestChannel", TestHelpers.TestChannelAsync)) {

@@ -9,6 +9,12 @@ namespace HEAL.Bricks {
   public abstract class Service : Runnable, IService {
     public override bool AutoStart => true;
 
-    public abstract Task StopAsync(string[] args, CancellationToken cancellationToken);
+    protected Service() : base() { }
+    protected Service(IChannel channel) : base(channel) { }
+
+    public abstract Task StartAsync(string[] args, CancellationToken cancellationToken);
+    public abstract Task StopAsync(CancellationToken cancellationToken);
+
+    public abstract Task<IMessage> ProcessRequestAsync(IMessage message, CancellationToken cancellationToken);
   }
 }

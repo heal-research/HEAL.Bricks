@@ -13,6 +13,11 @@ namespace HEAL.Bricks {
     public virtual string DockerImage => "mcr.microsoft.com/dotnet/runtime:latest";
     public virtual bool AutoStart => false;
 
-    public abstract Task StartAsync(string[] args, CancellationToken cancellationToken);
+    protected IChannel? Channel { get; } = null;
+
+    protected Runnable() { }
+    protected Runnable(IChannel channel) {
+      Channel = channel ?? throw new ArgumentNullException(nameof(channel), "Channel must not be null.");
+    }
   }
 }

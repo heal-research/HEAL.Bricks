@@ -50,9 +50,9 @@ namespace HEAL.Bricks {
       AutoStart = runnable.AutoStart;
     }
 
-    public IRunnable CreateRunnable() {
+    public IRunnable CreateRunnable(IChannel channel) {
       Type runnableType = Type.GetType(TypeName) ?? throw new InvalidOperationException($"Cannot resolve runnable type name {TypeName}.");
-      return (IRunnable)(Activator.CreateInstance(runnableType) ?? throw new InvalidOperationException($"Cannot create runnable of type {TypeName}."));
+      return (IRunnable)(Activator.CreateInstance(runnableType, channel) ?? throw new InvalidOperationException($"Cannot create runnable of type {TypeName}."));
     }
 
     public override bool Equals(object? obj) {

@@ -15,8 +15,6 @@ namespace HEAL.Bricks.UI.WindowsForms {
   public partial class StarterForm : Form {
     private BricksOptions options;
     private IApplicationManager? appMan;
-    private readonly Dictionary<RunnableInfo, List<CancellationTokenSource>> appCTS = new();
-    private int runningApplications = 0;
 
     public string DefaultApplicationImageKey { get; set; } = "Package";
     public ImageList SmallImageList => smallImageList;
@@ -30,39 +28,27 @@ namespace HEAL.Bricks.UI.WindowsForms {
 
     private void EnableDisableControls() {
       startStopButton.Enabled = applicationsListView.SelectedItems.Count != 0;
-      packageManagerButton.Enabled = runningApplications == 0;
-      settingsButton.Enabled = runningApplications == 0;
-      reloadButton.Enabled = runningApplications == 0;
+      packageManagerButton.Enabled = appMan?.RunningRunnables.Count() == 0;
+      settingsButton.Enabled = appMan?.RunningRunnables.Count() == 0;
+      reloadButton.Enabled = appMan?.RunningRunnables.Count() == 0;
 
       if (startStopButton.Enabled) {
         RunnableInfo runnableInfo = (RunnableInfo)applicationsListView.SelectedItems[0].Tag;
-        if (appCTS[runnableInfo].Count == 0) {
-          startStopButton.Text = "&Start";
-          startStopButton.ImageKey = "Play";
-        }
-        else {
+        if (appMan?.RunningRunnables.Where(x => x.RunnableInfo == runnableInfo).Any() ?? false) {
           startStopButton.Text = "&Stop";
           startStopButton.ImageKey = "Stop";
+        } else {
+          startStopButton.Text = "&Start";
+          startStopButton.ImageKey = "Play";
         }
       }
     }
 
     private async Task StartApplicationAsync(RunnableInfo runnableInfo) {
-      using CancellationTokenSource cts = new();
-      appCTS[runnableInfo].Add(cts);
-      runningApplications++;
+      RunningRunnableInfo? runningRunnableInfo = await (appMan?.RunAsync(runnableInfo) ?? throw new InvalidOperationException("Application manager is null."));
       EnableDisableControls();
-      try {
-        await (appMan?.RunAsync(runnableInfo, cancellationToken: cts.Token) ?? throw new InvalidOperationException("Application manager is null."));
-      }
-      catch (Exception) {
-        if (!cts.IsCancellationRequested) throw;
-      }
-      finally {
-        appCTS[runnableInfo].Remove(cts);
-        runningApplications--;
-        EnableDisableControls();
-      }
+      await (runningRunnableInfo?.Terminated ?? Task.CompletedTask);
+      EnableDisableControls();
     }
 
     private async void LoadApplicationsOnLoad(object sender, EventArgs e) {
@@ -70,10 +56,11 @@ namespace HEAL.Bricks.UI.WindowsForms {
     }
 
     private async void StartStopApplicationOnClick(object sender, EventArgs e) {
+      IEnumerable<RunningRunnableInfo> runningRunnables = appMan?.RunningRunnables ?? Enumerable.Empty<RunningRunnableInfo>();
       if (applicationsListView.SelectedItems.Count != 0) {
         RunnableInfo runnableInfo = (RunnableInfo)applicationsListView.SelectedItems[0].Tag;
-        if (appCTS[runnableInfo].Count > 0) {
-          foreach (CancellationTokenSource cts in appCTS[runnableInfo].ToArray()) {
+        if (runningRunnables.Where(x => x.RunnableInfo == runnableInfo).Any()) {
+          foreach (CancellationTokenSource cts in runningRunnables.Where(x => x.RunnableInfo == runnableInfo).Select(x => x.CancellationTokenSource).ToArray()) {
             cts.Cancel();
           }
         } else {
@@ -114,7 +101,6 @@ namespace HEAL.Bricks.UI.WindowsForms {
       appMan = await ApplicationManager.CreateAsync(options);
 
       applicationsListView.Items.Clear();
-      appCTS.Clear();
       foreach (RunnableInfo runnable in appMan.InstalledRunnables) {
         applicationsListView.Items.Add(new ListViewItem {
           Text = runnable.ToString(),
@@ -122,7 +108,6 @@ namespace HEAL.Bricks.UI.WindowsForms {
           Tag = runnable,
           ToolTipText = runnable.Description
         });
-        appCTS.Add(runnable, new List<CancellationTokenSource>());
       }
       EnableDisableControls();
       if (applicationsListView.Items.Count > 0) applicationsListView.Items[0].Selected = true;
